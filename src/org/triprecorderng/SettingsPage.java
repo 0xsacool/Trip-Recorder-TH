@@ -169,6 +169,14 @@ final class SettingsPage {
                         host.showLanguageDialog();
                     }
                 });
+        Kit.Row theme = action(L.t("Dashboard theme"),
+                Prefs.performanceTheme(c) ? "GT-R Performance" : L.t("Classic"),
+                L.t("Change"), false, new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        Prefs.setPerformanceTheme(c, !Prefs.performanceTheme(c));
+                        host.rebuildSoon();
+                    }
+                });
         Kit.Row updates = action(L.t("Updates"), host.updateText(), L.t("Check for updates"), true,
                 new View.OnClickListener() {
                     @Override public void onClick(View v) {
@@ -209,7 +217,7 @@ final class SettingsPage {
             }
         });
         host.bindUpdateViews(updates.desc, channel.desc);
-        section(into, L.t("General"), language, updates, prices, battery, advanced, channel);
+        section(into, L.t("General"), language, theme, updates, prices, battery, advanced, channel);
     }
 
     private void showBatteryDialog() {

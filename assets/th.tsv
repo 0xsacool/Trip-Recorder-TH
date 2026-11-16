@@ -503,3 +503,9 @@ Up to %d km/h	ไม่เกิน %d กม./ชม.
 Nominal battery capacity	ความจุแบตเตอรี่ที่กำหนด
 Enter the battery capacity in kWh (10 to 150). Used only to estimate charging energy when no measured data is available.	ระบุความจุแบตเตอรี่ 10–150 kWh ใช้ประมาณพลังงานชาร์จเฉพาะเมื่อไม่มีข้อมูลพลังงานจริง
 Invalid battery capacity	ความจุแบตเตอรี่ไม่ถูกต้อง
+Dashboard theme	ธีมหน้าปัด
+Classic	คลาสสิก
+Remaining range	ระยะทางคงเหลือ
+Average consumption	อัตราสิ้นเปลืองเฉลี่ย
+Speed history	กราฟความเร็ว
+Waiting for vehicle data	รอข้อมูลรถ
