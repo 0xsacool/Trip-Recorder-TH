@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Optional GT-R-inspired dashboard; consumes the same read-only snapshots as ThisTripPage.
+ * Optional GT-R and Type R inspired dashboards; consume the same read-only snapshots as ThisTripPage.
  * No vehicle commands. Power and thermal values are read-only, never simulated.
  */
 final class PerformanceDashboard extends View {
@@ -24,6 +24,8 @@ final class PerformanceDashboard extends View {
     private final Typeface normal = Typeface.create("sans-serif", Typeface.NORMAL);
     private final Typeface bold = Typeface.create("sans-serif-condensed", Typeface.BOLD);
     private final Context c;
+    private final boolean typeR;
+    private final Typeface italic = Typeface.create("sans-serif-condensed", Typeface.BOLD_ITALIC);
     private final ThisTripPage.Host host;
     private final double[] history = new double[SAMPLES];
     private int sampleCount;
@@ -48,9 +50,10 @@ final class PerformanceDashboard extends View {
     private PerformanceDashboard(Context c, ThisTripPage.Host host) {
         super(c);
         this.c = c;
+        this.typeR = Prefs.typeRTheme(c);
         this.host = host;
         Arrays.fill(history, Double.NaN);
-        setBackgroundColor(0xFF090D11);
+        setBackgroundColor(typeR ? 0xFF08090B : 0xFF090D11);
         setFocusable(true);
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
         setOnClickListener(new OnClickListener() {
@@ -121,7 +124,7 @@ final class PerformanceDashboard extends View {
             }
             lastSample = live.telemetryWall;
         }
-        setContentDescription("GT-R Performance. " + status + ". " + source + ". "
+        setContentDescription((typeR ? "Type R Edition. " : "GT-R Performance. ") + status + ". " + source + ". "
                 + L.t("Speed") + " " + number(speed, "%.0f") + " km/h. "
                 + L.t("Battery") + " " + number(soc, "%.0f") + "%. "
                 + "Cell temperature min/max " + number(minTemp, "%.0f") + "/"
@@ -139,6 +142,11 @@ final class PerformanceDashboard extends View {
         canvas.save();
         canvas.translate((getWidth() - 1000f * scale) / 2f, (getHeight() - 470f * scale) / 2f);
         canvas.scale(scale, scale);
+        if (typeR) {
+            drawTypeR(canvas);
+            canvas.restore();
+            return;
+        }
         fill(canvas, 0, 0, 1000, 470, 0xFF090D11);
         fill(canvas, 0, 0, 1000, 62, PANEL);
         fill(canvas, 0, 61, 1000, 63, RED);
@@ -174,6 +182,126 @@ final class PerformanceDashboard extends View {
         cell(canvas, 510, 685, L.t("Cost"), money);
         graph(canvas, 709, 386, 983, 459);
         canvas.restore();
+    }
+
+    private static final int TYPE_R_RED = 0xFFF01930;
+    private static final int TYPE_R_PANEL = 0xFF121315;
+    private static final int TYPE_R_LINE = 0xFF33363A;
+
+    /** Type R layout: large central speed, segmented signed power, balanced side metrics. */
+    private void drawTypeR(Canvas cv) {
+        fill(cv, 0, 0, 1000, 470, 0xFF08090B);
+        fill(cv, 0, 0, 1000, 55, TYPE_R_PANEL);
+        sportText(cv, "TYPE R EDITION", 18, 28, 26, INK, Paint.Align.LEFT, 340);
+        text(cv, source, 18, 47, 14, MUTED, false, Paint.Align.LEFT, 650);
+        text(cv, status, 980, 25, 19, statusColor, true, Paint.Align.RIGHT, 300);
+        text(cv, tripLabel, 980, 46, 15, MUTED, false, Paint.Align.RIGHT, 240);
+        fill(cv, 0, 55, 1000, 58, TYPE_R_RED);
+
+        // The bar is actual signed traction power in kW, not battery percentage.
+        boolean regen = valid(motorPower) && motorPower < 0;
+        int accent = regen ? CYAN : TYPE_R_RED;
+        double maxPower = regen ? 100.0 : 200.0;
+        double progress = valid(motorPower) ? Math.min(1.0, Math.abs(motorPower) / maxPower) : 0;
+        text(cv, regen ? "REGEN" : "POWER", 18, 84, 20, INK, true, Paint.Align.LEFT, 148);
+        text(cv, regen ? "0 - 100 kW" : "0 - 200 kW", 18, 106, 12, MUTED, false, Paint.Align.LEFT, 148);
+        segmentedPower(cv, 166, 71, 818, 106, progress, accent);
+        sportText(cv, number(motorPower, "%.0f") + " kW", 980, 100, 32, INK, Paint.Align.RIGHT, 150);
+        fill(cv, 18, 117, 982, 119, TYPE_R_LINE);
+
+        // Keep the visual hierarchy of the approved Type R concept.
+        p.setStyle(Paint.Style.STROKE); p.setColor(TYPE_R_LINE); p.setStrokeWidth(2);
+        cv.drawLine(316, 130, 276, 306, p);
+        cv.drawLine(724, 130, 684, 306, p);
+        p.setStyle(Paint.Style.FILL);
+
+        text(cv, L.t("Battery"), 22, 151, 17, MUTED, false, Paint.Align.LEFT, 235);
+        sportText(cv, number(soc, "%.0f") + "%", 22, 202, 51, INK, Paint.Align.LEFT, 235);
+        fill(cv, 22, 211, 251, 218, TYPE_R_LINE);
+        if (valid(soc)) fill(cv, 22, 211, 22 + (float) soc * 2.29f, 218,
+                soc < 15 ? TYPE_R_RED : soc < 30 ? 0xFFFFB44D : INK);
+        fill(cv, 22, 228, 252, 230, TYPE_R_RED);
+        text(cv, L.t("Remaining range"), 22, 255, 16, MUTED, false, Paint.Align.LEFT, 235);
+        sportText(cv, number(range, "%.0f") + " km", 22, 297, 41, INK, Paint.Align.LEFT, 235);
+
+        text(cv, L.t("Speed"), 500, 151, 16, MUTED, false, Paint.Align.CENTER, 320);
+        sportText(cv, number(speed, "%.0f"), 500, 252, 119, INK, Paint.Align.CENTER, 340);
+        text(cv, "km/h", 500, 277, 21, MUTED, true, Paint.Align.CENTER, 200);
+        // These are indicators, not buttons or mode commands.
+        boolean driving = valid(motorPower) && motorPower > 0;
+        boolean recovering = valid(motorPower) && motorPower < 0;
+        slant(cv, 362, 287, 496, 310, driving ? TYPE_R_RED : TYPE_R_LINE);
+        slant(cv, 506, 287, 640, 310, recovering ? CYAN : TYPE_R_LINE);
+        text(cv, "POWER", 429, 304, 14, INK, true, Paint.Align.CENTER, 112);
+        text(cv, "REGEN", 573, 304, 14, recovering ? 0xFF08090B : INK, true, Paint.Align.CENTER, 112);
+
+        text(cv, L.t("Trip"), 744, 151, 17, MUTED, false, Paint.Align.LEFT, 235);
+        sportText(cv, number(distance, "%.1f") + " km", 978, 199, 42, INK, Paint.Align.RIGHT, 235);
+        fill(cv, 744, 228, 978, 230, TYPE_R_RED);
+        text(cv, L.t("Time"), 744, 255, 16, MUTED, false, Paint.Align.LEFT, 235);
+        sportText(cv, elapsed, 978, 297, 43, INK, Paint.Align.RIGHT, 235);
+
+        fill(cv, 0, 321, 1000, 371, TYPE_R_PANEL);
+        typeRMetric(cv, 18, 339, 362, 330, "BATTERY TEMP MIN / MAX",
+                number(minTemp, "%.0f") + " / " + number(maxTemp, "%.0f") + " °C", 22);
+        typeRMetric(cv, 353, 339, 362, 323, "CELL VOLTAGE MIN / MAX",
+                number(minCell, "%.3f") + " / " + number(maxCell, "%.3f") + " V", 22);
+        typeRMetric(cv, 710, 339, 362, 272, "CHARGING VOLTAGE",
+                number(chargeVoltage, "%.0f") + " V", 22);
+        fill(cv, 338, 329, 340, 363, TYPE_R_LINE);
+        fill(cv, 695, 329, 697, 363, TYPE_R_LINE);
+
+        fill(cv, 18, 381, 982, 383, TYPE_R_RED);
+        typeRMetric(cv, 22, 409, 451, 302, L.t("Energy"), number(energy, "%.1f") + " kWh", 35);
+        typeRMetric(cv, 353, 409, 451, 325, L.t("Average consumption"),
+                number(average, "%.1f") + " kWh/100 km", 35);
+        typeRMetric(cv, 710, 409, 451, 272, L.t("Cost"), money, 35);
+        fill(cv, 338, 396, 340, 451, TYPE_R_LINE);
+        fill(cv, 695, 396, 697, 451, TYPE_R_LINE);
+    }
+
+    private void typeRMetric(Canvas cv, float left, float labelY, float valueY, float maxWidth,
+                             String label, String value, float size) {
+        text(cv, label, left, labelY, 14, MUTED, false, Paint.Align.LEFT, maxWidth);
+        sportText(cv, value, left, valueY, size, INK, Paint.Align.LEFT, maxWidth);
+    }
+
+    private void segmentedPower(Canvas cv, float left, float top, float right, float bottom,
+                                double percent, int color) {
+        final int count = 12;
+        float pitch = (right - left) / count;
+        for (int i = 0; i < count; i++) {
+            float x = left + i * pitch;
+            slant(cv, x, top, x + pitch - 3, bottom, TYPE_R_LINE);
+            double fraction = Math.max(0, Math.min(1, percent * count - i));
+            if (fraction > 0) {
+                cv.save();
+                cv.clipRect(x, top, x + (float) fraction * (pitch - 3), bottom);
+                slant(cv, x, top, x + pitch - 3, bottom, color);
+                cv.restore();
+            }
+        }
+    }
+
+    private void slant(Canvas cv, float left, float top, float right, float bottom, int color) {
+        float skew = Math.min(12, (right-left)/4);
+        Path path = new Path();
+        path.moveTo(left + skew, top);
+        path.lineTo(right, top);
+        path.lineTo(right - skew, bottom);
+        path.lineTo(left, bottom);
+        path.close();
+        p.setStyle(Paint.Style.FILL); p.setColor(color);
+        cv.drawPath(path, p);
+    }
+
+    private void sportText(Canvas cv, String value, float x, float y, float size, int color,
+                           Paint.Align align, float maxWidth) {
+        p.setStyle(Paint.Style.FILL); p.setTypeface(italic);
+        p.setTextAlign(align); p.setTextSize(size); p.setColor(color);
+        float width = p.measureText(value);
+        if (width > maxWidth) p.setTextSize(size * maxWidth / width);
+        cv.drawText(value, x, y, p);
     }
 
     private void gauge(Canvas cv, float x, float y, float r, int min, int max, double value,

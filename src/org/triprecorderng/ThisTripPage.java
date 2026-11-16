@@ -107,7 +107,7 @@ final class ThisTripPage {
     private TextView fuelPer100;
 
     static View build(Context c, Host host) {
-        if (Prefs.performanceTheme(c)) return PerformanceDashboard.build(c, host);
+        if (Prefs.sportTheme(c)) return PerformanceDashboard.build(c, host);
         return new ThisTripPage(c, host).create();
     }
 

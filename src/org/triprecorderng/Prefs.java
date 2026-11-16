@@ -30,13 +30,46 @@ final class Prefs {
         return c.getApplicationContext().getSharedPreferences("triprecng", Context.MODE_PRIVATE);
     }
 
-    /** The original dashboard stays the default. Theme affects presentation only. */
+    /** Presentation only; preserve the selection made on Dev-5/6. */
+    static final String THEME_CLASSIC = "classic";
+    static final String THEME_GTR = "gtr";
+    static final String THEME_TYPE_R = "type_r";
+
+    static String dashboardTheme(Context c) {
+        SharedPreferences p = sp(c);
+        String value = p.getString("dashboard_theme", "");
+        if (THEME_CLASSIC.equals(value) || THEME_GTR.equals(value) || THEME_TYPE_R.equals(value))
+            return value;
+        return p.getBoolean("performance_theme_gtr", false) ? THEME_GTR : THEME_CLASSIC;
+    }
+
+    static void setDashboardTheme(Context c, String value) {
+        if (!THEME_CLASSIC.equals(value) && !THEME_GTR.equals(value) && !THEME_TYPE_R.equals(value)) return;
+        sp(c).edit().putString("dashboard_theme", value)
+                .putBoolean("performance_theme_gtr", THEME_GTR.equals(value)).apply();
+    }
+
+    static String themeName(Context c) {
+        String theme = dashboardTheme(c);
+        if (THEME_TYPE_R.equals(theme)) return "Type R Edition";
+        if (THEME_GTR.equals(theme)) return "GT-R Performance";
+        return L.t("Classic");
+    }
+
     static boolean performanceTheme(Context c) {
-        return sp(c).getBoolean("performance_theme_gtr", false);
+        return THEME_GTR.equals(dashboardTheme(c));
+    }
+
+    static boolean typeRTheme(Context c) {
+        return THEME_TYPE_R.equals(dashboardTheme(c));
+    }
+
+    static boolean sportTheme(Context c) {
+        return !THEME_CLASSIC.equals(dashboardTheme(c));
     }
 
     static void setPerformanceTheme(Context c, boolean enabled) {
-        sp(c).edit().putBoolean("performance_theme_gtr", enabled).apply();
+        setDashboardTheme(c, enabled ? THEME_GTR : THEME_CLASSIC);
     }
 
     /** Boot counter of the Android system (changes on every real restart); -1 if unavailable. */

@@ -422,7 +422,7 @@ public class MainActivity extends Activity {
     /** The GT-R theme uses a horizontal bottom navigation bar; Classic keeps its original rail.
      * Re-layout on returning from Settings so switching themes is immediate. */
     private void updateNavigationLayout() {
-        boolean bottom = Prefs.performanceTheme(this);
+        boolean bottom = Prefs.sportTheme(this);
         if (bottom == bottomNav || shellBody == null || content == null) return;
         bottomNav = bottom;
         LinearLayout nav = (LinearLayout) navView;
@@ -506,7 +506,14 @@ public class MainActivity extends Activity {
         for (int i = 0; i < tabViews.length; i++) {
             boolean sel = i == index;
             LinearLayout t = tabViews[i];
-            t.setBackgroundResource(sel ? res("tab_selected_bg") : 0);
+            if (sel && Prefs.typeRTheme(this)) {
+                GradientDrawable selected = new GradientDrawable();
+                selected.setColor(0xFF2C1115);
+                selected.setStroke(Ui.dp(this, 1), 0xFFD92235);
+                t.setBackground(selected);
+            } else {
+                t.setBackgroundResource(sel ? res("tab_selected_bg") : 0);
+            }
             ((TextView) t.getChildAt(1)).setTextColor(sel ? Ui.TEXT_SELECTED : 0xCCFFFFFF);
             ((ImageView) t.getChildAt(0)).setColorFilter(sel ? 0xFFFFFFFF : 0xCCFFFFFF,
                     PorterDuff.Mode.SRC_IN);

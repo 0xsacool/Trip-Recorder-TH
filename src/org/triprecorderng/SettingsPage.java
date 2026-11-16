@@ -1,5 +1,6 @@
 package org.triprecorderng;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;
@@ -170,11 +171,20 @@ final class SettingsPage {
                     }
                 });
         Kit.Row theme = action(L.t("Dashboard theme"),
-                Prefs.performanceTheme(c) ? "GT-R Performance" : L.t("Classic"),
-                L.t("Change"), false, new View.OnClickListener() {
+                Prefs.themeName(c), L.t("Change"), false, new View.OnClickListener() {
                     @Override public void onClick(View v) {
-                        Prefs.setPerformanceTheme(c, !Prefs.performanceTheme(c));
-                        host.rebuildSoon();
+                        final String[] keys = {Prefs.THEME_CLASSIC, Prefs.THEME_GTR, Prefs.THEME_TYPE_R};
+                        String[] choices = {L.t("Classic"), "GT-R Performance", "Type R Edition"};
+                        String current = Prefs.dashboardTheme(c);
+                        int selected = 0;
+                        for (int i = 0; i < keys.length; i++) if (keys[i].equals(current)) selected = i;
+                        new AlertDialog.Builder(c).setTitle(L.t("Dashboard theme"))
+                                .setSingleChoiceItems(choices, selected, (dialog, which) -> {
+                                    Prefs.setDashboardTheme(c, keys[which]);
+                                    dialog.dismiss();
+                                    host.rebuildSoon();
+                                })
+                                .setNegativeButton(L.t("Cancel"), null).show();
                     }
                 });
         Kit.Row updates = action(L.t("Updates"), host.updateText(), L.t("Check for updates"), true,
