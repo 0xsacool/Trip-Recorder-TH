@@ -14,8 +14,8 @@ the car's network debugging (ADB) is not ready yet	تصحيح الشبكة في 
 approval pending	بانتظار الموافقة
 debugging request was not accepted yet	لم يتم قبول طلب التصحيح بعد
 helper started	بدأ المساعد
-Open Setting > BYD auto-start apps, find Trip Recorder NG in 'Disable background Apps' and turn it OFF (OFF means the app is allowed to start). Then restart the head unit once.	افتح الإعدادات > تطبيقات التشغيل التلقائي في BYD، وابحث عن Trip Recorder NG ضمن «Disable background Apps» وأوقف مفتاحه (إيقاف المفتاح يعني السماح للتطبيق بالعمل). ثم أعد تشغيل وحدة الشاشة مرة واحدة.
-BYD did not start Trip Recorder NG by itself after the last restart, so trips are not recorded until you open the app.\n\n	لم تشغّل BYD تطبيق Trip Recorder NG تلقائيًا بعد آخر إعادة تشغيل، لذلك لا تُسجَّل الرحلات حتى تفتح التطبيق.\n\n
+Open Setting > BYD auto-start apps, find EV TripLog in 'Disable background Apps' and turn it OFF (OFF means the app is allowed to start). Then restart the head unit once.	افتح الإعدادات > تطبيقات التشغيل التلقائي في BYD، وابحث عن EV TripLog ضمن «Disable background Apps» وأوقف مفتاحه (إيقاف المفتاح يعني السماح للتطبيق بالعمل). ثم أعد تشغيل وحدة الشاشة مرة واحدة.
+BYD did not start EV TripLog by itself after the last restart, so trips are not recorded until you open the app.\n\n	لم تشغّل BYD تطبيق EV TripLog تلقائيًا بعد آخر إعادة تشغيل، لذلك لا تُسجَّل الرحلات حتى تفتح التطبيق.\n\n
 Auto-start is not confirmed yet. BYD switches it back to blocked every time Trip Recorder is installed or updated, and until it is allowed the app does not record after a restart.\n\n	لم يتأكد التشغيل التلقائي بعد. تعيد BYD منعه في كل مرة يُثبَّت فيها Trip Recorder أو يُحدَّث، وحتى يُسمح به لا يسجّل التطبيق بعد إعادة التشغيل.\n\n
 Turn off 'Disable background Apps'	أوقف «Disable background Apps»
 Open BYD settings	فتح إعدادات BYD
@@ -156,8 +156,8 @@ Allowed	مسموح
 Not allowed	غير مسموح
 Allow	سماح
 Started automatically after the last restart	بدأ تلقائيًا بعد آخر إعادة تشغيل
-NOT started automatically after the last restart: turn Trip Recorder NG OFF in 'Disable background Apps'	لم يبدأ تلقائيًا بعد آخر إعادة تشغيل: أوقف مفتاح Trip Recorder NG ضمن «Disable background Apps»
-Not confirmed yet: turn Trip Recorder NG OFF in 'Disable background Apps', then restart the head unit once	لم يتأكد بعد: أوقف مفتاح Trip Recorder NG ضمن «Disable background Apps» ثم أعد تشغيل وحدة الشاشة مرة واحدة
+NOT started automatically after the last restart: turn EV TripLog OFF in 'Disable background Apps'	لم يبدأ تلقائيًا بعد آخر إعادة تشغيل: أوقف مفتاح EV TripLog ضمن «Disable background Apps»
+Not confirmed yet: turn EV TripLog OFF in 'Disable background Apps', then restart the head unit once	لم يتأكد بعد: أوقف مفتاح EV TripLog ضمن «Disable background Apps» ثم أعد تشغيل وحدة الشاشة مرة واحدة
 BYD auto-start apps	تطبيقات التشغيل التلقائي في BYD
 Open	فتح
 Energy prices	أسعار الطاقة
@@ -195,7 +195,7 @@ Simplified: 100 points, minus 5 for every hard acceleration or hard braking. It 
 What is the Vehicle data link?	ما هو رابط بيانات المركبة؟
 An optional setting (off by default). When on, the app starts a small helper through the car's network debugging so it can read BYD's own vehicle data: battery level, energy counter, odometer and ignition. Without it trips are recorded from GPS only.	إعداد اختياري (متوقف افتراضيًا). عند تفعيله يشغّل التطبيق مساعدًا صغيرًا عبر تصحيح الشبكة في السيارة ليتمكن من قراءة بيانات المركبة من BYD: مستوى البطارية وعدّاد الطاقة وعدّاد المسافة وحالة التشغيل. وبدونه تُسجَّل الرحلات من GPS فقط.
 Why does recording stop after a restart?	لماذا يتوقف التسجيل بعد إعادة التشغيل؟
-BYD blocks apps from starting by themselves. Open Setting > BYD auto-start apps and turn Trip Recorder NG OFF in 'Disable background Apps'. BYD switches it back on every time the app is installed or updated, so do this again after an update.	تمنع BYD التطبيقات من البدء تلقائيًا. افتح الإعدادات > تطبيقات التشغيل التلقائي في BYD وأوقف مفتاح Trip Recorder NG ضمن «Disable background Apps». تعيد BYD تفعيل المنع في كل مرة يُثبَّت التطبيق أو يُحدَّث، لذا كرّر ذلك بعد كل تحديث.
+BYD blocks apps from starting by themselves. Open Setting > BYD auto-start apps and turn EV TripLog OFF in 'Disable background Apps'. BYD switches it back on every time the app is installed or updated, so do this again after an update.	تمنع BYD التطبيقات من البدء تلقائيًا. افتح الإعدادات > تطبيقات التشغيل التلقائي في BYD وأوقف مفتاح EV TripLog ضمن «Disable background Apps». تعيد BYD تفعيل المنع في كل مرة يُثبَّت التطبيق أو يُحدَّث، لذا كرّر ذلك بعد كل تحديث.
 Where are my files?	أين ملفاتي؟
 Export CSV and GPX from My Trips or Setting. Files go to Documents/TripRecorderNG.	يمكنك تصدير CSV وGPX من «رحلاتي» أو من الإعدادات. تُحفظ الملفات في Documents/TripRecorderNG.
 Are my trips backed up?	هل رحلاتي محفوظة احتياطيًا؟
@@ -213,7 +213,7 @@ With Vehicle data link enabled, recorded charging energy is preferred. If it is 
 What do the colours and charts on a trip show?	ماذا تعرض الألوان والرسوم البيانية في الرحلة؟
 The route is coloured by speed (green slow, red fast). Red and amber dots mark hard braking and hard acceleration. Under the map, pick Speed, Battery, Elevation or Efficiency and touch the chart to see that moment on the map. Battery, Efficiency and event dots are recorded for trips made after the update; older trips show speed and elevation only.	يُلوَّن المسار بحسب السرعة (الأخضر بطيء والأحمر سريع). وتشير النقاط الحمراء والكهرمانية إلى الكبح الحاد والتسارع الحاد. أسفل الخريطة اختر السرعة أو البطارية أو الارتفاع أو الكفاءة والمس الرسم البياني لترى تلك اللحظة على الخريطة. تُسجَّل البطارية والكفاءة ونقاط الأحداث للرحلات التي تمت بعد التحديث؛ أما الرحلات الأقدم فتعرض السرعة والارتفاع فقط.
 Turn on Vehicle data link?	تفعيل رابط بيانات المركبة؟
-This adds battery, energy, odometer and ignition data to your trips.\n\nTo get them, Trip Recorder NG uses the car's own network debugging (ADB) on this head unit to start a small helper. Depending on the head unit, the car may ask you to allow debugging for this app (tick "Always allow" and tap Allow); on some units it is accepted automatically. After that the helper starts by itself each time the car boots.\n\nYou can switch it off here at any time (this stops the helper), and "Forget" deletes the app's key.	يضيف هذا بيانات البطارية والطاقة وعدّاد المسافة وحالة التشغيل إلى رحلاتك.\n\nللحصول عليها يستخدم Trip Recorder NG تصحيح الشبكة (ADB) في هذه الشاشة لتشغيل مساعد صغير. وبحسب الشاشة قد تطلب السيارة السماح بالتصحيح لهذا التطبيق (ضع علامة «السماح دائمًا» ثم اضغط سماح)، وفي بعض الوحدات يُقبل تلقائيًا. بعد ذلك يبدأ المساعد من تلقاء نفسه في كل مرة تُشغَّل فيها السيارة.\n\nيمكنك إيقافه هنا في أي وقت (وهذا يوقف المساعد)، و«حذف المفتاح» يحذف مفتاح التطبيق.
+This adds battery, energy, odometer and ignition data to your trips.\n\nTo get them, EV TripLog uses the car's own network debugging (ADB) on this head unit to start a small helper. Depending on the head unit, the car may ask you to allow debugging for this app (tick "Always allow" and tap Allow); on some units it is accepted automatically. After that the helper starts by itself each time the car boots.\n\nYou can switch it off here at any time (this stops the helper), and "Forget" deletes the app's key.	يضيف هذا بيانات البطارية والطاقة وعدّاد المسافة وحالة التشغيل إلى رحلاتك.\n\nللحصول عليها يستخدم EV TripLog تصحيح الشبكة (ADB) في هذه الشاشة لتشغيل مساعد صغير. وبحسب الشاشة قد تطلب السيارة السماح بالتصحيح لهذا التطبيق (ضع علامة «السماح دائمًا» ثم اضغط سماح)، وفي بعض الوحدات يُقبل تلقائيًا. بعد ذلك يبدأ المساعد من تلقاء نفسه في كل مرة تُشغَّل فيها السيارة.\n\nيمكنك إيقافه هنا في أي وقت (وهذا يوقف المساعد)، و«حذف المفتاح» يحذف مفتاح التطبيق.
 Currency	العملة
 Electricity price per kWh	سعر الكهرباء لكل كيلوواط
 default %s	الافتراضي %s
@@ -277,10 +277,10 @@ Hide	إخفاء
 Show	إظهار
 Installed: %1$s%2$s   -   following: %3$s	المثبّت: %1$s%2$s   -   يتابع: %3$s
 (not a release build)	(ليس إصدارًا منشورًا)
-Dev: the newest builds, made for testing, may contain bugs	التطوير: أحدث الإصدارات، مخصّصة للتجربة وقد تحتوي على أخطاء
+Beta: the newest builds, made for testing, may contain bugs	التطوير: أحدث الإصدارات، مخصّصة للتجربة وقد تحتوي على أخطاء
 Stable: tested builds (recommended)	المستقر: إصدارات مختبَرة (موصى بها)
 Stable - tested builds (recommended)	المستقر - إصدارات مختبَرة (موصى بها)
-Dev - the newest builds, for testing	التطوير - أحدث الإصدارات، للتجربة
+Beta - the newest builds, for testing	التطوير - أحدث الإصدارات، للتجربة
 Checking for updates...	جارٍ التحقق من التحديثات...
 Could not check for updates: %s	تعذّر التحقق من التحديثات: %s
 No %s build has been published yet.	لم يُنشر أي إصدار بعد على قناة %s.
@@ -289,8 +289,8 @@ A newer %1$s build is available: %2$s%3$s.	يتوفر إصدار أحدث على
 The latest %1$s build is %2$s%3$s, which is older than the installed build %4$s. Install it anyway?	أحدث إصدار على قناة %1$s هو %2$s%3$s، وهو أقدم من الإصدار المثبّت %4$s. هل تريد تثبيته على أي حال؟
 Installed: %s	المثبّت: %s
 This switches the app from %1$s to %2$s.	هذا ينقل التطبيق من قناة %1$s إلى قناة %2$s.
-Dev builds are made for testing and may contain bugs. Going back to Stable later usually works but cannot be guaranteed if a dev build changed how trips are stored (your backup in Documents/TripRecorderNG stays safe).	إصدارات التطوير مخصّصة للتجربة وقد تحتوي على أخطاء. العودة إلى المستقر لاحقًا تنجح عادةً لكن لا يمكن ضمانها إذا غيّر إصدار التطوير طريقة تخزين الرحلات (نسختك الاحتياطية في Documents/TripRecorderNG تبقى محفوظة).
-The app restarts during the update. BYD switches its auto-start setting back on at every install: afterwards turn Trip Recorder NG OFF in 'Disable background Apps' and restart the head unit once.	يُعاد تشغيل التطبيق أثناء التحديث. تعيد BYD تفعيل إعداد التشغيل التلقائي عند كل تثبيت: بعد ذلك أوقف مفتاح Trip Recorder NG ضمن «Disable background Apps» ثم أعد تشغيل وحدة الشاشة مرة واحدة.
+Beta builds are made for testing and may contain bugs. Going back to Stable later usually works but cannot be guaranteed if a dev build changed how trips are stored (your backup in Documents/TripRecorderNG stays safe).	إصدارات التطوير مخصّصة للتجربة وقد تحتوي على أخطاء. العودة إلى المستقر لاحقًا تنجح عادةً لكن لا يمكن ضمانها إذا غيّر إصدار التطوير طريقة تخزين الرحلات (نسختك الاحتياطية في Documents/TripRecorderNG تبقى محفوظة).
+The app restarts during the update. BYD switches its auto-start setting back on at every install: afterwards turn EV TripLog OFF in 'Disable background Apps' and restart the head unit once.	يُعاد تشغيل التطبيق أثناء التحديث. تعيد BYD تفعيل إعداد التشغيل التلقائي عند كل تثبيت: بعد ذلك أوقف مفتاح EV TripLog ضمن «Disable background Apps» ثم أعد تشغيل وحدة الشاشة مرة واحدة.
 Update available	تحديث متوفر
 Install	تثبيت
 Update only while the car is parked.	حدّث التطبيق أثناء توقف السيارة فقط.
@@ -307,7 +307,7 @@ The car refused this app's debugging key. Turn the Vehicle data link off and on 
 The car did not answer in time. If the app restarts by itself, the update worked.	لم تستجب السيارة في الوقت المناسب. إذا أُعيد تشغيل التطبيق من تلقاء نفسه فقد نجح التحديث.
 The update did not finish.	لم يكتمل التحديث.
 No. Everything is stored on this head unit. Nothing is uploaded. The only exception is Setting > Check for updates, which contacts GitHub, and only when you tap it.	لا. كل شيء يُخزَّن على هذه الشاشة ولا يُرفع أي شيء. الاستثناء الوحيد هو الإعدادات > التحقق من التحديثات، الذي يتصل بـ GitHub، وفقط عند الضغط عليه.
-Dev	التطوير
+Beta	التطوير
 Stable	المستقر
 GitHub's answer could not be read	تعذّرت قراءة ردّ GitHub
 No internet connection (GitHub cannot be reached)	لا يوجد اتصال بالإنترنت (تعذّر الوصول إلى GitHub)

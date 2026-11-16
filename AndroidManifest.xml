@@ -44,7 +44,7 @@
     <application
         android:name=".App"
         android:supportsRtl="true"
-        android:label="Trip Recorder NG"
+        android:label="EV TripLog"
         android:icon="@drawable/ic_launcher"
         android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
         android:allowBackup="false"

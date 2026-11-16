@@ -108,7 +108,7 @@ final class Updates {
     }
 
     static String channelTitle(String channel) {
-        return DEV.equals(channel) ? L.t("Dev") : L.t("Stable");
+        return DEV.equals(channel) ? L.t("Beta") : L.t("Stable");
     }
 
     // ---- releases ----------------------------------------------------------------------------
@@ -295,7 +295,7 @@ final class Updates {
         HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
         c.setConnectTimeout(10_000);
         c.setReadTimeout(20_000);
-        c.setRequestProperty("User-Agent", "TripRecorderNG/" + installedName(ctx));
+        c.setRequestProperty("User-Agent", "EVTripLog/" + installedName(ctx));
         c.setRequestProperty("Accept", accept);
         return c;
     }

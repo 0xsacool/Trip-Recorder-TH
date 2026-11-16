@@ -14,7 +14,7 @@ import java.util.Locale;
 
 /**
  * Runs as a separate process under the shell user (started through ADB with app_process), which is
- * what gives it permission to call BYD's vehicle API. It reads values and serves them to the Trip Recorder NG
+ * what gives it permission to call BYD's vehicle API. It reads values and serves them to the EV TripLog
  * app over a loopback socket protected by a shared token. The one thing it writes is the instrument-projection
  * flag, and only when the app's blind-spot option asks for a picture on the instrument cluster.
  *

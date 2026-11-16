@@ -1,4 +1,4 @@
-# Thai translation for Trip Recorder TH
+# Thai translation for EV TripLog
 Charging	กำลังชาร์จ
  - paused	 - หยุดชั่วคราว
 Off	ปิด
@@ -15,8 +15,8 @@ the car's network debugging (ADB) is not ready yet	ระบบดีบัก�
 approval pending	รอการอนุญาต
 debugging request was not accepted yet	ยังไม่ได้รับอนุญาตให้ดีบัก
 helper started	เริ่มตัวช่วยแล้ว
-Open Setting > BYD auto-start apps, find Trip Recorder NG in 'Disable background Apps' and turn it OFF (OFF means the app is allowed to start). Then restart the head unit once.	เปิดการตั้งค่า > แอปเริ่มอัตโนมัติของ BYD ค้นหา Trip Recorder NG ใน Disable background Apps แล้วปิดสวิตช์ (ปิดหมายถึงอนุญาตให้แอปเริ่มได้) จากนั้นรีสตาร์ตหน้าจอรถหนึ่งครั้ง
-BYD did not start Trip Recorder NG by itself after the last restart, so trips are not recorded until you open the app.\n\n	BYD ไม่ได้เริ่ม Trip Recorder NG หลังรีสตาร์ตครั้งล่าสุด จึงยังไม่บันทึกการเดินทางจนกว่าจะเปิดแอป\n\n
+Open Setting > BYD auto-start apps, find EV TripLog in 'Disable background Apps' and turn it OFF (OFF means the app is allowed to start). Then restart the head unit once.	เปิดการตั้งค่า > แอปเริ่มอัตโนมัติของ BYD ค้นหา EV TripLog ใน Disable background Apps แล้วปิดสวิตช์ (ปิดหมายถึงอนุญาตให้แอปเริ่มได้) จากนั้นรีสตาร์ตหน้าจอรถหนึ่งครั้ง
+BYD did not start EV TripLog by itself after the last restart, so trips are not recorded until you open the app.\n\n	BYD ไม่ได้เริ่ม EV TripLog หลังรีสตาร์ตครั้งล่าสุด จึงยังไม่บันทึกการเดินทางจนกว่าจะเปิดแอป\n\n
 Auto-start is not confirmed yet. BYD switches it back to blocked every time Trip Recorder is installed or updated, and until it is allowed the app does not record after a restart.\n\n	ยังไม่ยืนยันการเริ่มอัตโนมัติ BYD จะบล็อกอีกครั้งทุกครั้งที่ติดตั้งหรืออัปเดตแอป หากไม่อนุญาต แอปจะไม่บันทึกหลังรีสตาร์ต\n\n
 Turn off 'Disable background Apps'	ปิด Disable background Apps
 Open BYD settings	เปิดการตั้งค่า BYD
@@ -157,8 +157,8 @@ Allowed	อนุญาตแล้ว
 Not allowed	ไม่อนุญาต
 Allow	อนุญาต
 Started automatically after the last restart	เริ่มอัตโนมัติหลังรีสตาร์ตล่าสุดแล้ว
-NOT started automatically after the last restart: turn Trip Recorder NG OFF in 'Disable background Apps'	ไม่เริ่มอัตโนมัติหลังรีสตาร์ตล่าสุด: ปิด Trip Recorder NG ใน Disable background Apps
-Not confirmed yet: turn Trip Recorder NG OFF in 'Disable background Apps', then restart the head unit once	ยังไม่ยืนยัน: ปิด Trip Recorder NG ใน Disable background Apps แล้วรีสตาร์ตหน้าจอรถ
+NOT started automatically after the last restart: turn EV TripLog OFF in 'Disable background Apps'	ไม่เริ่มอัตโนมัติหลังรีสตาร์ตล่าสุด: ปิด EV TripLog ใน Disable background Apps
+Not confirmed yet: turn EV TripLog OFF in 'Disable background Apps', then restart the head unit once	ยังไม่ยืนยัน: ปิด EV TripLog ใน Disable background Apps แล้วรีสตาร์ตหน้าจอรถ
 BYD auto-start apps	แอปเริ่มอัตโนมัติของ BYD
 Open	เปิด
 Energy prices	ราคาพลังงาน
@@ -196,7 +196,7 @@ Simplified: 100 points, minus 5 for every hard acceleration or hard braking. It 
 What is the Vehicle data link?	การเชื่อมต่อข้อมูลรถคืออะไร?
 An optional setting (off by default). When on, the app starts a small helper through the car's network debugging so it can read BYD's own vehicle data: battery level, energy counter, odometer and ignition. Without it trips are recorded from GPS only.	ตัวเลือกที่ปิดไว้ตามค่าเริ่มต้น เมื่อเปิด แอปจะเริ่มตัวช่วยผ่านระบบดีบักเครือข่ายเพื่ออ่านข้อมูลรถ เช่น แบตเตอรี่ ตัวนับพลังงาน เลขไมล์ และสถานะการเปิดรถ หากปิดจะบันทึกด้วย GPS เท่านั้น
 Why does recording stop after a restart?	ทำไมการบันทึกหยุดหลังรีสตาร์ต?
-BYD blocks apps from starting by themselves. Open Setting > BYD auto-start apps and turn Trip Recorder NG OFF in 'Disable background Apps'. BYD switches it back on every time the app is installed or updated, so do this again after an update.	BYD บล็อกการเริ่มแอปอัตโนมัติ เปิดการตั้งค่า > แอปเริ่มอัตโนมัติของ BYD แล้วปิด Trip Recorder NG ใน Disable background Apps ต้องทำใหม่ทุกครั้งที่ติดตั้งหรืออัปเดต
+BYD blocks apps from starting by themselves. Open Setting > BYD auto-start apps and turn EV TripLog OFF in 'Disable background Apps'. BYD switches it back on every time the app is installed or updated, so do this again after an update.	BYD บล็อกการเริ่มแอปอัตโนมัติ เปิดการตั้งค่า > แอปเริ่มอัตโนมัติของ BYD แล้วปิด EV TripLog ใน Disable background Apps ต้องทำใหม่ทุกครั้งที่ติดตั้งหรืออัปเดต
 Where are my files?	ไฟล์อยู่ที่ไหน?
 Export CSV and GPX from My Trips or Setting. Files go to Documents/TripRecorderNG.	ส่งออก CSV และ GPX จากประวัติทริปหรือการตั้งค่า ไฟล์อยู่ใน Documents/TripRecorderNG
 Are my trips backed up?	มีการสำรองทริปหรือไม่?
@@ -214,7 +214,7 @@ With Vehicle data link enabled, recorded charging energy is preferred. If it is 
 What do the colours and charts on a trip show?	สีและกราฟในทริปแสดงอะไร?
 The route is coloured by speed (green slow, red fast). Red and amber dots mark hard braking and hard acceleration. Under the map, pick Speed, Battery, Elevation or Efficiency and touch the chart to see that moment on the map. Battery, Efficiency and event dots are recorded for trips made after the update; older trips show speed and elevation only.	เส้นทางมีสีตามความเร็ว (เขียวช้า แดงเร็ว) จุดแดงและเหลืองแสดงเบรกและเร่งแรง เลือกความเร็ว แบตเตอรี่ ระดับความสูง หรือประสิทธิภาพ แล้วแตะกราฟเพื่อดูตำแหน่งในช่วงนั้น ทริปเก่าอาจมีเฉพาะความเร็วและระดับความสูง
 Turn on Vehicle data link?	เปิดการเชื่อมต่อข้อมูลรถหรือไม่?
-This adds battery, energy, odometer and ignition data to your trips.\n\nTo get them, Trip Recorder NG uses the car's own network debugging (ADB) on this head unit to start a small helper. Depending on the head unit, the car may ask you to allow debugging for this app (tick "Always allow" and tap Allow); on some units it is accepted automatically. After that the helper starts by itself each time the car boots.\n\nYou can switch it off here at any time (this stops the helper), and "Forget" deletes the app's key.	เพิ่มข้อมูลแบตเตอรี่ พลังงาน เลขไมล์ และสถานะการเปิดรถให้ทริปของคุณ\n\nแอปใช้ระบบดีบักเครือข่าย (ADB) ของหน้าจอรถเพื่อเริ่มตัวช่วย บางเครื่องอาจขออนุญาตดีบัก (เลือกอนุญาตเสมอ แล้วแตะอนุญาต) บางเครื่องยอมรับอัตโนมัติ หลังจากนั้นตัวช่วยจะเริ่มทุกครั้งที่รถเปิด\n\nปิดได้ทุกเมื่อเพื่อหยุดตัวช่วย และลืมกุญแจเพื่อลบกุญแจของแอป
+This adds battery, energy, odometer and ignition data to your trips.\n\nTo get them, EV TripLog uses the car's own network debugging (ADB) on this head unit to start a small helper. Depending on the head unit, the car may ask you to allow debugging for this app (tick "Always allow" and tap Allow); on some units it is accepted automatically. After that the helper starts by itself each time the car boots.\n\nYou can switch it off here at any time (this stops the helper), and "Forget" deletes the app's key.	เพิ่มข้อมูลแบตเตอรี่ พลังงาน เลขไมล์ และสถานะการเปิดรถให้ทริปของคุณ\n\nแอปใช้ระบบดีบักเครือข่าย (ADB) ของหน้าจอรถเพื่อเริ่มตัวช่วย บางเครื่องอาจขออนุญาตดีบัก (เลือกอนุญาตเสมอ แล้วแตะอนุญาต) บางเครื่องยอมรับอัตโนมัติ หลังจากนั้นตัวช่วยจะเริ่มทุกครั้งที่รถเปิด\n\nปิดได้ทุกเมื่อเพื่อหยุดตัวช่วย และลืมกุญแจเพื่อลบกุญแจของแอป
 Currency	สกุลเงิน
 Electricity price per kWh	ค่าไฟต่อ kWh
 default %s	ค่าเริ่มต้น %s
@@ -278,10 +278,10 @@ Hide	ซ่อน
 Show	แสดง
 Installed: %1$s%2$s   -   following: %3$s	ติดตั้ง: %1$s%2$s   -   ติดตาม: %3$s
 (not a release build)	 (ไม่ใช่รุ่นเผยแพร่)
-Dev: the newest builds, made for testing, may contain bugs	Dev: รุ่นใหม่สำหรับทดสอบ อาจมีข้อผิดพลาด
+Beta: the newest builds, made for testing, may contain bugs	Beta: รุ่นใหม่สำหรับทดสอบ อาจมีข้อผิดพลาด
 Stable: tested builds (recommended)	Stable: รุ่นผ่านการทดสอบ (แนะนำ)
 Stable - tested builds (recommended)	Stable - รุ่นผ่านการทดสอบ (แนะนำ)
-Dev - the newest builds, for testing	Dev - รุ่นใหม่สำหรับทดสอบ
+Beta - the newest builds, for testing	Beta - รุ่นใหม่สำหรับทดสอบ
 Checking for updates...	กำลังตรวจสอบอัปเดต...
 Could not check for updates: %s	ตรวจสอบอัปเดตไม่ได้: %s
 No %s build has been published yet.	ยังไม่มีรุ่น %s เผยแพร่
@@ -290,8 +290,8 @@ A newer %1$s build is available: %2$s%3$s.	มีรุ่น %1$s ใหม่:
 The latest %1$s build is %2$s%3$s, which is older than the installed build %4$s. Install it anyway?	รุ่น %1$s ล่าสุดคือ %2$s%3$s ซึ่งเก่ากว่ารุ่นที่ติดตั้ง %4$s ต้องการติดตั้งหรือไม่?
 Installed: %s	ติดตั้ง: %s
 This switches the app from %1$s to %2$s.	จะเปลี่ยนแอปจาก %1$s เป็น %2$s
-Dev builds are made for testing and may contain bugs. Going back to Stable later usually works but cannot be guaranteed if a dev build changed how trips are stored (your backup in Documents/TripRecorderNG stays safe).	รุ่น Dev ใช้ทดสอบและอาจมีข้อผิดพลาด การย้อนกลับ Stable มักทำได้ แต่ไม่รับประกันหากมีการเปลี่ยนโครงสร้างข้อมูล (ข้อมูลสำรองใน Documents/TripRecorderNG ยังอยู่)
-The app restarts during the update. BYD switches its auto-start setting back on at every install: afterwards turn Trip Recorder NG OFF in 'Disable background Apps' and restart the head unit once.	แอปจะรีสตาร์ตระหว่างอัปเดต BYD จะบล็อกการเริ่มอัตโนมัติทุกครั้งที่ติดตั้ง ให้ปิด Trip Recorder NG ใน Disable background Apps แล้วรีสตาร์ตหน้าจอรถหนึ่งครั้ง
+Beta builds are made for testing and may contain bugs. Going back to Stable later usually works but cannot be guaranteed if a dev build changed how trips are stored (your backup in Documents/TripRecorderNG stays safe).	รุ่น Beta ใช้ทดสอบและอาจมีข้อผิดพลาด การย้อนกลับ Stable มักทำได้ แต่ไม่รับประกันหากมีการเปลี่ยนโครงสร้างข้อมูล (ข้อมูลสำรองใน Documents/TripRecorderNG ยังอยู่)
+The app restarts during the update. BYD switches its auto-start setting back on at every install: afterwards turn EV TripLog OFF in 'Disable background Apps' and restart the head unit once.	แอปจะรีสตาร์ตระหว่างอัปเดต BYD จะบล็อกการเริ่มอัตโนมัติทุกครั้งที่ติดตั้ง ให้ปิด EV TripLog ใน Disable background Apps แล้วรีสตาร์ตหน้าจอรถหนึ่งครั้ง
 Update available	มีอัปเดต
 Install	ติดตั้ง
 Update only while the car is parked.	อัปเดตเฉพาะเมื่อรถจอด
@@ -308,7 +308,7 @@ The car refused this app's debugging key. Turn the Vehicle data link off and on 
 The car did not answer in time. If the app restarts by itself, the update worked.	รถไม่ตอบสนองทันเวลา หากแอปรีสตาร์ตเองแสดงว่าอัปเดตสำเร็จ
 The update did not finish.	อัปเดตไม่เสร็จ
 No. Everything is stored on this head unit. Nothing is uploaded. The only exception is Setting > Check for updates, which contacts GitHub, and only when you tap it.	ไม่ต้องใช้ ข้อมูลทั้งหมดเก็บบนหน้าจอรถ ไม่มีการอัปโหลด ยกเว้นตรวจสอบอัปเดตที่ติดต่อ GitHub เมื่อคุณแตะเท่านั้น
-Dev	Dev
+Beta	Beta
 Stable	Stable
 GitHub's answer could not be read	อ่านคำตอบจาก GitHub ไม่ได้
 No internet connection (GitHub cannot be reached)	ไม่มีอินเทอร์เน็ต (เข้าถึง GitHub ไม่ได้)

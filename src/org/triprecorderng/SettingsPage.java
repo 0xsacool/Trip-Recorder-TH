@@ -267,9 +267,9 @@ final class SettingsPage {
         String autoText = health == Prefs.AUTOSTART_OK
                 ? L.t("Started automatically after the last restart")
                 : health == Prefs.AUTOSTART_BLOCKED
-                ? L.t("NOT started automatically after the last restart: turn Trip Recorder NG OFF in "
+                ? L.t("NOT started automatically after the last restart: turn EV TripLog OFF in "
                 + "'Disable background Apps'")
-                : L.t("Not confirmed yet: turn Trip Recorder NG OFF in 'Disable background Apps', then "
+                : L.t("Not confirmed yet: turn EV TripLog OFF in 'Disable background Apps', then "
                 + "restart the head unit once");
         Kit.Row autostart = action(L.t("BYD auto-start apps"), autoText, L.t("Open"), false,
                 new View.OnClickListener() {

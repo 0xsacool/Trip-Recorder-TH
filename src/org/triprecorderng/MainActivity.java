@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Main screen laid out like the stock "Driving behavior" app (shown as Trip Recorder NG): a title bar with Q&A and Setting
+ * Main screen laid out like the stock "Driving behavior" app (shown as EV TripLog): a title bar with Q&A and Setting
  * buttons, a left tab menu (This Trip, My Trips, Attainment, Statistics) and a content area.
  */
 public class MainActivity extends Activity {
@@ -49,7 +49,7 @@ public class MainActivity extends Activity {
     private static final int TAB_CHARGE = 4;
     private static final int TAB_TWEAKS = 5;
     private static String appTitle() {
-        return "Trip Recorder NG"; // the name is not translated
+        return "EV TripLog"; // the name is not translated
     }
 
     private final Handler ui = new Handler(Looper.getMainLooper());
@@ -204,7 +204,7 @@ public class MainActivity extends Activity {
 
     /**
      * When BYD has not let the app start by itself (its "Disable background Apps" switch is on for
-     * Trip Recorder NG), tell the user how to fix it, every time the app is opened. The state is inferred from
+     * EV TripLog), tell the user how to fix it, every time the app is opened. The state is inferred from
      * whether the system's start broadcast reached the app after the last restart (BYD's own switch cannot be
      * read). Skipped while driving, in the first minutes after the head unit boots (the broadcast may simply not
      * have arrived yet) and while the user is in BYD's settings screen. "Don't show again" mutes it, but every
@@ -228,10 +228,10 @@ public class MainActivity extends Activity {
             reminder = true;
         }
         final boolean again = reminder;
-        String how = L.t("Open Setting > BYD auto-start apps, find Trip Recorder NG in 'Disable background Apps' and "
+        String how = L.t("Open Setting > BYD auto-start apps, find EV TripLog in 'Disable background Apps' and "
                 + "turn it OFF (OFF means the app is allowed to start). Then restart the head unit once.");
         String why = health == Prefs.AUTOSTART_BLOCKED
-                ? L.t("BYD did not start Trip Recorder NG by itself after the last restart, so trips are not "
+                ? L.t("BYD did not start EV TripLog by itself after the last restart, so trips are not "
                 + "recorded until you open the app.\n\n")
                 : L.t("Auto-start is not confirmed yet. BYD switches it back to blocked every time Trip "
                 + "Recorder is installed or updated, and until it is allowed the app does not record "
@@ -845,13 +845,13 @@ public class MainActivity extends Activity {
 
     private String channelDescription() {
         return Updates.DEV.equals(Updates.channel(this))
-                ? L.t("Dev: the newest builds, made for testing, may contain bugs")
+                ? L.t("Beta: the newest builds, made for testing, may contain bugs")
                 : L.t("Stable: tested builds (recommended)");
     }
 
     private void showChannelDialog() {
         final String[] values = {Updates.STABLE, Updates.DEV};
-        String[] labels = {L.t("Stable - tested builds (recommended)"), L.t("Dev - the newest builds, for testing")};
+        String[] labels = {L.t("Stable - tested builds (recommended)"), L.t("Beta - the newest builds, for testing")};
         Ui.show(new AlertDialog.Builder(this)
                 .setTitle(L.t("Update channel"))
                 .setItems(labels, new android.content.DialogInterface.OnClickListener() {
@@ -929,12 +929,12 @@ public class MainActivity extends Activity {
                     Updates.channelTitle(mine.channel), chName));
         }
         if (Updates.DEV.equals(channel)) {
-            msg.append("\n\n").append(L.t("Dev builds are made for testing and may contain bugs. Going back to Stable "
+            msg.append("\n\n").append(L.t("Beta builds are made for testing and may contain bugs. Going back to Stable "
                     + "later usually works but cannot be guaranteed if a dev build changed how trips are stored "
                     + "(your backup in Documents/TripRecorderNG stays safe)."));
         }
         msg.append("\n\n").append(L.t("The app restarts during the update. BYD switches its auto-start setting "
-                + "back on at every install: afterwards turn Trip Recorder NG OFF in 'Disable background Apps' "
+                + "back on at every install: afterwards turn EV TripLog OFF in 'Disable background Apps' "
                 + "and restart the head unit once."));
         Ui.show(new AlertDialog.Builder(this)
                 .setTitle(L.t("Update available"))
@@ -1091,7 +1091,7 @@ public class MainActivity extends Activity {
         return Ui.show(new AlertDialog.Builder(this)
                 .setTitle(L.t("Turn on Vehicle data link?"))
                 .setMessage(L.t("This adds battery, energy, odometer and ignition data to your trips.\n\n"
-                        + "To get them, Trip Recorder NG uses the car's own network debugging (ADB) on "
+                        + "To get them, EV TripLog uses the car's own network debugging (ADB) on "
                         + "this head unit to start a small helper. Depending on the head unit, the car "
                         + "may ask you to allow debugging for this app (tick \"Always allow\" and tap "
                         + "Allow); on some units it is accepted automatically. After that the helper "

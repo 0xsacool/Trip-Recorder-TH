@@ -47,7 +47,7 @@ final class QaPage {
                                 + "trips are recorded from GPS only.")},
                 {L.t("Why does recording stop after a restart?"),
                         L.t("BYD blocks apps from starting by themselves. Open Setting > BYD auto-start apps and turn "
-                                + "Trip Recorder NG OFF in 'Disable background Apps'. BYD switches it back on every time "
+                                + "EV TripLog OFF in 'Disable background Apps'. BYD switches it back on every time "
                                 + "the app is installed or updated, so do this again after an update.")},
                 {L.t("Where are my files?"),
                         L.t("Export CSV and GPX from My Trips or Setting. Files go to Documents/TripRecorderNG.")},

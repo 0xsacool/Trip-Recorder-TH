@@ -696,7 +696,7 @@ public class RecorderService extends Service {
         PendingIntent pi = PendingIntent.getActivity(this, 0, open,
                 PendingIntent.FLAG_UPDATE_CURRENT);
         return new Notification.Builder(this, CHANNEL)
-                .setContentTitle("Trip Recorder NG")
+                .setContentTitle("EV TripLog")
                 .setContentText(text)
                 .setSmallIcon(android.R.drawable.ic_menu_mylocation)
                 .setContentIntent(pi)
