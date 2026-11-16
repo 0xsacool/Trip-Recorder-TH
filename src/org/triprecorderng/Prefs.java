@@ -30,6 +30,15 @@ final class Prefs {
         return c.getApplicationContext().getSharedPreferences("triprecng", Context.MODE_PRIVATE);
     }
 
+    /** The original dashboard stays the default. Theme affects presentation only. */
+    static boolean performanceTheme(Context c) {
+        return sp(c).getBoolean("performance_theme_gtr", false);
+    }
+
+    static void setPerformanceTheme(Context c, boolean enabled) {
+        sp(c).edit().putBoolean("performance_theme_gtr", enabled).apply();
+    }
+
     /** Boot counter of the Android system (changes on every real restart); -1 if unavailable. */
     static int currentBootCount(Context c) {
         try {
