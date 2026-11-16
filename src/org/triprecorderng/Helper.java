@@ -29,7 +29,7 @@ import java.util.Locale;
  * cluster; the state read back, nan when unreadable).
  */
 public final class Helper {
-    static final String VERSION = "8";
+    static final String VERSION = "9";
     private static BydFrameworkVehicle vehicle;
     private static String bindError;
     private static String token;
@@ -107,6 +107,8 @@ public final class Helper {
             while ((line = r.readLine()) != null) {
                 if (line.equals("get")) {
                     w.println(snapshot());
+                } else if (line.equals("telemetry")) {
+                    w.println(telemetrySnapshot());
                 } else if (line.equals("chg")) {
                     w.println(chargeSnapshot());
                 } else if (line.equals("net")) {
@@ -233,6 +235,13 @@ public final class Helper {
         double[] c = vehicle == null || bindError != null ? null : vehicle.charging();
         if (c == null) return "c1 nan nan nan nan nan";
         return "c1 " + num(c[0]) + " " + num(c[1]) + " " + num(c[2]) + " " + num(c[3]) + " " + num(c[4]);
+    }
+
+    private static String telemetrySnapshot() {
+        double[] values = vehicle == null || bindError != null ? null : vehicle.telemetry();
+        StringBuilder sb = new StringBuilder("e1");
+        for (int i = 0; i < 6; i++) sb.append(' ').append(num(values == null ? Double.NaN : values[i]));
+        return sb.toString();
     }
 
     private static String snapshot() {

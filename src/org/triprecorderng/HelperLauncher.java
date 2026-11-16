@@ -31,13 +31,18 @@ final class HelperLauncher {
     /** One line for the Setting screen, based on what is actually connected. */
     static String statusText(Context ctx) {
         if (!Prefs.linkEnabled(ctx)) return L.t("Off");
-        if (isConnected()) return L.t("Connected - helper running");
+        if (isConnected()) return "BYD API via helper".equals(RecorderService.live.vehicle)
+                ? L.t("Connected - helper running") : L.t("Connected") + " - " + RecorderService.live.vehicle;
         return pendingText();
     }
 
     /** True when the recorder is really getting data from the helper. */
     static boolean isConnected() {
-        return "BYD API via helper".equals(RecorderService.live.vehicle);
+        RecorderService.Live l = RecorderService.live;
+        long age = System.currentTimeMillis() - l.lastTickWall;
+        return l.running && age >= 0 && age < 10000
+                && ("BYD API via helper".equals(l.vehicle) || "BYD framework API".equals(l.vehicle)
+                    || "autoservice binder".equals(l.vehicle));
     }
 
     private static String pendingText() {
@@ -179,10 +184,11 @@ final class HelperLauncher {
 
         HelperVehicle probe = new HelperVehicle(token);
         String err = probe.connect();
+        boolean ready = err == null && probe.hasCoreData();
         probe.close();
         if (err == null) {
-            state = State.RUNNING;
-            detail = L.t("helper already running");
+            state = ready ? State.RUNNING : State.FAILED;
+            detail = ready ? L.t("helper already running") : "helper connected, waiting for BYD data";
             return;
         }
 
@@ -226,6 +232,7 @@ final class HelperLauncher {
             }
             HelperVehicle check = new HelperVehicle(token);
             err2 = check.connect();
+            if (err2 == null && !check.hasCoreData()) err2 = "helper connected, waiting for BYD data";
             check.close();
             if (err2 == null) break;
         }

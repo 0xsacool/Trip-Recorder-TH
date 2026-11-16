@@ -14,29 +14,43 @@ final class BydFrameworkVehicle implements Vehicle {
     private static final String P = "android.hardware.bydauto.";
 
     private final Context ctx;
-    private Object speed, statistic, bodywork, charging, instrument;
+    private Object speed, statistic, bodywork, charging, instrument, engine, manager;
+    private Method mEnginePower;
+    private Integer tempMinId, tempMaxId, cellMinId, cellMaxId, chargeVoltId, powerId, speedId, socId;
     private Method[] mCharging;
     private Method mFuel, mEvKm, mHevKm, mFuelPct, mElecRange, mFuelRange, mJourney;
     private Method mSpeed, mTotalMileage, mTotalElec, mDriveTime, mSoc, mPower;
     private String error = "";
 
     BydFrameworkVehicle(Context ctx) {
-        this.ctx = ctx.getApplicationContext();
+        Context app = ctx.getApplicationContext();
+        this.ctx = app == null ? ctx : app;
     }
 
     /** Resolves the device objects and methods. Returns null on success or an error text. */
     String bind() {
         try {
             HiddenApi.exempt();
-            speed = device(P + "speed.BYDAutoSpeedDevice");
-            statistic = device(P + "statistic.BYDAutoStatisticDevice");
-            bodywork = device(P + "bodywork.BYDAutoBodyworkDevice");
-            mSpeed = speed.getClass().getMethod("getCurrentSpeed");
-            mTotalMileage = statistic.getClass().getMethod("getTotalMileageValue");
-            mTotalElec = statistic.getClass().getMethod("getTotalElecConValue");
-            mDriveTime = statistic.getClass().getMethod("getDrivingTimeValue");
-            mSoc = statistic.getClass().getMethod("getElecPercentageValue");
-            mPower = bodywork.getClass().getMethod("getPowerLevel");
+            speed = optionalDevice(P + "speed.BYDAutoSpeedDevice");
+            statistic = optionalDevice(P + "statistic.BYDAutoStatisticDevice");
+            bodywork = optionalDevice(P + "bodywork.BYDAutoBodyworkDevice");
+            engine = optionalDevice(P + "engine.BYDAutoEngineDevice");
+            manager = optionalDevice(P + "BYDAutoDeviceManager");
+            mEnginePower = optional(engine, "getEnginePower");
+            tempMinId = feature("Statistic", "STATISTIC_LOWEST_BATTERY_TEMP");
+            tempMaxId = feature("Statistic", "STATISTIC_HIGHEST_BATTERY_TEMP");
+            cellMinId = feature("Statistic", "STATISTIC_LOWEST_BATTERY_VOLTAGE");
+            cellMaxId = feature("Statistic", "STATISTIC_HIGHEST_BATTERY_VOLTAGE");
+            chargeVoltId = feature("Charging", "CHARGING_CHARGE_BATTERY_VOLT");
+            powerId = feature("Engine", "ENGINE_POWER");
+            speedId = feature("Speed", "SPEED_AUTO_SPEED");
+            socId = feature("Statistic", "STATISTIC_ELEC_PERCENTAGE");
+            mSpeed = optional(speed, "getCurrentSpeed");
+            mTotalMileage = optional(statistic, "getTotalMileageValue");
+            mTotalElec = optional(statistic, "getTotalElecConValue");
+            mDriveTime = optional(statistic, "getDrivingTimeValue");
+            mSoc = optional(statistic, "getElecPercentageValue");
+            mPower = optional(bodywork, "getPowerLevel");
             mFuel = optional(statistic, "getTotalFuelConValue");
             mEvKm = optional(statistic, "getEVMileageValue");
             mHevKm = optional(statistic, "getHEVMileageValue");
@@ -45,6 +59,10 @@ final class BydFrameworkVehicle implements Vehicle {
             mFuelRange = optional(statistic, "getFuelDrivingRangeValue");
             bindInstrument();
             bindCharging();
+            if (speed == null && statistic == null && manager == null) {
+                error = "BYD speed and statistic devices unavailable";
+                return error;
+            }
             return null;
         } catch (Throwable t) {
             error = describe(t);
@@ -54,6 +72,7 @@ final class BydFrameworkVehicle implements Vehicle {
 
     /** A statistic getter that a unit may not have (a pure EV has no fuel, for example). */
     private static Method optional(Object target, String name) {
+        if (target == null) return null;
         try {
             return target.getClass().getMethod(name);
         } catch (Throwable t) {
@@ -79,7 +98,7 @@ final class BydFrameworkVehicle implements Vehicle {
             String[] names = {"getBatteryManagementDeviceState", "getChargingGunState",
                     "getChargerWorkState", "getChargingPower", "getChargingCapacity"};
             mCharging = new Method[names.length];
-            for (int i = 0; i < names.length; i++) mCharging[i] = charging.getClass().getMethod(names[i]);
+            for (int i = 0; i < names.length; i++) mCharging[i] = optional(charging, names[i]);
         } catch (Throwable t) {
             charging = null;
             mCharging = null;
@@ -88,10 +107,78 @@ final class BydFrameworkVehicle implements Vehicle {
 
     private Object device(String cls) throws Exception {
         Class<?> c = Class.forName(cls);
-        Method gi = c.getMethod("getInstance", Context.class);
-        Object o = gi.invoke(null, ctx);
+        Object o;
+        try {
+            o = c.getMethod("getInstance", Context.class).invoke(null, ctx);
+        } catch (NoSuchMethodException e) {
+            o = c.getMethod("getInstance").invoke(null);
+        }
         if (o == null) throw new IllegalStateException(cls + ".getInstance returned null");
         return o;
+    }
+
+    private Object optionalDevice(String cls) {
+        try { return device(cls); }
+        catch (Throwable t) { error = cls + ": " + describe(t); return null; }
+    }
+
+    // Resolve symbols on the actual head unit rather than guessing firmware-specific numeric IDs.
+    static Integer feature(String group, String name) {
+        String base = P + "BYDAutoFeatureIds";
+        for (String cls : new String[]{base + "$" + group, base}) {
+            try { return ((Number) Class.forName(cls).getField(name).get(null)).intValue(); }
+            catch (Throwable ignored) { }
+        }
+        return null;
+    }
+
+    /** BYDAutoDevice.get is read-only. Feature encoding follows the actual FID type. */
+    private double fid(Object target, int dev, Integer id, boolean floating) {
+        if (id == null) return Double.NaN;
+        if (manager != null) {
+            try {
+                Object raw = manager.getClass().getMethod(floating ? "getDouble" : "getInt",
+                        Integer.TYPE, Integer.TYPE).invoke(manager, dev, id);
+                if (raw instanceof Number) return ((Number) raw).doubleValue();
+            } catch (Throwable ignored) { }
+        }
+        if (target == null) return Double.NaN;
+        try {
+            Object event = target.getClass().getMethod("get", int[].class, Class.class)
+                    .invoke(target, new int[]{id}, floating ? Float.TYPE : Integer.TYPE);
+            if (event == null) return Double.NaN;
+            Object raw = event.getClass().getField(floating ? "floatValue" : "intValue").get(event);
+            return raw instanceof Number ? ((Number) raw).doubleValue() : Double.NaN;
+        } catch (Throwable t) {
+            return Double.NaN;
+        }
+    }
+
+    private static double between(double v, double min, double max) {
+        return v >= min && v <= max ? v : Double.NaN;
+    }
+
+    private static double temperature(double raw) {
+        // Statistic temperature is offset by 40 on the mapped FID; raw zero is treated
+        // as not available rather than showing a misleading -40 C on unsupported units.
+        return between(raw, 1, 140) - 40.0;
+    }
+
+    @Override public double[] telemetry() {
+        double min = temperature(fid(statistic, 1014, tempMinId, false));
+        double max = temperature(fid(statistic, 1014, tempMaxId, false));
+        if (!Double.isNaN(min) && !Double.isNaN(max) && min > max) {
+            min = max = Double.NaN;
+        }
+        double power = between(fid(engine, 1012, powerId, false), -500, 1000);
+        if (Double.isNaN(power)) power = between(num(engine, mEnginePower), -500, 1000);
+        double voltage = between(fid(charging, 1009, chargeVoltId, false), 50, 1000);
+        double cellMin = between(fid(statistic, 1014, cellMinId, false) / 1000, 1, 5);
+        double cellMax = between(fid(statistic, 1014, cellMaxId, false) / 1000, 1, 5);
+        if (!Double.isNaN(cellMin) && !Double.isNaN(cellMax) && cellMin > cellMax) {
+            cellMin = cellMax = Double.NaN;
+        }
+        return new double[]{min, max, power, voltage, cellMin, cellMax};
     }
 
     private static String describe(Throwable t) {
@@ -114,11 +201,11 @@ final class BydFrameworkVehicle implements Vehicle {
 
     @Override public String name() { return "BYD framework API"; }
 
-    @Override public double speedKmh() { return clean(num(speed, mSpeed)); }
+    @Override public double speedKmh() { double v = between(num(speed, mSpeed), 0, 350); return Double.isNaN(v) ? between(fid(speed, 1013, speedId, true), 0, 350) : v; }
 
     @Override public double powerLevel() { return clean(num(bodywork, mPower)); }
 
-    @Override public double socPercent() { return clean(num(statistic, mSoc)); }
+    @Override public double socPercent() { double v = between(num(statistic, mSoc), 0, 100); return Double.isNaN(v) ? between(fid(statistic, 1014, socId, true), 0, 100) : v; }
 
     @Override public double totalElecConsumption() { return clean(num(statistic, mTotalElec)); }
 

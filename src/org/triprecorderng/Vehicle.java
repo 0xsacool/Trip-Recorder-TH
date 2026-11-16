@@ -45,6 +45,12 @@ interface Vehicle {
 
     default double fuelRangeKm() { return Double.NaN; }
 
+    /** Live read-only data: min/max cell temperature (C), drive power (kW),
+     *  charging-reported voltage (V), min/max cell voltage (V). Unsupported fields are NaN. */
+    default double[] telemetry() {
+        return new double[]{Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN};
+    }
+
     /** Last error text, for the diagnostics screen. */
     String lastError();
 

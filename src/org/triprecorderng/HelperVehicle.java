@@ -45,9 +45,13 @@ final class HelperVehicle implements Vehicle {
                 close();
                 return "helper refused: " + hello;
             }
-            if (!hello.contains(Helper.VERSION)) {
+            if (!hello.startsWith("ok " + Helper.VERSION + " ")) {
                 close();
                 return "helper version mismatch: " + hello;
+            }
+            if (!hello.endsWith(" bound")) {
+                close();
+                return "helper BYD API unbound";
             }
             return refresh() ? null : error;
         } catch (IOException e) {
@@ -76,6 +80,10 @@ final class HelperVehicle implements Vehicle {
         }
     }
 
+    synchronized boolean hasCoreData() {
+        return socket != null && ((snap[0] >= 0 && snap[0] <= 350) || (snap[2] >= 0 && snap[2] <= 100));
+    }
+
     private static double parse(String s) {
         if (s.equals("nan")) return Double.NaN;
         try {
@@ -87,8 +95,26 @@ final class HelperVehicle implements Vehicle {
 
     private synchronized double get(int i) {
         if (socket == null) return Double.NaN;
-        if (SystemClock.elapsedRealtime() - snapAt > 150) refresh();
+        if (SystemClock.elapsedRealtime() - snapAt > 150 && !refresh()) return Double.NaN;
         return snap[i];
+    }
+
+    @Override public synchronized double[] telemetry() {
+        if (socket == null) return Vehicle.super.telemetry();
+        try {
+            out.println("telemetry");
+            String line = in.readLine();
+            if (line == null) throw new IOException("helper closed the connection");
+            String[] p = line.split(" ");
+            if (p.length != 7 || !p[0].equals("e1")) return Vehicle.super.telemetry();
+            double[] values = new double[6];
+            for (int i = 0; i < values.length; i++) values[i] = parse(p[i + 1]);
+            return values;
+        } catch (IOException e) {
+            error = "helper telemetry link lost (" + e.getMessage() + ")";
+            close();
+            return Vehicle.super.telemetry();
+        }
     }
 
     /** Charging snapshot from the helper (cached for a couple of seconds), or null if unavailable. */

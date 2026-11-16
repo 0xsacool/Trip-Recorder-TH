@@ -24,6 +24,7 @@ final class BinderVehicle implements Vehicle {
     private static final int FID_DRIVE_TIME = 1246789668;
 
     private IBinder binder;
+    private int speedId = FID_SPEED, socId = FID_SOC;
     private String error = "";
 
     String bind() {
@@ -35,6 +36,10 @@ final class BinderVehicle implements Vehicle {
                 error = "autoservice not found";
                 return error;
             }
+            Integer speed = BydFrameworkVehicle.feature("Speed", "SPEED_AUTO_SPEED");
+            Integer soc = BydFrameworkVehicle.feature("Statistic", "STATISTIC_ELEC_PERCENTAGE");
+            if (speed != null) speedId = speed;
+            if (soc != null) socId = soc;
             return null;
         } catch (Throwable t) {
             error = t.getClass().getSimpleName() + ": " + t.getMessage();
@@ -76,14 +81,14 @@ final class BinderVehicle implements Vehicle {
     @Override public String name() { return "autoservice binder"; }
 
     @Override public double speedKmh() {
-        double v = read(DEV_SPEED, FID_SPEED);
-        return Double.isNaN(v) ? Double.NaN : Math.max(0, v);
+        double v = read(DEV_SPEED, speedId);
+        return v >= 0 && v <= 350 ? v : Double.NaN;
     }
 
     /** Not readable through this path (integer read), so ignition is inferred from motion. */
     @Override public double powerLevel() { return Double.NaN; }
 
-    @Override public double socPercent() { return read(DEV_STATISTIC, FID_SOC); }
+    @Override public double socPercent() { double v = read(DEV_STATISTIC, socId); return v >= 0 && v <= 100 ? v : Double.NaN; }
 
     @Override public double totalElecConsumption() { return read(DEV_STATISTIC, FID_ELEC_TOTAL); }
 

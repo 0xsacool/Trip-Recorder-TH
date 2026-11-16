@@ -19,8 +19,8 @@ final class VehicleProvider {
     private String report = "not probed yet";
     private String lastLoggedReport = "";
     private long lastLogMs;
-    /** Set once the direct paths were refused: the answer cannot change while this process lives. */
-    private boolean directRefused;
+    /** Direct API can become ready after boot, so retry with a bounded backoff. */
+    private long lastDirectProbeMs;
 
     VehicleProvider(Context ctx, Gps gps) {
         this.ctx = ctx.getApplicationContext();
@@ -34,6 +34,7 @@ final class VehicleProvider {
         if (current instanceof HelperVehicle) {
             HelperVehicle h = (HelperVehicle) current;
             if (!h.connected() || !linkWanted) {
+                h.close();
                 current = null;
                 lastProbeMs = 0;
             }
@@ -41,8 +42,9 @@ final class VehicleProvider {
         long every;
         if (current == null) every = 3_000;
         else if (current instanceof GpsVehicle) every = linkWanted ? 3_000 : 60_000;
-        else every = Long.MAX_VALUE;
-        if (now - lastProbeMs > every) probe();
+        else if (current instanceof HelperVehicle) every = 30_000;
+        else every = 30_000;
+        if (lastProbeMs == 0 || now - lastProbeMs >= every) probe();
         return current;
     }
 
@@ -53,15 +55,22 @@ final class VehicleProvider {
     /** Make the next get() re-check the sources immediately. */
     synchronized void requestProbe() {
         lastProbeMs = 0;
+        lastDirectProbeMs = 0;
     }
 
     /** Re-run the selection immediately (also used by the self-test button). */
     synchronized String probe() {
         lastProbeMs = System.currentTimeMillis();
         StringBuilder sb = new StringBuilder();
+        if (current instanceof HelperVehicle) {
+            HelperVehicle h = (HelperVehicle) current;
+            if (Prefs.linkEnabled(ctx) && h.connected() && usable(h)) return report;
+            h.close();
+        }
         current = null;
 
-        if (!directRefused) {
+        if (lastDirectProbeMs == 0 || lastProbeMs - lastDirectProbeMs >= 30_000) {
+            lastDirectProbeMs = lastProbeMs;
             BydFrameworkVehicle fw = new BydFrameworkVehicle(ctx);
             String err = fw.bind();
             if (err == null && usable(fw)) {
@@ -81,11 +90,11 @@ final class VehicleProvider {
                 } else {
                     sb.append("autoservice binder: ").append(err2 != null ? err2 : bv.lastError())
                       .append('\n');
-                    directRefused = true;
+                    // A temporary startup failure must not permanently disable direct access.
                 }
             }
         } else {
-            sb.append("direct BYD API: refused by the car (not retried)\n");
+            sb.append("direct BYD API: retry on backoff\n");
         }
 
         if (current == null && Prefs.linkEnabled(ctx)) {
@@ -96,7 +105,7 @@ final class VehicleProvider {
                 sb.append("helper process: connected\n");
             } else {
                 hv.close();
-                sb.append("helper process: ").append(err3 != null ? err3 : "no data").append('\n');
+                sb.append("helper process: ").append(err3 != null ? err3 : "no data: " + hv.lastError()).append('\n');
                 HelperLauncher.ensureAsync(ctx, false);
             }
         } else if (current == null) {
@@ -120,6 +129,7 @@ final class VehicleProvider {
     }
 
     private static boolean usable(Vehicle v) {
-        return !Double.isNaN(v.speedKmh()) || !Double.isNaN(v.socPercent());
+        double speed = v.speedKmh(), soc = v.socPercent();
+        return (speed >= 0 && speed <= 350) || (soc >= 0 && soc <= 100);
     }
 }

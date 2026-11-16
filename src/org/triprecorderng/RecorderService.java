@@ -70,6 +70,10 @@ public class RecorderService extends Service {
         volatile double fuelPct = Double.NaN;
         volatile double elecRange = Double.NaN;
         volatile double fuelRange = Double.NaN;
+        // Replace one whole snapshot atomically; no synthetic zeros for missing sensors.
+        volatile double[] telemetry = new double[]{Double.NaN, Double.NaN, Double.NaN,
+                Double.NaN, Double.NaN, Double.NaN};
+        volatile long telemetryWall;
         volatile boolean tripActive;
         volatile double tripKm;
         volatile long tripSec;
@@ -121,6 +125,7 @@ public class RecorderService extends Service {
     private long lastBrakeEvt;
     private long lastNotifMs;
     private long lastLiveMs;
+    private int lastTelemetryMask = -1;
     private double lastAlt;
     private double lastBearing;
     private boolean ignitionWasKnown = true;
@@ -258,7 +263,7 @@ public class RecorderService extends Service {
         lastTickMs = now;
 
         Vehicle v = provider.get();
-        if (Prefs.linkEnabled(this) && !(v instanceof HelperVehicle)) {
+        if (Prefs.linkEnabled(this) && (v == null || v instanceof GpsVehicle)) {
             HelperLauncher.ensureAsync(this, false); // throttled by its own back-off
         }
         Tweaks.ensureRoaming(this, false, "periodic check");
@@ -273,15 +278,33 @@ public class RecorderService extends Service {
         live.gpsFix = gps.fresh(5000) != null;
         if (v == null) {
             live.vehicle = "none";
+            live.soc = live.elecRange = live.speed = Double.NaN;
+            live.telemetryWall = 0;
             live.error = "no vehicle data path (" + provider.report().replace('\n', ' ') + ")";
             maybeNotify(now, L.t("No vehicle data"));
             return;
+        }
+        if (!v.name().equals(live.vehicle)) {
+            live.telemetryWall = 0;
+            live.soc = live.elecRange = Double.NaN;
+            lastLiveMs = 0;
         }
         live.vehicle = v.name();
         live.error = v.lastError();
         charges.update(v, wall, now);
         if (now - lastLiveMs >= 5000) {
             lastLiveMs = now;
+            live.soc = v.socPercent();
+            live.telemetry = v.telemetry();
+            live.telemetryWall = wall;
+            int mask = 0;
+            for (int i = 0; i < live.telemetry.length; i++)
+                if (Vehicle.valid(live.telemetry[i])) mask |= 1 << i;
+            if (mask != lastTelemetryMask) {
+                lastTelemetryMask = mask;
+                Diag.log("telemetry " + v.name() + " [tempMin,tempMax,driveKW,chargeV,cellMin,cellMax] "
+                        + java.util.Arrays.toString(live.telemetry));
+            }
             live.fuelPct = v.fuelPercent();
             live.elecRange = v.elecRangeKm();
             live.fuelRange = v.fuelRangeKm();
@@ -305,7 +328,7 @@ public class RecorderService extends Service {
         if (trip == null) {
             // right after the service starts, give the data link a moment so the trip's baseline
             // (battery, energy, odometer) is taken from BYD data rather than missing
-            if (Prefs.linkEnabled(this) && !(v instanceof HelperVehicle)
+            if (Prefs.linkEnabled(this) && v instanceof GpsVehicle
                     && now - serviceStartMs < 25_000) {
                 maybeNotify(now, L.t("Connecting to the car's data..."));
                 return;
