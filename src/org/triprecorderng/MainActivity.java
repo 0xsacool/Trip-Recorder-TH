@@ -58,6 +58,8 @@ public class MainActivity extends Activity {
 
     private FrameLayout content;
     private View navView;
+    private LinearLayout shellBody;
+    private boolean bottomNav;
     private View qaButton;
     private View settingButton;
     // title bar actions of the detail screens
@@ -363,6 +365,7 @@ public class MainActivity extends Activity {
         column.addView(bar, new LinearLayout.LayoutParams(-1, Ui.dp(this, 64)));
 
         LinearLayout body = new LinearLayout(this);
+        shellBody = body;
         body.setOrientation(LinearLayout.HORIZONTAL);
         column.addView(body, new LinearLayout.LayoutParams(-1, 0, 1f));
 
@@ -411,15 +414,64 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(0, -1, 1f);
         clp.setMargins(0, Ui.dp(this, 14), p24, p24);
         body.addView(content, clp);
+        updateNavigationLayout();
 
         setContentView(root);
     }
 
+    /** The GT-R theme uses a horizontal bottom navigation bar; Classic keeps its original rail.
+     * Re-layout on returning from Settings so switching themes is immediate. */
+    private void updateNavigationLayout() {
+        boolean bottom = Prefs.performanceTheme(this);
+        if (bottom == bottomNav || shellBody == null || content == null) return;
+        bottomNav = bottom;
+        LinearLayout nav = (LinearLayout) navView;
+        shellBody.removeAllViews();
+        shellBody.setOrientation(bottom ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL);
+        nav.setOrientation(bottom ? LinearLayout.HORIZONTAL : LinearLayout.VERTICAL);
+        nav.setPadding(bottom ? Ui.dp(this, 12) : 0, bottom ? 0 : Ui.dp(this, 20),
+                bottom ? Ui.dp(this, 12) : 0, 0);
+        nav.setGravity(bottom ? Gravity.CENTER_VERTICAL : Gravity.TOP);
+        nav.setBackgroundColor(bottom ? 0xFF141B22 : android.graphics.Color.TRANSPARENT);
+        for (int i = 0; i < tabViews.length; i++) {
+            LinearLayout t = tabViews[i];
+            t.setGravity(bottom ? Gravity.CENTER : Gravity.CENTER_VERTICAL);
+            t.setPadding(Ui.dp(this, bottom ? 4 : 18), 0, Ui.dp(this, bottom ? 4 : 12), 0);
+            ImageView icon = (ImageView) t.getChildAt(0);
+            icon.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, bottom ? 22 : 30),
+                    Ui.dp(this, bottom ? 22 : 30)));
+            TextView label = (TextView) t.getChildAt(1);
+            label.setTextSize(bottom ? 16 : 22);
+            label.setSingleLine(bottom);
+            label.setEllipsize(bottom ? android.text.TextUtils.TruncateAt.END : null);
+            label.setPadding(Ui.dp(this, bottom ? 6 : 14), 0, 0, 0);
+            label.setLayoutParams(new LinearLayout.LayoutParams(bottom ? 0 : -2, -2, bottom ? 1f : 0f));
+            LinearLayout.LayoutParams lp = bottom
+                    ? new LinearLayout.LayoutParams(0, -1, 1f)
+                    : new LinearLayout.LayoutParams(-1, Ui.dp(this, 52));
+            if (!bottom) lp.setMargins(Ui.dp(this, 24), Ui.dp(this, i == 0 ? 8 : 16), Ui.dp(this, 12), 0);
+            t.setLayoutParams(lp);
+        }
+        int margin = Ui.dp(this, bottom ? 12 : 24);
+        LinearLayout.LayoutParams cp = bottom
+                ? new LinearLayout.LayoutParams(-1, 0, 1f)
+                : new LinearLayout.LayoutParams(0, -1, 1f);
+        cp.setMargins(bottom ? margin : 0, Ui.dp(this, 14), margin, bottom ? Ui.dp(this, 4) : margin);
+        if (bottom) {
+            shellBody.addView(content, cp);
+            shellBody.addView(nav, new LinearLayout.LayoutParams(-1, Ui.dp(this, 55)));
+        } else {
+            shellBody.addView(nav, new LinearLayout.LayoutParams(Ui.dp(this, 260), -1));
+            shellBody.addView(content, cp);
+        }
+    }
+
     /** Full-screen pages (settings, Q&A, trip details) hide the menu like the stock app does. */
     private void setChrome(boolean fullScreenPage) {
+        updateNavigationLayout();
         int vis = fullScreenPage ? View.GONE : View.VISIBLE;
         ((LinearLayout.LayoutParams) content.getLayoutParams()).leftMargin =
-                fullScreenPage ? Ui.dp(this, 24) : 0;
+                fullScreenPage ? Ui.dp(this, 24) : bottomNav ? Ui.dp(this, 12) : 0;
         content.requestLayout();
         navView.setVisibility(vis);
         qaButton.setVisibility(vis);

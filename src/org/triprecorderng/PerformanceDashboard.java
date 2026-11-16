@@ -13,8 +13,7 @@ import java.util.List;
 
 /**
  * Optional GT-R-inspired dashboard; consumes the same read-only snapshots as ThisTripPage.
- * No changes to recording, vehicle commands, database, or signing. Motor power is not exposed
- * by the existing vehicle source, so this displays battery and consumption gauges and real speed samples.
+ * No vehicle commands. Power and thermal values are read-only, never simulated.
  */
 final class PerformanceDashboard extends View {
     private static final int INK = 0xFFF2F4F7, MUTED = 0xFFADB6C2;
@@ -31,6 +30,8 @@ final class PerformanceDashboard extends View {
     private long lastSample;
     private double speed = Double.NaN, soc = Double.NaN, range = Double.NaN;
     private double average = Double.NaN, distance = Double.NaN, energy = Double.NaN;
+    private double motorPower = Double.NaN, minTemp = Double.NaN, maxTemp = Double.NaN;
+    private double minCell = Double.NaN, maxCell = Double.NaN, chargeVoltage = Double.NaN;
     private String elapsed = "--", money = "--", tripLabel = "", status = "", source = "";
     private int statusColor = MUTED;
     private Trip shown;
@@ -73,6 +74,15 @@ final class PerformanceDashboard extends View {
         speed = fresh ? positive(live.speed) : Double.NaN;
         soc = linked && valid(live.soc) && live.soc >= 0 && live.soc <= 100 ? live.soc : Double.NaN;
         range = linked ? positive(live.elecRange) : Double.NaN;
+        boolean telemetryFresh = linked && live.telemetryWall > 0 && now >= live.telemetryWall
+                && now - live.telemetryWall < 10000;
+        double[] data = live.telemetry;
+        motorPower = telemetryFresh ? data[2] : Double.NaN;
+        minTemp = telemetryFresh ? data[0] : Double.NaN;
+        maxTemp = telemetryFresh ? data[1] : Double.NaN;
+        chargeVoltage = telemetryFresh ? data[3] : Double.NaN;
+        minCell = telemetryFresh ? data[4] : Double.NaN;
+        maxCell = telemetryFresh ? data[5] : Double.NaN;
 
         Trip current = RecorderService.current;
         List<Trip> trips = host.trips();
@@ -102,18 +112,20 @@ final class PerformanceDashboard extends View {
         if (Prefs.autoStartHealth(c) == Prefs.AUTOSTART_BLOCKED)
             source = L.t("Auto-start is blocked by BYD - see Setting");
 
-        if (now - lastSample >= 900 || now < lastSample) {
-            if (lastSample != 0 && (now < lastSample || now - lastSample > 3500)) sampleCount = 0;
-            if (sampleCount < SAMPLES) history[sampleCount++] = speed;
+        if (live.telemetryWall != lastSample || (!telemetryFresh && sampleCount > 0 && valid(history[sampleCount-1]))) {
+            if (!telemetryFresh || (lastSample != 0 && (now < lastSample || now - lastSample > 12000))) sampleCount = 0;
+            if (sampleCount < SAMPLES) history[sampleCount++] = motorPower;
             else {
                 System.arraycopy(history, 1, history, 0, SAMPLES - 1);
-                history[SAMPLES - 1] = speed;
+                history[SAMPLES - 1] = motorPower;
             }
-            lastSample = now;
+            lastSample = live.telemetryWall;
         }
         setContentDescription("GT-R Performance. " + status + ". " + source + ". "
                 + L.t("Speed") + " " + number(speed, "%.0f") + " km/h. "
                 + L.t("Battery") + " " + number(soc, "%.0f") + "%. "
+                + "Cell temperature min/max " + number(minTemp, "%.0f") + "/"
+                + number(maxTemp, "%.0f") + " C. Power " + number(motorPower, "%.1f") + " kW. "
                 + tripLabel + ": " + number(distance, "%.1f") + " km, "
                 + L.t("Energy") + " " + number(energy, "%.1f") + " kWh, "
                 + L.t("Cost") + " " + money + ".");
@@ -136,29 +148,35 @@ final class PerformanceDashboard extends View {
         text(canvas, tripLabel, 980, 50, 17, MUTED, false, Paint.Align.RIGHT, 260);
 
         int batteryColor = valid(soc) && soc < 15 ? RED : valid(soc) && soc < 30 ? 0xFFFFB44D : CYAN;
-        gauge(canvas, 184, 211, 132, 100, soc, batteryColor,
-                L.t("Battery"), number(soc, "%.0f"), "%", 4);
-        // Consumption dial is trip average, not a false real-time motor reading.
-        gauge(canvas, 816, 211, 132, 40, average, CYAN,
+        gauge(canvas, 176, 190, 121, -100, 200, motorPower, motorPower < 0 ? CYAN : RED,
+                motorPower < 0 ? "REGEN" : "DRIVE POWER", number(motorPower, "%.0f"), "kW", 6);
+        gauge(canvas, 824, 190, 121, 0, 40, average, CYAN,
                 L.t("Average consumption"), number(average, "%.1f"), "kWh/100 km", 4);
-        text(canvas, L.t("Speed"), 500, 109, 22, MUTED, false, Paint.Align.CENTER, 290);
-        text(canvas, number(speed, "%.0f"), 500, 207, 105, INK, true, Paint.Align.CENTER, 290);
-        text(canvas, "km/h", 500, 244, 26, MUTED, false, Paint.Align.CENTER, 200);
-        fill(canvas, 366, 260, 634, 262, LINE);
-        text(canvas, L.t("Remaining range"), 500, 292, 20, MUTED, false, Paint.Align.CENTER, 280);
-        text(canvas, number(range, "%.0f") + " km", 500, 335, 41, INK, true, Paint.Align.CENTER, 285);
+        text(canvas, L.t("Speed"), 500, 88, 17, MUTED, false, Paint.Align.CENTER, 260);
+        text(canvas, number(speed, "%.0f"), 500, 171, 91, INK, true, Paint.Align.CENTER, 260);
+        text(canvas, "km/h", 500, 195, 20, MUTED, false, Paint.Align.CENTER, 200);
+        fill(canvas, 365, 204, 635, 206, RED);
+        text(canvas, L.t("Battery") + "  " + number(soc, "%.0f") + "%", 500, 236, 29, INK, true, Paint.Align.CENTER, 250);
+        fill(canvas, 370, 246, 630, 255, LINE);
+        if (valid(soc)) fill(canvas, 370, 246, 370+(float)soc*2.6f, 255, batteryColor);
+        text(canvas, L.t("Remaining range"), 500, 277, 16, MUTED, false, Paint.Align.CENTER, 250);
+        text(canvas, number(range, "%.0f") + " km", 500, 307, 29, INK, true, Paint.Align.CENTER, 250);
 
-        fill(canvas, 0, 359, 1000, 470, PANEL);
-        fill(canvas, 0, 359, 1000, 361, LINE);
+        fill(canvas, 0, 319, 1000, 372, PANEL);
+        telemetryCell(canvas, 0, 346, "BATTERY TEMP MIN / MAX", number(minTemp, "%.0f") + " / " + number(maxTemp, "%.0f") + " °C");
+        telemetryCell(canvas, 346, 690, "CELL VOLTAGE MIN / MAX", number(minCell, "%.3f") + " / " + number(maxCell, "%.3f") + " V");
+        telemetryCell(canvas, 690, 1000, "CHARGING VOLTAGE", number(chargeVoltage, "%.0f") + " V");
+        fill(canvas, 0, 377, 1000, 470, PANEL);
+        fill(canvas, 0, 377, 1000, 379, LINE);
         cell(canvas, 0, 175, L.t("Trip"), number(distance, "%.1f") + " km");
         cell(canvas, 175, 345, L.t("Time"), elapsed);
         cell(canvas, 345, 510, L.t("Energy"), number(energy, "%.1f") + " kWh");
         cell(canvas, 510, 685, L.t("Cost"), money);
-        graph(canvas, 709, 374, 983, 449);
+        graph(canvas, 709, 386, 983, 459);
         canvas.restore();
     }
 
-    private void gauge(Canvas cv, float x, float y, float r, int max, double value,
+    private void gauge(Canvas cv, float x, float y, float r, int min, int max, double value,
                        int accent, String title, String reading, String unit, int divisions) {
         p.setStyle(Paint.Style.FILL); p.setColor(PANEL);
         cv.drawCircle(x, y, r, p);
@@ -171,7 +189,10 @@ final class PerformanceDashboard extends View {
         cv.drawArc(arc, 135, 270, false, p);
         if (valid(value)) {
             p.setColor(accent);
-            cv.drawArc(arc, 135, (float)(270 * Math.min(max, value) / max), false, p);
+            double clamped = Math.max(min, Math.min(max, value));
+            double zero = Math.max(min, 0);
+            float a = (float)(135 + 270 * (zero - min) / (max - min));
+            cv.drawArc(arc, a, (float)(270 * (clamped - zero) / (max - min)), false, p);
         }
         for (int i = 0; i <= divisions * 5; i++) {
             double a = Math.toRadians(135 + 270.0 * i / (divisions * 5));
@@ -180,15 +201,16 @@ final class PerformanceDashboard extends View {
             p.setColor(major ? INK : SILVER);
             p.setStrokeWidth(major ? 2.5f : 1.2f);
             cv.drawLine(x + co*(r-20), y + si*(r-20), x + co*(r-(major?32:25)), y + si*(r-(major?32:25)), p);
-            if (major) text(cv, String.valueOf(max * i / (divisions*5)), x+co*(r-45),
+            if (major) text(cv, String.valueOf(min + (max-min) * i / (divisions*5)), x+co*(r-41),
                     y+si*(r-45)+5, 15, MUTED, false, Paint.Align.CENTER, 35);
         }
-        text(cv, title, x, y-24, 19, MUTED, false, Paint.Align.CENTER, r*1.35f);
-        text(cv, reading, x, y+28, 54, INK, true, Paint.Align.CENTER, r*1.32f);
-        text(cv, unit, x, y+52, 17, MUTED, false, Paint.Align.CENTER, r*1.3f);
+        // Keep titles entirely inside the inner dial, away from tick numbers.
+        text(cv, title, x, y-23, 15, MUTED, false, Paint.Align.CENTER, r*0.96f);
+        text(cv, reading, x, y+24, 49, INK, true, Paint.Align.CENTER, r*1.07f);
+        text(cv, unit, x, y+46, 15, MUTED, false, Paint.Align.CENTER, r*1.0f);
         // Short outer needle shows the dial value without covering the readout.
         if (valid(value)) {
-            double a = Math.toRadians(135 + 270.0*Math.min(max, value)/max);
+            double a = Math.toRadians(135 + 270.0*(Math.max(min, Math.min(max, value))-min)/(max-min));
             float co = (float)Math.cos(a), si = (float)Math.sin(a);
             p.setStyle(Paint.Style.STROKE); p.setColor(RED); p.setStrokeWidth(4);
             cv.drawLine(x+co*(r-30), y+si*(r-30), x+co*(r-9), y+si*(r-9), p);
@@ -196,26 +218,33 @@ final class PerformanceDashboard extends View {
         p.setStyle(Paint.Style.FILL);
     }
 
+    private void telemetryCell(Canvas cv, float left, float right, String label, String reading) {
+        float x = (left+right)/2;
+        text(cv, label, x, 337, 13, MUTED, false, Paint.Align.CENTER, right-left-14);
+        text(cv, reading, x, 362, 24, INK, true, Paint.Align.CENTER, right-left-14);
+        fill(cv, right-1, 326, right+1, 365, LINE);
+    }
+
     private void cell(Canvas cv, float left, float right, String label, String value) {
         float x = (left+right)/2;
-        text(cv, label, x, 397, 18, MUTED, false, Paint.Align.CENTER, right-left-12);
-        text(cv, value, x, 444, 32, INK, true, Paint.Align.CENTER, right-left-12);
-        fill(cv, right-1, 379, right+1, 451, LINE);
+        text(cv, label, x, 407, 16, MUTED, false, Paint.Align.CENTER, right-left-12);
+        text(cv, value, x, 448, 28, INK, true, Paint.Align.CENTER, right-left-12);
+        fill(cv, right-1, 391, right+1, 457, LINE);
     }
 
     private void graph(Canvas cv, float x, float y, float r, float b) {
-        text(cv, L.t("Speed history") + " (km/h)", x, y+14, 15, MUTED, false, Paint.Align.LEFT, r-x);
+        text(cv, "POWER HISTORY (kW)", x, y+14, 15, MUTED, false, Paint.Align.LEFT, r-x);
         float top = y+24;
         fill(cv, x, top, r, b, 0xFF0A1014);
         p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(1); p.setColor(LINE);
-        cv.drawLine(x, (top+b)/2, r, (top+b)/2, p);
+        cv.drawLine(x, b-(b-top)/3, r, b-(b-top)/3, p);
         cv.drawLine(x, b, r, b, p);
         Path path = new Path();
         boolean started = false;
         for (int i=0; i<sampleCount; i++) {
             if (!valid(history[i])) { started = false; continue; }
             float sx=x+(r-x)*(SAMPLES-sampleCount+i)/(SAMPLES-1);
-            float sy=b-(b-top)*(float)Math.min(180, history[i])/180;
+            float sy=b-(b-top)*(float)(Math.max(-100, Math.min(200, history[i]))+100)/300;
             if (started) path.lineTo(sx, sy); else path.moveTo(sx, sy);
             started = true;
         }
