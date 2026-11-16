@@ -11,10 +11,9 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Language support: the app's texts are written in English in the code and looked up in assets/ar.tsv or
- * assets/ru.tsv when the app language is Arabic or Russian (a missing entry simply stays English). The language is
- * chosen in Setting (Automatic follows the head unit's language). Digits are always Latin so numbers read the same
- * everywhere. Only Arabic changes the direction of the text; Russian reads left to right like English.
+ * Language support: English keys are looked up in assets/ar.tsv, assets/ru.tsv, or assets/th.tsv.
+ * Thai is the default for this edition; Automatic follows the head unit's language.
+ * Missing translations fall back to English. Digits remain Latin and only Arabic uses right-to-left layout.
  */
 final class L {
     private L() {}
@@ -25,7 +24,7 @@ final class L {
     static final String RU = "ru";
     static final String TH = "th";
 
-    /** The language in use: "en", "ar" or "ru". */
+    /** The language in use: "en", "ar", "ru" or "th". */
     private static volatile String lang = EN;
     private static volatile boolean arabic;
     private static Map<String, String> table;
@@ -43,7 +42,7 @@ final class L {
         lang = next;
     }
 
-    /** The stored choice: "auto", "en", "ar" or "ru". */
+    /** The stored choice: "auto", "en", "ar", "ru" or "th". */
     static String setting(Context ctx) {
         SharedPreferences p = ctx.getApplicationContext().getSharedPreferences("triprecng", Context.MODE_PRIVATE);
         return p.getString("lang", TH);
@@ -65,7 +64,7 @@ final class L {
         return arabic;
     }
 
-    /** The language in use: "en", "ar" or "ru". */
+    /** The language in use: "en", "ar", "ru" or "th". */
     static String current() {
         return lang;
     }
