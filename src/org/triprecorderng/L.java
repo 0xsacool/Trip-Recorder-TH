@@ -23,6 +23,7 @@ final class L {
     static final String EN = "en";
     static final String AR = "ar";
     static final String RU = "ru";
+    static final String TH = "th";
 
     /** The language in use: "en", "ar" or "ru". */
     private static volatile String lang = EN;
@@ -45,7 +46,7 @@ final class L {
     /** The stored choice: "auto", "en", "ar" or "ru". */
     static String setting(Context ctx) {
         SharedPreferences p = ctx.getApplicationContext().getSharedPreferences("triprecng", Context.MODE_PRIVATE);
-        return p.getString("lang", AUTO);
+        return p.getString("lang", TH);
     }
 
     static void setSetting(Context ctx, String value) {
@@ -55,9 +56,9 @@ final class L {
     }
 
     private static String resolve(String setting) {
-        if (AR.equals(setting) || RU.equals(setting) || EN.equals(setting)) return setting;
+        if (AR.equals(setting) || RU.equals(setting) || EN.equals(setting) || TH.equals(setting)) return setting;
         String d = Locale.getDefault().getLanguage();
-        return AR.equals(d) ? AR : RU.equals(d) ? RU : EN;
+        return AR.equals(d) ? AR : RU.equals(d) ? RU : TH.equals(d) ? TH : EN;
     }
 
     static boolean isArabic() {
@@ -71,7 +72,7 @@ final class L {
 
     /** A language's own name, as it is written in the language dialog. */
     static String nameOf(String code) {
-        return AR.equals(code) ? "العربية" : RU.equals(code) ? "Русский" : "English";
+        return AR.equals(code) ? "العربية" : RU.equals(code) ? "Русский" : TH.equals(code) ? "ไทย" : "English";
     }
 
     /** The English text, or its translation when the app language is Arabic or Russian. */
@@ -118,6 +119,7 @@ final class L {
 
     /** Locale for dates: the head unit's own, or Arabic month and day names with Latin digits, or Russian ones. */
     static Locale dateLocale() {
+        if (TH.equals(lang)) return new Locale.Builder().setLanguage("th").setRegion("TH").setUnicodeLocaleKeyword("ca", "gregory").setUnicodeLocaleKeyword("nu", "latn").build();
         if (RU.equals(lang)) return new Locale.Builder().setLanguage("ru").setRegion("RU").build();
         if (!arabic) return Locale.getDefault();
         return new Locale.Builder().setLanguage("ar").setRegion("OM").setUnicodeLocaleKeyword("nu", "latn").build();

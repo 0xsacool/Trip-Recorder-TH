@@ -60,11 +60,11 @@ final class AttainmentPage {
         add(records, Kit.IconView.LEAF, Kit.ACCENT, L.t("Most efficient"),
                 r.mostEfficient == null ? "" : modeOf(r.mostEfficient) + date(r.mostEfficient, shortDay),
                 r.mostEfficient == null ? "--" : Ui.f(r.mostEfficient.energyPer100Km(), "%.1f"), L.t("kWh/100km"));
-        add(records, Kit.IconView.LEAF, Kit.ACCENT, L.t("Most efficient"),
+        if (!Prefs.ATTO3_EDITION) add(records, Kit.IconView.LEAF, Kit.ACCENT, L.t("Most efficient"),
                 r.mostEfficientElectric == null ? "" : L.t("Electric") + " · " + date(r.mostEfficientElectric, shortDay),
                 r.mostEfficientElectric == null ? "--" : Ui.f(r.mostEfficientElectric.energyPer100Km(), "%.1f"),
                 L.t("kWh/100km"));
-        add(records, Kit.IconView.PUMP, Kit.AMBER, L.t("Best fuel economy"),
+        if (!Prefs.ATTO3_EDITION) add(records, Kit.IconView.PUMP, Kit.AMBER, L.t("Best fuel economy"),
                 r.bestFuel == null ? "" : L.t("Hybrid") + " · " + date(r.bestFuel, shortDay),
                 r.bestFuel == null ? "--" : Ui.f(Stats.fuelPer100Hybrid(r.bestFuel, 10), "%.1f"), L.t("L/100km"));
         add(records, Kit.IconView.STAR, Kit.ACCENT, L.t("Best drive score"), date(r.bestScore, df),
@@ -99,15 +99,15 @@ final class AttainmentPage {
                 String.valueOf(r.count), "");
         add(totals, Kit.IconView.CLOCK, BLUE_TEXT, L.t("Total drive time"), cap(L.t("recorded")),
                 Kit.numUnit(Ui.duration(r.totalSec), 0.62f), "");
-        add(totals, Kit.IconView.COIN, Kit.AMBER, L.t("Total cost"), cap(L.t("electricity + fuel")),
+        add(totals, Kit.IconView.COIN, Kit.AMBER, L.t("Total cost"), cap(Prefs.ATTO3_EDITION ? L.t("Electricity only") : L.t("electricity + fuel")),
                 anyCost ? Cost.amount(c, costSum) : "--", Prefs.currency(c));
-        add(totals, Kit.IconView.PUMP, Kit.AMBER, L.t("Fuel used"),
+        if (!Prefs.ATTO3_EDITION) add(totals, Kit.IconView.PUMP, Kit.AMBER, L.t("Fuel used"),
                 fuelTrips > 0 ? cap(L.f("over %d trip(s)", fuelTrips)) : cap(L.t("recorded for new trips")),
                 fuelTrips > 0 ? Ui.f(fuelSum, "%.1f") : "--", L.t("L"));
-        add(totals, Kit.IconView.PUMP, Kit.AMBER, L.t("Fuel economy"), L.t("Hybrid driving"),
+        if (!Prefs.ATTO3_EDITION) add(totals, Kit.IconView.PUMP, Kit.AMBER, L.t("Fuel economy"), L.t("Hybrid driving"),
                 hybridKm >= TripEnergy.MIN_MODE_KM ? Ui.f(hybridFuel / hybridKm * 100.0, "%.1f") : "--", L.t("L/100km"));
         add(totals, Kit.IconView.LEAF, Kit.ACCENT, L.t("CO2 avoided"),
-                co2.trips > 0 ? cap(L.f("about %s trees a year", Ui.f(co2.trees, "%.1f"))) : cap(L.t("needs fuel data")),
+                co2.trips > 0 ? cap(L.f("about %s trees a year", Ui.f(co2.trees, "%.1f"))) : cap(Prefs.ATTO3_EDITION ? L.t("No vehicle data") : L.t("needs fuel data")),
                 co2.trips > 0 ? Ui.f(co2.kg, "%.0f") : "--", L.t("kg"));
 
         LinearLayout.LayoutParams l1 = new LinearLayout.LayoutParams(0, -1, 1f);

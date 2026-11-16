@@ -1,0 +1,505 @@
+# Thai translation for Trip Recorder TH
+Charging	กำลังชาร์จ
+ - paused	 - หยุดชั่วคราว
+Off	ปิด
+Connected - helper running	เชื่อมต่อแล้ว - ตัวช่วยทำงานอยู่
+Connecting...	กำลังเชื่อมต่อ...
+Waiting for the car to accept the request (tap Allow on the car screen if it asks)	รอรถอนุญาต (หากมีข้อความแจ้งเตือน ให้แตะอนุญาตบนหน้าจอรถ)
+Not connected - 	ไม่ได้เชื่อมต่อ - 
+Connecting soon...	จะเชื่อมต่ออีกครั้ง...
+ (retrying in %d s)	 (ลองใหม่ใน %d วินาที)
+starting	กำลังเริ่ม
+turned off	ปิดแล้ว
+helper already running	ตัวช่วยทำงานอยู่แล้ว
+the car's network debugging (ADB) is not ready yet	ระบบดีบักผ่านเครือข่าย (ADB) ของรถยังไม่พร้อม
+approval pending	รอการอนุญาต
+debugging request was not accepted yet	ยังไม่ได้รับอนุญาตให้ดีบัก
+helper started	เริ่มตัวช่วยแล้ว
+Open Setting > BYD auto-start apps, find Trip Recorder NG in 'Disable background Apps' and turn it OFF (OFF means the app is allowed to start). Then restart the head unit once.	เปิดการตั้งค่า > แอปเริ่มอัตโนมัติของ BYD ค้นหา Trip Recorder NG ใน Disable background Apps แล้วปิดสวิตช์ (ปิดหมายถึงอนุญาตให้แอปเริ่มได้) จากนั้นรีสตาร์ตหน้าจอรถหนึ่งครั้ง
+BYD did not start Trip Recorder NG by itself after the last restart, so trips are not recorded until you open the app.\n\n	BYD ไม่ได้เริ่ม Trip Recorder NG หลังรีสตาร์ตครั้งล่าสุด จึงยังไม่บันทึกการเดินทางจนกว่าจะเปิดแอป\n\n
+Auto-start is not confirmed yet. BYD switches it back to blocked every time Trip Recorder is installed or updated, and until it is allowed the app does not record after a restart.\n\n	ยังไม่ยืนยันการเริ่มอัตโนมัติ BYD จะบล็อกอีกครั้งทุกครั้งที่ติดตั้งหรืออัปเดตแอป หากไม่อนุญาต แอปจะไม่บันทึกหลังรีสตาร์ต\n\n
+Turn off 'Disable background Apps'	ปิด Disable background Apps
+Open BYD settings	เปิดการตั้งค่า BYD
+Later	ภายหลัง
+Driving Behavior Q&A	คำถามเกี่ยวกับการขับขี่
+Setting	การตั้งค่า
+This Trip	ทริปปัจจุบัน
+My Trips	ประวัติทริป
+Attainment	ความสำเร็จ
+Statistics	สถิติ
+Tweaks	เครื่องมือเพิ่มเติม
+BYD API via helper	BYD API ผ่านตัวช่วย
+GPS only	เฉพาะ GPS
+BYD framework API	BYD Framework API
+autoservice binder	Autoservice Binder
+none	ไม่มี
+Mileage (km)	ระยะทาง (กม.)
+Duration	ระยะเวลา
+Hard acceleration	เร่งความเร็วรุนแรง
+Hard braking	เบรกแรง
+Drive score	คะแนนการขับขี่
+km/h	กม./ชม.
+Service stopped	บริการหยุดทำงาน
+Recording	กำลังบันทึก
+Not recording	ไม่ได้บันทึก
+fix	รับสัญญาณแล้ว
+searching	กำลังค้นหา
+off	ปิด
+Data link: %s	การเชื่อมต่อข้อมูล: %s
+Auto-start is blocked by BYD - see Setting	BYD บล็อกการเริ่มอัตโนมัติ - ดูการตั้งค่า
+No trip recorded yet	ยังไม่มีการบันทึกทริป
+Current trip	ทริปปัจจุบัน
+%1$d trips, %2$s km	%1$d ทริป, %2$s กม.
+Export CSV	ส่งออก CSV
+No trips yet	ยังไม่มีทริป
+Restore trips from backup	กู้คืนทริปจากข้อมูลสำรอง
+Restore %d trip(s) from backup	กู้คืน %d ทริปจากข้อมูลสำรอง
+Cost (%s)	ค่าใช้จ่าย (%s)
+Highest achievements	สถิติสูงสุด
+Longest trip	ทริปไกลที่สุด
+%s km	%s กม.
+Longest drive	ขับนานที่สุด
+Top speed	ความเร็วสูงสุด
+%s km/h	%s กม./ชม.
+Best drive score	คะแนนการขับขี่สูงสุด
+Total distance	ระยะทางรวม
+%s%% driven electric	ขับด้วยไฟฟ้า %s%%
+Total trips	จำนวนทริปรวม
+Total drive time	เวลาขับขี่รวม
+Total cost	ค่าใช้จ่ายรวม
+electricity + fuel	ไฟฟ้า + น้ำมัน
+Fuel used	น้ำมันที่ใช้
+%s L	%s ลิตร
+over %d trip(s)	จาก %d ทริป
+recorded for new trips	บันทึกสำหรับทริปใหม่
+about %s trees a year	เทียบเท่าต้นไม้ประมาณ %s ต้นต่อปี
+needs fuel data	ต้องใช้ข้อมูลน้ำมัน
+Mileage	ระยะทาง
+Consumption	อัตราสิ้นเปลือง
+Trips	ทริป
+Cost	ค่าใช้จ่าย
+Fuel	น้ำมัน
+Daily	รายวัน
+Monthly	รายเดือน
+Average drive score	คะแนนการขับขี่เฉลี่ย
+Number of trips	จำนวนทริป
+ - last 12 months	 - 12 เดือนล่าสุด
+ - last 14 days	 - 14 วันล่าสุด
+Trip details	รายละเอียดทริป
+Average speed	ความเร็วเฉลี่ย
+Max speed	ความเร็วสูงสุด
+Battery	แบตเตอรี่
+Energy used	พลังงานที่ใช้
+%s kWh	%s kWh
+%s kWh/100km	%s kWh/100 กม.
+Electric / hybrid distance	ระยะทางไฟฟ้า / ไฮบริด
+%1$s km / %2$s km	%1$s กม. / %2$s กม.
+Odometer change	ระยะทางจากเลขไมล์
+Distance measured by	ระยะทางวัดจาก
+car trip counter	มาตรวัดทริปของรถ
+speed	ความเร็ว
+Hard accel / braking	เร่งแรง / เบรกแรง
+Idle time	เวลาจอด
+Time above 100 km/h	เวลาที่ขับเกิน 100 กม./ชม.
+Electricity cost	ค่าไฟฟ้า
+Fuel cost	ค่าน้ำมัน
+Trip cost	ค่าใช้จ่ายทริป
+Driving advice	คำแนะนำการขับขี่
+Export GPX	ส่งออก GPX
+Delete	ลบ
+Data roaming	โรมมิ่งข้อมูล
+Keep data roaming on	เปิดโรมมิ่งข้อมูลตลอดเวลา
+Turn on	เปิด
+%d session(s)	%d ครั้ง
+about %s added	เพิ่มประมาณ %s
+about %s	ประมาณ %s
+No charging sessions yet	ยังไม่มีประวัติการชาร์จ
+A session is recorded automatically while the car charges	บันทึกอัตโนมัติขณะรถชาร์จ
+Turn on Vehicle data link in Setting: charging is read from the car through it	เปิดการเชื่อมต่อข้อมูลรถในการตั้งค่าเพื่ออ่านข้อมูลการชาร์จ
+Partial	ข้อมูลบางส่วน
+Type	ประเภท
+Charging details	รายละเอียดการชาร์จ
+Battery (%) while charging - touch the chart to inspect	แบตเตอรี่ (%) ระหว่างชาร์จ - แตะกราฟเพื่อดูข้อมูล
+Not enough samples to draw a chart	ข้อมูลไม่เพียงพอสำหรับกราฟ
+%s kW	%s kW
+charging now	กำลังชาร์จ
+Energy added (estimate)	พลังงานที่เพิ่ม (ประมาณ)
+Energy added	พลังงานที่เพิ่ม
+Average power	กำลังไฟเฉลี่ย
+Highest power reported	กำลังไฟสูงสุดที่รายงาน
+not reported	ไม่มีข้อมูล
+Charger	เครื่องชาร์จ
+Partial: this charge happened while the head unit was asleep. Only the battery level before and after is known, so the times shown are the window in which it happened, not how long it charged.	ข้อมูลบางส่วน: รถชาร์จขณะหน้าจอพัก จึงทราบเฉพาะระดับแบตเตอรี่ก่อนและหลัง เวลาที่แสดงคือช่วงที่เกิดการชาร์จ ไม่ใช่ระยะเวลาชาร์จจริง
+Partial: the app missed part of this session (the head unit was asleep or the app was not running), so the battery gain and energy can be lower than the real total.	ข้อมูลบางส่วน: แอปไม่ได้บันทึกช่วงหนึ่งของการชาร์จ (หน้าจอพักหรือแอปหยุดทำงาน) ระดับแบตเตอรี่และพลังงานที่เพิ่มอาจต่ำกว่าจริง
+Show place	แสดงสถานที่
+Delete this charging session permanently?	ลบประวัติการชาร์จนี้ถาวรหรือไม่?
+Cancel	ยกเลิก
+Language	ภาษา
+Change	เปลี่ยน
+Trip recording service	บริการบันทึกทริป
+Running	กำลังทำงาน
+Stopped	หยุดแล้ว
+Vehicle data source	แหล่งข้อมูลรถ
+Self-test	ทดสอบระบบ
+Vehicle data link	การเชื่อมต่อข้อมูลรถ
+Vehicle data link turned off	ปิดการเชื่อมต่อข้อมูลรถแล้ว
+Connecting to the car's data service...	กำลังเชื่อมต่อบริการข้อมูลรถ...
+Reconnect	เชื่อมต่อใหม่
+Try to connect to the car's data right now	ลองเชื่อมต่อข้อมูลรถทันที
+Retry now	ลองใหม่ตอนนี้
+Reconnecting...	กำลังเชื่อมต่อใหม่...
+Debugging key	กุญแจดีบัก
+This app's key for the car's network debugging	กุญแจของแอปสำหรับดีบักผ่านเครือข่ายรถ
+Forget	ลืมกุญแจ
+Key removed and link turned off	ลบกุญแจและปิดการเชื่อมต่อแล้ว
+Location (GPS track)	ตำแหน่ง (เส้นทาง GPS)
+Allowed	อนุญาตแล้ว
+Not allowed	ไม่อนุญาต
+Allow	อนุญาต
+Started automatically after the last restart	เริ่มอัตโนมัติหลังรีสตาร์ตล่าสุดแล้ว
+NOT started automatically after the last restart: turn Trip Recorder NG OFF in 'Disable background Apps'	ไม่เริ่มอัตโนมัติหลังรีสตาร์ตล่าสุด: ปิด Trip Recorder NG ใน Disable background Apps
+Not confirmed yet: turn Trip Recorder NG OFF in 'Disable background Apps', then restart the head unit once	ยังไม่ยืนยัน: ปิด Trip Recorder NG ใน Disable background Apps แล้วรีสตาร์ตหน้าจอรถ
+BYD auto-start apps	แอปเริ่มอัตโนมัติของ BYD
+Open	เปิด
+Energy prices	ราคาพลังงาน
+Electricity %1$s, fuel %2$s	ไฟฟ้า %1$s, น้ำมัน %2$s
+ (default)	 (ค่าเริ่มต้น)
+Set	ตั้งค่า
+Record route (GPS track)	บันทึกเส้นทาง (GPS)
+On: trips keep their route on the map	เปิด: บันทึกเส้นทางบนแผนที่
+Off: new trips store no route and no event positions	ปิด: ทริปใหม่ไม่บันทึกเส้นทางหรือตำแหน่งเหตุการณ์
+Automatic backup	สำรองข้อมูลอัตโนมัติ
+On: every finished trip is also saved to 	เปิด: ทุกทริปที่เสร็จสิ้นจะบันทึกไว้ที่ 
+Off. Backup folder: 	ปิด: โฟลเดอร์สำรองข้อมูล: 
+%d trip file(s)	%d ไฟล์ทริป
+newest %s	ล่าสุด %s
+Warning: Documents is not writable, so this copy is deleted if the app is uninstalled	คำเตือน: เขียนข้อมูลใน Documents ไม่ได้ ข้อมูลสำรองนี้จะถูกลบเมื่อถอนการติดตั้งแอป
+Automatic backup turned on	เปิดการสำรองข้อมูลอัตโนมัติแล้ว
+Automatic backup turned off	ปิดการสำรองข้อมูลอัตโนมัติแล้ว
+Back up now	สำรองข้อมูลทันที
+Saves any finished trip that has no backup file yet	บันทึกทริปที่เสร็จสิ้นและยังไม่มีข้อมูลสำรอง
+Back up	สำรองข้อมูล
+Restore from backup	กู้คืนจากข้อมูลสำรอง
+Adds the trips from the backup folder that are missing here (nothing is overwritten)	เพิ่มทริปที่ยังไม่มีจากโฟลเดอร์สำรอง (ไม่เขียนทับ)
+Restore	กู้คืน
+Export all trips	ส่งออกทริปทั้งหมด
+Export	ส่งออก
+Log file: %s	ไฟล์บันทึก: %s
+Automatic (follows the head unit)	อัตโนมัติ (ตามภาษาหน้าจอรถ)
+How is a trip recorded?	บันทึกทริปอย่างไร?
+A trip is one ignition cycle: it starts when the car is switched on and ends when it is switched off. If the ignition state cannot be read, a trip starts when the car moves and ends after three minutes standing still.	หนึ่งทริปคือหนึ่งรอบการเปิดรถ เริ่มเมื่อเปิดรถและสิ้นสุดเมื่อปิดรถ หากอ่านสถานะรถไม่ได้ จะเริ่มเมื่อรถเคลื่อนที่และสิ้นสุดหลังหยุดนิ่งสามนาที
+What is measured?	บันทึกข้อมูลอะไรบ้าง?
+Speed (several times a second), battery level and the car's energy counter, plus the GPS position every few seconds. Distance comes from the car's own trip counter (from speed when that is not available).	ความเร็วหลายครั้งต่อวินาที ระดับแบตเตอรี่ ตัวนับพลังงานของรถ และตำแหน่ง GPS ทุกสองสามวินาที ระยะทางมาจากมาตรวัดทริปของรถ หรือคำนวณจากความเร็วเมื่อไม่มีข้อมูล
+Does it need internet?	ต้องใช้อินเทอร์เน็ตไหม?
+How is the drive score calculated?	คะแนนการขับขี่คำนวณอย่างไร?
+Simplified: 100 points, minus 5 for every hard acceleration or hard braking. It differs from the stock app, which uses settings downloaded from BYD.	คำนวณแบบง่าย จาก 100 คะแนน หัก 5 คะแนนต่อการเร่งหรือเบรกแรงแต่ละครั้ง ต่างจากแอปเดิมที่ใช้การตั้งค่าจาก BYD
+What is the Vehicle data link?	การเชื่อมต่อข้อมูลรถคืออะไร?
+An optional setting (off by default). When on, the app starts a small helper through the car's network debugging so it can read BYD's own vehicle data: battery level, energy counter, odometer and ignition. Without it trips are recorded from GPS only.	ตัวเลือกที่ปิดไว้ตามค่าเริ่มต้น เมื่อเปิด แอปจะเริ่มตัวช่วยผ่านระบบดีบักเครือข่ายเพื่ออ่านข้อมูลรถ เช่น แบตเตอรี่ ตัวนับพลังงาน เลขไมล์ และสถานะการเปิดรถ หากปิดจะบันทึกด้วย GPS เท่านั้น
+Why does recording stop after a restart?	ทำไมการบันทึกหยุดหลังรีสตาร์ต?
+BYD blocks apps from starting by themselves. Open Setting > BYD auto-start apps and turn Trip Recorder NG OFF in 'Disable background Apps'. BYD switches it back on every time the app is installed or updated, so do this again after an update.	BYD บล็อกการเริ่มแอปอัตโนมัติ เปิดการตั้งค่า > แอปเริ่มอัตโนมัติของ BYD แล้วปิด Trip Recorder NG ใน Disable background Apps ต้องทำใหม่ทุกครั้งที่ติดตั้งหรืออัปเดต
+Where are my files?	ไฟล์อยู่ที่ไหน?
+Export CSV and GPX from My Trips or Setting. Files go to Documents/TripRecorderNG.	ส่งออก CSV และ GPX จากประวัติทริปหรือการตั้งค่า ไฟล์อยู่ใน Documents/TripRecorderNG
+Are my trips backed up?	มีการสำรองทริปหรือไม่?
+Yes, by default. Each finished trip is also saved as a small file in Documents/TripRecorderNG/backup, so the trips survive an uninstall or a cleared app. Setting > Restore from backup adds any missing trips back.	มีตามค่าเริ่มต้น ทริปที่เสร็จสิ้นจะบันทึกเป็นไฟล์ใน Documents/TripRecorderNG/backup เพื่อคงข้อมูลหลังถอนการติดตั้งหรือล้างแอป ใช้การตั้งค่า > กู้คืนจากข้อมูลสำรอง เพื่อเพิ่มทริปที่หายไป
+How is the cost calculated?	คำนวณค่าใช้จ่ายอย่างไร?
+The Thai edition defaults to THB and 4.50 per kWh (an editable example, not a tariff). Change the price in Setting > Energy prices. Trip cost is battery energy used times electricity price. Charging cost is energy added times electricity price. Charging losses are not included.	เวอร์ชันไทยใช้ THB และค่าไฟเริ่มต้น 4.50 บาท/kWh (ตัวอย่างที่แก้ไขได้ ไม่ใช่อัตราค่าไฟจริง) เปลี่ยนได้ในการตั้งค่า > ราคาพลังงาน ค่าเดินทางคือพลังงานจากแบตเตอรี่คูณค่าไฟ ค่าชาร์จคือพลังงานที่เพิ่มคูณค่าไฟ ไม่รวมการสูญเสียระหว่างชาร์จ
+Why does a hybrid trip show two consumption numbers?	ทำไมทริปไฮบริดแสดงอัตราสิ้นเปลืองสองค่า?
+The car's energy counter is net: it also goes down when the engine charges the battery, so one kWh/100km figure for a mixed trip is misleading. On a hybrid trip the app splits it by the car's own electric and hybrid kilometres. Electric: kWh per 100 km driven on electricity, with the energy the engine put into the battery added back. Hybrid: litres per 100 km driven with the engine running; it includes the fuel that charged the battery. Both are estimates; the totals (kWh, litres, cost) are exact, and Whole trip per 100 km is the plain total divided by the distance. In Statistics, Consumption is the car's net figure for every trip, Electric leaves out the trips that burned fuel, Fuel is the litres burned and Fuel economy is litres per 100 km of hybrid driving.	ตัวนับพลังงานสุทธิจะลดลงเมื่อเครื่องยนต์ชาร์จแบตเตอรี่ ตัวเลข kWh/100 กม. เพียงค่าเดียวจึงอาจทำให้เข้าใจผิด แอปแยกตามระยะทางไฟฟ้าและไฮบริดของรถ ไฟฟ้า: kWh ต่อ 100 กม. ที่ขับด้วยไฟฟ้า รวมพลังงานที่เครื่องยนต์ชาร์จกลับ ไฮบริด: ลิตรต่อ 100 กม. เมื่อเครื่องยนต์ทำงาน รวมเชื้อเพลิงที่ใช้ชาร์จแบตเตอรี่ ทั้งสองเป็นค่าประมาณ ส่วนยอดรวมมาจากตัวนับจริง สถิติแยกการสิ้นเปลืองสุทธิ การขับด้วยไฟฟ้า และอัตราสิ้นเปลืองน้ำมัน
+What are Driving advice, CO2 avoided and the driving level?	คำแนะนำการขับขี่ การลด CO2 และระดับการขับขี่คืออะไร?
+Driving advice on a trip is chosen by simple rules from a short list of tips (hard braking or acceleration, high average speed, high consumption, a long drive). CO2 avoided compares your trips with a typical petrol car (8 L per 100 km) minus the fuel you burned and an assumed 0.4 kg CO2 per kWh of grid electricity: it is an estimate. The driving level has 16 steps, based on the distance recorded here.	คำแนะนำมาจากกฎง่าย ๆ เช่น เบรกแรง เร่งแรง ความเร็วหรืออัตราสิ้นเปลืองสูง และขับนาน การลด CO2 เป็นค่าประมาณเทียบกับรถน้ำมัน 8 ลิตร/100 กม. หักน้ำมันที่ใช้และ 0.4 กก. CO2 ต่อ kWh ระดับการขับขี่มี 16 ขั้นตามระยะทางที่บันทึก
+What are Tweaks?	เครื่องมือเพิ่มเติมคืออะไร?
+Small changes to the car that need the shell user's rights, made through the car's network debugging, so they need the Vehicle data link. The first one turns mobile data roaming on (settings put global data_roaming 1). "Keep data roaming on" repeats it at start-up, whenever the helper starts, and within a minute if something switches roaming off.	การปรับค่ารถบางอย่างที่ต้องใช้สิทธิ์ Shell ผ่านระบบดีบักเครือข่าย จึงต้องเปิดการเชื่อมต่อข้อมูลรถ การเปิดโรมมิ่งข้อมูลจะใช้คำสั่ง settings put global data_roaming 1 และตัวเลือกเปิดตลอดเวลาจะตั้งซ้ำเมื่อเริ่มรถหรือเมื่อตรวจพบว่าปิด
+How are charging sessions recorded?	บันทึกประวัติการชาร์จอย่างไร?
+With Vehicle data link enabled, recorded charging energy is preferred. If it is unavailable, energy is estimated from battery percentage gained and the median measured on trips, or the nominal battery capacity in Setting (60 kWh initially). Sessions missed while the screen is asleep are marked Partial.	เมื่อเปิดการเชื่อมต่อข้อมูลรถ จะใช้ค่าพลังงานชาร์จจริงที่รถรายงานก่อน หากไม่มีจะประมาณจากเปอร์เซ็นต์แบตเตอรี่ที่เพิ่มคูณค่ามัธยฐานจากทริป หรือความจุแบตเตอรี่ในการตั้งค่า (เริ่มต้น 60 kWh) การชาร์จขณะหน้าจอพักจะระบุเป็นข้อมูลบางส่วน
+What do the colours and charts on a trip show?	สีและกราฟในทริปแสดงอะไร?
+The route is coloured by speed (green slow, red fast). Red and amber dots mark hard braking and hard acceleration. Under the map, pick Speed, Battery, Elevation or Efficiency and touch the chart to see that moment on the map. Battery, Efficiency and event dots are recorded for trips made after the update; older trips show speed and elevation only.	เส้นทางมีสีตามความเร็ว (เขียวช้า แดงเร็ว) จุดแดงและเหลืองแสดงเบรกและเร่งแรง เลือกความเร็ว แบตเตอรี่ ระดับความสูง หรือประสิทธิภาพ แล้วแตะกราฟเพื่อดูตำแหน่งในช่วงนั้น ทริปเก่าอาจมีเฉพาะความเร็วและระดับความสูง
+Turn on Vehicle data link?	เปิดการเชื่อมต่อข้อมูลรถหรือไม่?
+This adds battery, energy, odometer and ignition data to your trips.\n\nTo get them, Trip Recorder NG uses the car's own network debugging (ADB) on this head unit to start a small helper. Depending on the head unit, the car may ask you to allow debugging for this app (tick "Always allow" and tap Allow); on some units it is accepted automatically. After that the helper starts by itself each time the car boots.\n\nYou can switch it off here at any time (this stops the helper), and "Forget" deletes the app's key.	เพิ่มข้อมูลแบตเตอรี่ พลังงาน เลขไมล์ และสถานะการเปิดรถให้ทริปของคุณ\n\nแอปใช้ระบบดีบักเครือข่าย (ADB) ของหน้าจอรถเพื่อเริ่มตัวช่วย บางเครื่องอาจขออนุญาตดีบัก (เลือกอนุญาตเสมอ แล้วแตะอนุญาต) บางเครื่องยอมรับอัตโนมัติ หลังจากนั้นตัวช่วยจะเริ่มทุกครั้งที่รถเปิด\n\nปิดได้ทุกเมื่อเพื่อหยุดตัวช่วย และลืมกุญแจเพื่อลบกุญแจของแอป
+Currency	สกุลเงิน
+Electricity price per kWh	ค่าไฟต่อ kWh
+default %s	ค่าเริ่มต้น %s
+Fuel price per litre	ค่าน้ำมันต่อลิตร
+Electricity %1$s     Fuel %2$s	ไฟฟ้า %1$s     น้ำมัน %2$s
+Used to work out what each trip and each charge cost. Leave a price empty to use the default. The cost counts the energy taken from the battery, so charging losses are not included.	ใช้คำนวณค่าทริปและค่าชาร์จ เว้นว่างเพื่อใช้ค่าเริ่มต้น คิดจากพลังงานจากแบตเตอรี่ ไม่รวมการสูญเสียระหว่างชาร์จ
+Save	บันทึก
+Prices saved	บันทึกราคาแล้ว
+Everything is already backed up (%d files)	สำรองทั้งหมดแล้ว (%d ไฟล์)
+Backed up %1$d item(s) (%2$d files in %3$s)	สำรอง %1$d รายการ (%2$d ไฟล์ใน %3$s)
+Restore trips from backup?	กู้คืนทริปจากข้อมูลสำรองหรือไม่?
+Trips found in the backup folder that are not in the app yet will be added. Existing trips are not changed.	ทริปที่ยังไม่มีในแอปจะถูกเพิ่มโดยไม่แก้ไขทริปเดิม
+%1$d trip(s) and %2$d charging session(s) restored	กู้คืน %1$d ทริป และ %2$d การชาร์จแล้ว
+%d already in the app	มีอยู่แล้ว %d รายการ
+%d could not be read	อ่านไม่ได้ %d รายการ
+Delete this trip permanently?	ลบทริปนี้ถาวรหรือไม่?
+Saved %s	บันทึก %s แล้ว
+Export failed: %s	ส่งออกไม่สำเร็จ: %s
+OK	ตกลง
+Could not open settings	เปิดการตั้งค่าไม่ได้
+This trip has no GPS track	ทริปนี้ไม่มีเส้นทาง GPS
+Could not open Google Maps	เปิด Google Maps ไม่ได้
+Wi-Fi	Wi-Fi
+Network status unavailable	ไม่สามารถอ่านสถานะเครือข่าย
+Trip recording	การบันทึกทริป
+Starting...	กำลังเริ่ม...
+No vehicle data	ไม่มีข้อมูลรถ
+Connecting to the car's data...	กำลังเชื่อมต่อข้อมูลรถ...
+Waiting for ignition	รอเปิดรถ
+Waiting for movement	รอรถเคลื่อนที่
+Recording: %.1f km	กำลังบันทึก: %.1f กม.
+No GPS track for this trip	ทริปนี้ไม่มีเส้นทาง GPS
+130+ km/h	130+ กม./ชม.
+hard braking %d	เบรกแรง %d ครั้ง
+hard accel %d	เร่งแรง %d ครั้ง
+Speed	ความเร็ว
+Elevation	ระดับความสูง
+Efficiency	ประสิทธิภาพ
+No speed data	ไม่มีข้อมูลความเร็ว
+Battery along the route was not recorded for this trip (%1$s%% -> %2$s%%)	ไม่มีข้อมูลแบตเตอรี่ตามเส้นทางของทริปนี้ (%1$s%% -> %2$s%%)
+No battery data for this trip	ไม่มีข้อมูลแบตเตอรี่ของทริปนี้
+No altitude data for this trip	ไม่มีข้อมูลระดับความสูง
+Energy along the route was not recorded for this trip	ไม่มีข้อมูลพลังงานตามเส้นทางของทริปนี้
+Not enough distance in any speed band	ระยะทางในแต่ละช่วงความเร็วไม่เพียงพอ
+  -  whole trip %s	   -  ทั้งทริป %s
+kWh/100km by speed (km/h)	kWh/100 กม. ตามช่วงความเร็ว (กม./ชม.)
+Elevation (m)  -  climb %1$d m, descent %2$d m	ระดับความสูง (ม.) - ขึ้น %1$d ม. ลง %2$d ม.
+%d m	%d ม.
+On	เปิด
+Unknown	ไม่ทราบ
+failed at %1$s: %2$s	ล้มเหลวที่ %1$s: %2$s
+failed at %s	ล้มเหลวที่ %s
+%1$dh %2$dm	%1$d ชม. %2$d นาที
+%d min	%d นาที
+Updates	อัปเดต
+Check for updates	ตรวจสอบอัปเดต
+Update channel	ช่องทางอัปเดต
+Advanced	ขั้นสูง
+Options for experts: which builds the update check follows	ตัวเลือกสำหรับผู้เชี่ยวชาญ: เลือกรุ่นที่จะตรวจสอบ
+Hide	ซ่อน
+Show	แสดง
+Installed: %1$s%2$s   -   following: %3$s	ติดตั้ง: %1$s%2$s   -   ติดตาม: %3$s
+(not a release build)	 (ไม่ใช่รุ่นเผยแพร่)
+Dev: the newest builds, made for testing, may contain bugs	Dev: รุ่นใหม่สำหรับทดสอบ อาจมีข้อผิดพลาด
+Stable: tested builds (recommended)	Stable: รุ่นผ่านการทดสอบ (แนะนำ)
+Stable - tested builds (recommended)	Stable - รุ่นผ่านการทดสอบ (แนะนำ)
+Dev - the newest builds, for testing	Dev - รุ่นใหม่สำหรับทดสอบ
+Checking for updates...	กำลังตรวจสอบอัปเดต...
+Could not check for updates: %s	ตรวจสอบอัปเดตไม่ได้: %s
+No %s build has been published yet.	ยังไม่มีรุ่น %s เผยแพร่
+You have the latest %1$s build: %2$s.	คุณใช้รุ่น %1$s ล่าสุด: %2$s
+A newer %1$s build is available: %2$s%3$s.	มีรุ่น %1$s ใหม่: %2$s%3$s
+The latest %1$s build is %2$s%3$s, which is older than the installed build %4$s. Install it anyway?	รุ่น %1$s ล่าสุดคือ %2$s%3$s ซึ่งเก่ากว่ารุ่นที่ติดตั้ง %4$s ต้องการติดตั้งหรือไม่?
+Installed: %s	ติดตั้ง: %s
+This switches the app from %1$s to %2$s.	จะเปลี่ยนแอปจาก %1$s เป็น %2$s
+Dev builds are made for testing and may contain bugs. Going back to Stable later usually works but cannot be guaranteed if a dev build changed how trips are stored (your backup in Documents/TripRecorderNG stays safe).	รุ่น Dev ใช้ทดสอบและอาจมีข้อผิดพลาด การย้อนกลับ Stable มักทำได้ แต่ไม่รับประกันหากมีการเปลี่ยนโครงสร้างข้อมูล (ข้อมูลสำรองใน Documents/TripRecorderNG ยังอยู่)
+The app restarts during the update. BYD switches its auto-start setting back on at every install: afterwards turn Trip Recorder NG OFF in 'Disable background Apps' and restart the head unit once.	แอปจะรีสตาร์ตระหว่างอัปเดต BYD จะบล็อกการเริ่มอัตโนมัติทุกครั้งที่ติดตั้ง ให้ปิด Trip Recorder NG ใน Disable background Apps แล้วรีสตาร์ตหน้าจอรถหนึ่งครั้ง
+Update available	มีอัปเดต
+Install	ติดตั้ง
+Update only while the car is parked.	อัปเดตเฉพาะเมื่อรถจอด
+Installing needs the Vehicle data link: turn it on in Setting first. The app installs the update through the car's network debugging.	การติดตั้งต้องเปิดการเชื่อมต่อข้อมูลรถในหน้าการตั้งค่า แอปใช้ระบบดีบักเครือข่ายของรถติดตั้งอัปเดต
+Installing %s	กำลังติดตั้ง %s
+Downloading...	กำลังดาวน์โหลด...
+Downloading... %d%%	กำลังดาวน์โหลด... %d%%
+Checking the file...	กำลังตรวจสอบไฟล์...
+Installing... the app restarts in a moment.	กำลังติดตั้ง... แอปจะรีสตาร์ตในอีกสักครู่
+The update failed: %s	อัปเดตล้มเหลว: %s
+The update failed.	อัปเดตล้มเหลว
+The car's network debugging could not be reached. Check Setting > Vehicle data link.	เข้าถึงระบบดีบักเครือข่ายรถไม่ได้ ตรวจสอบการเชื่อมต่อข้อมูลรถในการตั้งค่า
+The car refused this app's debugging key. Turn the Vehicle data link off and on again.	รถปฏิเสธกุญแจดีบักของแอป ให้ปิดแล้วเปิดการเชื่อมต่อข้อมูลรถใหม่
+The car did not answer in time. If the app restarts by itself, the update worked.	รถไม่ตอบสนองทันเวลา หากแอปรีสตาร์ตเองแสดงว่าอัปเดตสำเร็จ
+The update did not finish.	อัปเดตไม่เสร็จ
+No. Everything is stored on this head unit. Nothing is uploaded. The only exception is Setting > Check for updates, which contacts GitHub, and only when you tap it.	ไม่ต้องใช้ ข้อมูลทั้งหมดเก็บบนหน้าจอรถ ไม่มีการอัปโหลด ยกเว้นตรวจสอบอัปเดตที่ติดต่อ GitHub เมื่อคุณแตะเท่านั้น
+Dev	Dev
+Stable	Stable
+GitHub's answer could not be read	อ่านคำตอบจาก GitHub ไม่ได้
+No internet connection (GitHub cannot be reached)	ไม่มีอินเทอร์เน็ต (เข้าถึง GitHub ไม่ได้)
+GitHub answered %s	GitHub ตอบกลับ %s
+The connection to GitHub failed	เชื่อมต่อ GitHub ล้มเหลว
+The download address is not from this project's releases	ที่อยู่ดาวน์โหลดไม่ใช่รุ่นเผยแพร่ของโปรเจกต์นี้
+No storage is available	ไม่มีพื้นที่จัดเก็บ
+The file is larger than expected	ไฟล์ใหญ่กว่าที่คาดไว้
+The download is incomplete	ดาวน์โหลดไม่สมบูรณ์
+The downloaded file is damaged (its checksum differs)	ไฟล์เสียหาย (Checksum ไม่ตรงกัน)
+The file could not be saved	บันทึกไฟล์ไม่ได้
+The file is not a valid app	ไฟล์ไม่ใช่แอปที่ถูกต้อง
+The file is a different app	ไฟล์เป็นแอปอื่น
+The file's signature could not be read	อ่านลายเซ็นไฟล์ไม่ได้
+The file is signed with a different key, so Android would not install it over this app	ไฟล์ลงนามด้วยกุญแจอื่น Android จึงไม่สามารถติดตั้งทับแอปนี้ได้
+The file could not be checked	ตรวจสอบไฟล์ไม่ได้
+You chose not to see this reminder again. It comes back every %d openings of the app while auto-start is still blocked.\n\n	คุณเลือกไม่แสดงข้อความเตือนนี้ จะเตือนทุก %d ครั้งที่เปิดแอปหากการเริ่มอัตโนมัติยังถูกบล็อก\n\n
+Show every time	แสดงทุกครั้ง
+Don't show again	ไม่แสดงอีก
+This reminder will show every time the app is opened.	ข้อความเตือนจะแสดงทุกครั้งที่เปิดแอป
+Understood. The reminder comes back after %d openings of the app.	รับทราบ จะเตือนอีกเมื่อเปิดแอปครบ %d ครั้ง
+Details are in the log file.	ดูรายละเอียดในไฟล์บันทึก
+Tap the map to open this trip in a map app	แตะแผนที่เพื่อเปิดทริปในแอปแผนที่
+Open track with	เปิดเส้นทางด้วย
+Could not open the track	เปิดเส้นทางไม่ได้
+Exact track (GPX)	เส้นทางจริง (GPX)
+Follows roads, not the exact track	ตามถนน ไม่ใช่เส้นทางจริง
+Other apps...	แอปอื่น...
+Apps that open GPX files	แอปที่เปิดไฟล์ GPX ได้
+No map app that opens GPX files is installed. OsmAnd is one.	ยังไม่มีแอปแผนที่ที่เปิด GPX ได้ เช่น OsmAnd
+The car did not move	รถไม่ได้เคลื่อนที่
+Connect to BYD cloud	เชื่อมต่อ BYD Cloud
+Connect now	เชื่อมต่อทันที
+AVAS (external EV sound)	AVAS (เสียงเตือนรถไฟฟ้าภายนอก)
+Turns the car's external EV sound (AVAS) off, the same switch as in the control center	ปิดเสียงเตือนรถไฟฟ้าภายนอก (AVAS) เป็นสวิตช์เดียวกับศูนย์ควบคุมรถ
+Turn off now	ปิดตอนนี้
+Keep AVAS off	ปิด AVAS ตลอดเวลา
+turned off at %s	ปิดเมื่อ %s
+already off at %s	ปิดอยู่แล้วเมื่อ %s
+not available on this car	รถรุ่นนี้ไม่รองรับ
+the car kept it on	รถยังคงเปิดไว้
+Modem reboot	รีสตาร์ตโมเด็ม
+Reboot now	รีสตาร์ตทันที
+Reboot the modem?	รีสตาร์ตโมเด็มหรือไม่?
+The car's mobile connection drops for about a minute while the modem restarts.	สัญญาณมือถือจะขาดหายประมาณหนึ่งนาทีขณะโมเด็มรีสตาร์ต
+Reboot	รีสตาร์ต
+refused by the phone service	บริการโทรศัพท์ปฏิเสธ
+Automatic reboot at %s: 	รีสตาร์ตอัตโนมัติเมื่อ %s: 
+LTE back after %d s	LTE กลับมาใน %d วินาที
+still not on LTE: reboot again	ยังไม่ได้ LTE: รีสตาร์ตอีกครั้ง
+Details	รายละเอียด
+Changes need the Vehicle data link turned on in	การเปลี่ยนแปลงต้องเปิดการเชื่อมต่อข้อมูลรถใน
+Re-applied at start-up and whenever the car switches it off.	ตั้งค่าใหม่เมื่อเริ่มรถหรือเมื่อรถปิดการตั้งค่านี้
+Links the car to BYD's server over any network, for the phone app.	เชื่อมต่อรถกับเซิร์ฟเวอร์ BYD ผ่านเครือข่ายที่ใช้งานได้ เพื่อให้แอปมือถือเข้าถึงรถ
+Request sent	ส่งคำขอแล้ว
+Turning off...	กำลังปิด...
+Turned off	ปิดแล้ว
+Turned off at every start-up and whenever the car is switched on.	ปิดทุกครั้งที่เริ่มระบบและเปิดรถ
+A full modem reboot using AT commands (AT+CFUN=1,1). The mobile connection drops for about a minute.	รีสตาร์ตโมเด็มด้วยคำสั่ง AT (AT+CFUN=1,1) สัญญาณมือถือจะขาดหายประมาณหนึ่งนาที
+Rebooting...	กำลังรีสตาร์ต...
+Rebooted	รีสตาร์ตแล้ว
+Reboot automatically	รีสตาร์ตอัตโนมัติ
+When the mobile connections APN2 and APN3 are both down and there is no signal.	เมื่อ APN2 และ APN3 ไม่เชื่อมต่อทั้งคู่และไม่มีสัญญาณ
+Connection	การเชื่อมต่อ
+Cellular	เครือข่ายมือถือ
+Roaming	โรมมิ่ง
+Apps use	แอปใช้เครือข่าย
+How changes are made	วิธีเปลี่ยนการตั้งค่า
+Changes go through the car's network debugging, so the Vehicle data link must be turned on in Setting.	การปรับใช้ระบบดีบักเครือข่ายของรถ จึงต้องเปิดการเชื่อมต่อข้อมูลรถในการตั้งค่า
+Applied at start-up, whenever the data link helper starts, and again within a minute if the car switches it off.	ตั้งค่าเมื่อเริ่มระบบ เมื่อตัวช่วยเริ่ม และภายในหนึ่งนาทีหากรถปิดการตั้งค่านี้
+Applied at start-up and whenever the ignition comes on, and checked again for 90 seconds, because the car can bring it back on shortly after it starts. At other times it is left alone.	ตั้งค่าเมื่อเริ่มระบบและเปิดรถ ตรวจซ้ำเป็นเวลา 90 วินาที เพราะรถอาจเปิดกลับเอง หลังจากนั้นไม่ปรับเปลี่ยน
+Restarts the modem with AT commands, as Engineer Mode's AT Command Tool does. The line under the button says how long LTE took to come back.	รีสตาร์ตโมเด็มด้วยคำสั่ง AT เช่นเครื่องมือใน Engineer Mode ข้อความใต้ปุ่มแสดงเวลาที่ LTE กลับมา
+Runs the reboot by itself when APN2 and APN3 have both been down and the modem has had no signal for about 2.5 minutes: at most 3 times in a row, 15 minutes apart.	รีสตาร์ตเองเมื่อ APN2 และ APN3 ขาดการเชื่อมต่อและไม่มีสัญญาณประมาณ 2.5 นาที ไม่เกิน 3 ครั้ง ห่างกันอย่างน้อย 15 นาที
+Commands	คำสั่ง
+Connected	เชื่อมต่อแล้ว
+Not connected	ไม่ได้เชื่อมต่อ
+Internet works	อินเทอร์เน็ตใช้งานได้
+No internet yet	ยังไม่มีอินเทอร์เน็ต
+Ethernet	Ethernet
+Other	อื่น ๆ
+Nothing	ไม่มี
+General	ทั่วไป
+Backup and export	สำรองข้อมูลและส่งออก
+The update was installed. If the app does not open by itself, open it again.	ติดตั้งอัปเดตแล้ว หากแอปไม่เปิดเอง ให้เปิดอีกครั้ง
+What's new	มีอะไรใหม่
+Mobile network	เครือข่ายมือถือ
+No signal	ไม่มีสัญญาณ
+SIM not ready	SIM ยังไม่พร้อม
+Disconnected	ตัดการเชื่อมต่อ
+Needs the Vehicle data link	ต้องเปิดการเชื่อมต่อข้อมูลรถ
+GPS	GPS
+Vehicle data	ข้อมูลรถ
+LIVE	สด
+Last trip	ทริปล่าสุด
+Your first drive will appear here	ทริปแรกของคุณจะแสดงที่นี่
+Average	เฉลี่ย
+Max	สูงสุด
+Energy	พลังงาน
+Behavior	พฤติกรรม
+kWh/100km	kWh/100 กม.
+Battery and energy need the Vehicle data link	ข้อมูลแบตเตอรี่และพลังงานต้องเปิดการเชื่อมต่อข้อมูลรถ
+Total	รวม
+Battery used	แบตเตอรี่ที่ใช้
+Lowest	ต่ำสุด
+Highest	สูงสุด
+Gained	เพิ่มขึ้น
+Level	ระดับ
+Most efficient	ประหยัดที่สุด
+Electric	ไฟฟ้า
+Best fuel economy	อัตราสิ้นเปลืองน้ำมันดีที่สุด
+Hybrid	ไฮบริด
+L/100km	ลิตร/100 กม.
+points	คะแนน
+recorded	บันทึกแล้ว
+Fuel economy	อัตราสิ้นเปลืองน้ำมัน
+Hybrid driving	ขับแบบไฮบริด
+CO2 avoided	CO2 ที่ลดได้
+Driving level	ระดับการขับขี่
+%1$d of %2$d	%1$d จาก %2$d
+Top level	ระดับสูงสุด
+%1$s km to level %2$d	อีก %1$s กม. ถึงระดับ %2$d
+Time	เวลา
+Per 100 km	ต่อ 100 กม.
+Fuel economy (L/100km, hybrid driving)	อัตราสิ้นเปลืองน้ำมัน (ลิตร/100 กม. ขับแบบไฮบริด)
+kWh per 100 km	kWh ต่อ 100 กม.
+Used	ใช้ไป
+Turn on Vehicle data link in Setting	เปิดการเชื่อมต่อข้อมูลรถในการตั้งค่า
+Touch to see it on the map	แตะเพื่อดูบนแผนที่
+Trip	ทริป
+Engine charging	ชาร์จจากเครื่องยนต์
+km	กม.
+L	ลิตร
+kg	กก.
+Consumption (kWh/100km)	อัตราสิ้นเปลือง (kWh/100 กม.)
+Electric consumption (kWh/100km, trips without fuel)	อัตราสิ้นเปลืองไฟฟ้า (kWh/100 กม. ทริปที่ไม่ใช้น้ำมัน)
+Fuel used (L)	น้ำมันที่ใช้ (ลิตร)
+Electricity only	เฉพาะไฟฟ้า
+Whole trip per 100 km	ทั้งทริปต่อ 100 กม.
+Why is a parked car not counted in kWh/100km and the drive time?	ทำไมเวลาจอดไม่นับใน kWh/100 กม. และเวลาขับขี่?
+A trip lasts while the ignition is on, so a car left parked with the air conditioning on, or with the cable in, stays in the same trip for hours. Standing still for 5 minutes or more counts as parked: the energy used then (shown as While parked in the trip details) and the time are left out of kWh/100km, the drive time and the longest drive. The totals, the battery used and the cost still include everything the trip used. Shorter stops, like traffic lights, are part of the drive. Trips recorded before this was added are worked out again from their saved samples; a trip with no saved samples keeps its whole figures.	ทริปจะดำเนินต่อขณะรถเปิด แม้จอดเปิดแอร์หรือเสียบสายชาร์จ หยุดนิ่ง 5 นาทีขึ้นไปจะนับเป็นการจอด โดยพลังงานและเวลาช่วงนั้นไม่รวมในอัตราสิ้นเปลือง เวลาขับ และทริปที่ขับนานที่สุด ยอดรวม แบตเตอรี่ที่ใช้ และค่าใช้จ่ายยังรวมทั้งหมด การหยุดสั้น ๆ เช่นไฟแดงนับเป็นการขับ ทริปเก่าจะคำนวณใหม่จากข้อมูลที่บันทึกไว้ หากไม่มีข้อมูลจะใช้ค่ารวมเดิม
+While parked	ขณะจอด
+kWh	kWh
+100km	100 กม.
+Blind-spot cameras	กล้องจุดบอด
+Shows the side camera in a window while a turn signal is on.	แสดงภาพกล้องด้านข้างขณะเปิดไฟเลี้ยว
+Needs permission	ต้องอนุญาตสิทธิ์
+The camera, and drawing over other apps, are given through the car's network debugging.	อนุญาตกล้องและการแสดงทับแอปอื่นผ่านระบบดีบักเครือข่ายรถ
+Picture	ภาพ
+On the instrument cluster	บนหน้าปัดคนขับ
+The left signal's picture goes to the cluster, the right one stays on this screen. In gear D it can cover part of the car's own Left Rear view. Needs the Vehicle data link.	ภาพไฟเลี้ยวซ้ายแสดงบนหน้าปัด ส่วนขวาแสดงบนจอนี้ ในเกียร์ D อาจบังส่วนหนึ่งของภาพด้านซ้ายเดิม ต้องเปิดการเชื่อมต่อข้อมูลรถ
+While a turn signal is on, the camera on that side is shown in a window next to the car's own blind-spot window, and stays a moment after the signal goes off. A tap on it closes it, and it can be dragged anywhere on the screen. The turn signal is read through the Vehicle data link. Side view is the car's own side view, rebuilt; Fisheye is the camera's picture as it comes, and in P it can be used whatever Picture says. On the cluster, the left signal's picture is shown there instead. With the speed range on, the pictures only show at speeds between the two knobs, except in P, where they always show.	ขณะเปิดไฟเลี้ยว จะแสดงภาพกล้องด้านนั้นข้างหน้าต่างจุดบอดเดิม และค้างชั่วครู่หลังปิดไฟเลี้ยว แตะเพื่อปิดและลากตำแหน่งได้ อ่านไฟเลี้ยวผ่านการเชื่อมต่อข้อมูลรถ ภาพด้านข้างคือภาพที่ปรับมุมแล้ว ส่วน Fisheye คือภาพดิบจากกล้อง ในเกียร์ P เลือก Fisheye ได้เสมอ บนหน้าปัดจะแสดงภาพฝั่งซ้าย เมื่อเปิดช่วงความเร็ว จะแสดงเฉพาะในช่วงที่กำหนด ยกเว้นเกียร์ P จะแสดงเสมอ
+Showing now	กำลังแสดง
+Ready	พร้อม
+Allowing...	กำลังอนุญาต...
+Side view	มุมด้านข้าง
+Fisheye	Fisheye
+Fisheye while parked	Fisheye ขณะจอด
+In P the picture is the fisheye, whatever the Picture is set to.	ในเกียร์ P จะแสดง Fisheye ไม่ว่าจะตั้งภาพแบบใด
+Not now	ไม่ใช่ตอนนี้
+You often accelerate hard. Pressing the pedal gently and steadily makes the drive smoother and safer.	คุณเร่งแรงบ่อย ค่อย ๆ เหยียบคันเร่งอย่างสม่ำเสมอเพื่อการขับขี่ที่นุ่มนวลและปลอดภัย
+Repeated hard acceleration wears parts faster and shortens the life of the car. Build up speed gradually.	การเร่งแรงซ้ำ ๆ ทำให้ชิ้นส่วนสึกหรอเร็วขึ้น ควรเพิ่มความเร็วทีละน้อย
+In busy traffic or at high speed, keep your speed in check and leave a generous gap to the car ahead.	ในการจราจรหนาแน่นหรือเมื่อขับเร็ว ควบคุมความเร็วและรักษาระยะห่างจากรถคันหน้า
+Braking hard again and again wears the tires and brakes and shakes the suspension and drivetrain. Keep your distance and ease off the pedal early.	การเบรกแรงบ่อยทำให้ยาง เบรก และช่วงล่างสึกหรอ ควรรักษาระยะห่างและผ่อนคันเร่งล่วงหน้า
+Driving fast raises the risk of a crash. Stay within the posted speed limits.	ความเร็วสูงเพิ่มความเสี่ยงอุบัติเหตุ ขับตามความเร็วที่กฎหมายกำหนด
+The faster you go, the narrower your view and the less time you have to react to something unexpected ahead. Keep your speed under control.	ยิ่งเร็ว มุมมองยิ่งแคบและมีเวลาตอบสนองน้อยลง ควบคุมความเร็วให้เหมาะสม
+To use less energy: service the car regularly, avoid rush hour where you can, carry less load and keep the tires at the right pressure.	เพื่อประหยัดพลังงาน ดูแลรถสม่ำเสมอ เลี่ยงรถติด ลดน้ำหนักบรรทุก และตรวจแรงดันลมยาง
+Steady driving at a moderate speed within the limit uses the least; going much faster or much slower costs more energy.	ขับด้วยความเร็วสม่ำเสมอในช่วงเหมาะสมและไม่เกินกำหนด ช่วยลดการใช้พลังงาน
+Plan breaks on long drives. If you feel tired, stop somewhere safe and rest; pushing on only adds to the tiredness and the risk of an accident.	วางแผนพักระหว่างขับทางไกล หากเหนื่อยให้จอดในที่ปลอดภัยเพื่อพัก อย่าฝืนขับ
+Great driving! Keep it up.	ขับได้ดีมาก! รักษามาตรฐานนี้ไว้
+Just starting out	เริ่มต้น
+Finding your way	เรียนรู้เส้นทาง
+Getting comfortable	เริ่มชำนาญ
+Confident	มั่นใจ
+Capable	คล่องแคล่ว
+Smooth operator	ขับขี่นุ่มนวล
+Experienced	มีประสบการณ์
+Seasoned	ช่ำชอง
+Road-wise	เชี่ยวชาญเส้นทาง
+Dependable	ไว้วางใจได้
+Expert	ผู้เชี่ยวชาญ
+Master	มืออาชีพ
+Virtuoso	ยอดฝีมือ
+Elite	ระดับแนวหน้า
+Grand master	ปรมาจารย์
+Legend of the road	ตำนานแห่งท้องถนน
+Show cameras only within a speed range	แสดงกล้องเฉพาะช่วงความเร็วที่กำหนด
+The pictures only show at speeds between the two knobs. In P they always show.	แสดงภาพเฉพาะระหว่างความเร็วที่กำหนด ในเกียร์ P จะแสดงเสมอ
+Any speed	ทุกความเร็ว
+Up to %d km/h	ไม่เกิน %d กม./ชม.
+%d km/h and above	%d กม./ชม. ขึ้นไป
+%1$d - %2$d km/h	%1$d - %2$d กม./ชม.
+Nominal battery capacity	ความจุแบตเตอรี่ที่กำหนด
+Enter the battery capacity in kWh (10 to 150). Used only to estimate charging energy when no measured data is available.	ระบุความจุแบตเตอรี่ 10–150 kWh ใช้ประมาณพลังงานชาร์จเฉพาะเมื่อไม่มีข้อมูลพลังงานจริง
+Invalid battery capacity	ความจุแบตเตอรี่ไม่ถูกต้อง

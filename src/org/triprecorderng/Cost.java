@@ -13,9 +13,9 @@ import java.util.Locale;
 final class Cost {
     private Cost() {}
 
-    /** Default prices (OMR) used until the user enters their own. */
-    static final double DEFAULT_ELEC_PRICE = 0.010;
-    static final double DEFAULT_FUEL_PRICE = 0.239;
+    /** Illustrative editable prices (THB) used until the user enters their own. */
+    static final double DEFAULT_ELEC_PRICE = 4.50;
+    static final double DEFAULT_FUEL_PRICE = 35.0;
 
     /** Always true now that default prices exist; kept so a cost display can still be switched off in one place. */
     static boolean enabled(Context c) {
@@ -46,6 +46,7 @@ final class Cost {
     }
 
     static double fuel(Trip t, Context c) {
+        if (Prefs.ATTO3_EDITION) return Double.NaN;
         double f = t.fuelUsed();
         return Double.isNaN(f) ? Double.NaN : f * fuelPrice(c);
     }

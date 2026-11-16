@@ -7,6 +7,20 @@ import android.content.SharedPreferences;
 final class Prefs {
     private Prefs() {}
 
+    // Thai edition targets battery-electric BYD Atto 3; keep the upstream hybrid data model intact.
+    static final boolean ATTO3_EDITION = true;
+    static final double DEFAULT_BATTERY_KWH = 60.0;
+
+    static double nominalBatteryKwh(Context c) {
+        return sp(c).getFloat("nominal_battery_kwh", (float) DEFAULT_BATTERY_KWH);
+    }
+
+    static boolean setNominalBatteryKwh(Context c, double kwh) {
+        if (Double.isNaN(kwh) || Double.isInfinite(kwh) || kwh < 10 || kwh > 150) return false;
+        sp(c).edit().putFloat("nominal_battery_kwh", (float) kwh).apply();
+        return true;
+    }
+
     /** True when this copy of the app runs in the main Android user (not BYD's secondary-display user). */
     static boolean isMainUser() {
         return android.os.Process.myUid() / 100000 == 0;
@@ -270,7 +284,7 @@ final class Prefs {
     }
 
     static String currency(Context c) {
-        return sp(c).getString("price_currency", "OMR");
+        return sp(c).getString("price_currency", "THB");
     }
 
     /** "stable", "dev", or "" when never chosen (then the update check follows the installed build's channel). */
@@ -314,6 +328,6 @@ final class Prefs {
     /** Empty text clears a price, which then falls back to the default. */
     static void setPrices(Context c, String elec, String fuel, String currency) {
         sp(c).edit().putString("price_elec", elec).putString("price_fuel", fuel)
-                .putString("price_currency", currency.isEmpty() ? "OMR" : currency).apply();
+                .putString("price_currency", currency.isEmpty() ? "THB" : currency).apply();
     }
 }

@@ -645,6 +645,7 @@ final class ThisTripPage {
         TextView[] fuel = item(row, Kit.IconView.PUMP, Kit.AMBER, 1f);
         fuelValue = fuel[0];
         fuelPer100 = fuel[1];
+        if (Prefs.ATTO3_EDITION) row.getChildAt(row.getChildCount() - 1).setVisibility(View.GONE);
         costValue = item(row, Kit.IconView.COIN, Kit.MUTED, 0.8f)[0];
         return row;
     }

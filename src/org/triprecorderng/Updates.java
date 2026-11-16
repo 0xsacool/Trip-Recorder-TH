@@ -46,7 +46,7 @@ final class Updates {
     static final String STABLE = "stable";
     static final String DEV = "dev";
 
-    private static final String REPO = "3freet/Trip-Recorder-NG";
+    private static final String REPO = "0xsacool/Trip-Recorder-TH";
     private static final String API_URL = "https://api.github.com/repos/" + REPO + "/releases?per_page=50";
     private static final String DOWNLOAD_PREFIX = "https://github.com/" + REPO + "/releases/download/";
     private static final int MAX_JSON_BYTES = 2 << 20;

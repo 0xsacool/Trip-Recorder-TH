@@ -176,7 +176,8 @@ final class SettingsPage {
                     }
                 });
         Kit.Row prices = action(L.t("Energy prices"),
-                L.f("Electricity %1$s, fuel %2$s",
+                Prefs.ATTO3_EDITION ? L.per(Ui.f(Cost.elecPrice(c), "%.2f") + " " + Prefs.currency(c), L.t("kWh"))
+                        + (Cost.elecIsDefault(c) ? L.t(" (default)") : "") : L.f("Electricity %1$s, fuel %2$s",
                         L.per(Ui.f(Cost.elecPrice(c), "%.4f") + " " + Prefs.currency(c), L.t("kWh"))
                                 + (Cost.elecIsDefault(c) ? L.t(" (default)") : ""),
                         L.per(Ui.f(Cost.fuelPrice(c), "%.3f") + " " + Prefs.currency(c), L.t("L"))
@@ -185,6 +186,10 @@ final class SettingsPage {
                     @Override public void onClick(View v) {
                         host.showPriceDialog();
                     }
+                });
+        Kit.Row battery = action(L.t("Nominal battery capacity"), Ui.f(Prefs.nominalBatteryKwh(c), "%.2f") + " kWh", L.t("Set"), false,
+                new View.OnClickListener() {
+                    @Override public void onClick(View v) { showBatteryDialog(); }
                 });
         final Kit.Row channel = action(L.t("Update channel"), host.channelDescription(), L.t("Change"), false,
                 new View.OnClickListener() {
@@ -204,7 +209,24 @@ final class SettingsPage {
             }
         });
         host.bindUpdateViews(updates.desc, channel.desc);
-        section(into, L.t("General"), language, updates, prices, advanced, channel);
+        section(into, L.t("General"), language, updates, prices, battery, advanced, channel);
+    }
+
+    private void showBatteryDialog() {
+        final android.widget.EditText input = new android.widget.EditText(c);
+        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        input.setText(Ui.f(Prefs.nominalBatteryKwh(c), "%.2f"));
+        Ui.show(new android.app.AlertDialog.Builder(c)
+                .setTitle(L.t("Nominal battery capacity"))
+                .setMessage(L.t("Enter the battery capacity in kWh (10 to 150). Used only to estimate charging energy when no measured data is available."))
+                .setView(input)
+                .setPositiveButton(L.t("Save"), (dialog, which) -> {
+                    try {
+                        if (!Prefs.setNominalBatteryKwh(c, Double.parseDouble(input.getText().toString()))) throw new IllegalArgumentException();
+                        host.rebuildSoon();
+                    } catch (IllegalArgumentException ex) { host.toast(L.t("Invalid battery capacity")); }
+                })
+                .setNegativeButton(L.t("Cancel"), null));
     }
 
     private void recordingSection(LinearLayout into) {

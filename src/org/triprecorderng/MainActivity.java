@@ -822,8 +822,8 @@ public class MainActivity extends Activity {
     }
 
     private void showLanguageDialog() {
-        final String[] values = {L.AUTO, L.EN, L.AR, L.RU};
-        String[] labels = {L.t("Automatic (follows the head unit)"), languageLabel(L.EN), languageLabel(L.AR), languageLabel(L.RU)};
+        final String[] values = {L.AUTO, L.TH, L.EN, L.AR, L.RU};
+        String[] labels = {L.t("Automatic (follows the head unit)"), languageLabel(L.TH), languageLabel(L.EN), languageLabel(L.AR), languageLabel(L.RU)};
         Ui.show(new AlertDialog.Builder(this)
                 .setTitle(L.t("Language"))
                 .setItems(labels, new android.content.DialogInterface.OnClickListener() {
@@ -1138,20 +1138,29 @@ public class MainActivity extends Activity {
         final TextView summary = Ui.text(this, "", 16, Ui.GREEN);
         summary.setPadding(0, Ui.dp(this, 4), 0, 0);
         box.addView(summary);
-        final EditText cur = priceField(box, L.t("Currency"), "OMR", Prefs.currency(this), false);
+        final EditText cur = priceField(box, L.t("Currency"), "THB", Prefs.currency(this), false);
         final EditText elec = priceField(box, L.t("Electricity price per kWh"),
                 L.f("default %s", trimNumber(Cost.DEFAULT_ELEC_PRICE)),
                 Double.isNaN(ep) ? "" : trimNumber(ep), true);
+        final int fuelLabelIndex = box.getChildCount();
         final EditText fuel = priceField(box, L.t("Fuel price per litre"),
                 L.f("default %s", trimNumber(Cost.DEFAULT_FUEL_PRICE)),
                 Double.isNaN(fp) ? "" : trimNumber(fp), true);
+        if (Prefs.ATTO3_EDITION) {
+            box.getChildAt(fuelLabelIndex).setVisibility(View.GONE);
+            fuel.setVisibility(View.GONE);
+        }
         android.text.TextWatcher watcher = new android.text.TextWatcher() {
             @Override public void beforeTextChanged(CharSequence c, int a, int b, int d) { }
             @Override public void onTextChanged(CharSequence c, int a, int b, int d) { }
             @Override public void afterTextChanged(android.text.Editable e) {
                 String code = cur.getText().toString().trim();
-                if (code.isEmpty()) code = "OMR";
+                if (code.isEmpty()) code = "THB";
                 String el = cleanPrice(elec.getText().toString()), fu = cleanPrice(fuel.getText().toString());
+                if (Prefs.ATTO3_EDITION) {
+                    summary.setText(L.t("Electricity price per kWh") + ": " + (el.isEmpty() ? trimNumber(Cost.DEFAULT_ELEC_PRICE) : el) + " " + code);
+                    return;
+                }
                 summary.setText(L.f("Electricity %1$s     Fuel %2$s",
                         L.per((el.isEmpty() ? trimNumber(Cost.DEFAULT_ELEC_PRICE) : el) + " " + code, L.t("kWh"))
                                 + (el.isEmpty() ? L.t(" (default)") : ""),

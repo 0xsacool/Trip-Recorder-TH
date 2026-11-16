@@ -86,7 +86,11 @@ final class StatisticsPage {
         col.addView(head, new LinearLayout.LayoutParams(-1, dp(60)));
 
         LinearLayout kinds = k.segmented();
-        for (int m : ORDER) kinds.addView(k.segment(name(m), metric == m, choose(m, monthly)));
+        if (Prefs.ATTO3_EDITION && (metric == Stats.FUEL || metric == Stats.ECONOMY || metric == Stats.ELECTRIC)) metric = Stats.CONSUMPTION;
+        for (int m : ORDER) {
+            if (Prefs.ATTO3_EDITION && (m == Stats.FUEL || m == Stats.ECONOMY || m == Stats.ELECTRIC)) continue;
+            kinds.addView(k.segment(name(m), metric == m, choose(m, monthly)));
+        }
         LinearLayout.LayoutParams klp = new LinearLayout.LayoutParams(-2, -2);
         klp.topMargin = dp(4);
         col.addView(kinds, klp);

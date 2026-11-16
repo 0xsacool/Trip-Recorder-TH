@@ -38,18 +38,21 @@ final class Stats {
      * was recorded are neither electric-only nor hybrid.
      */
     static boolean electricOnly(Trip t) {
+        if (Prefs.ATTO3_EDITION) return !Double.isNaN(t.energyUsed());
         double f = t.fuelUsed();
         return !Double.isNaN(f) && (f < TripEnergy.FUEL_EPS || t.hevKm() < 1);
     }
 
     /** The engine drove the car a good part of the way: its consumption is shown as electric and hybrid apart. */
     static boolean hybridDriving(Trip t) {
+        if (Prefs.ATTO3_EDITION) return false;
         double f = t.fuelUsed();
         return !Double.isNaN(f) && f >= TripEnergy.FUEL_EPS && t.hevKm() >= TripEnergy.MIN_MODE_KM;
     }
 
     /** The trip burned fuel. */
     static boolean burnedFuel(Trip t) {
+        if (Prefs.ATTO3_EDITION) return false;
         double f = t.fuelUsed();
         return !Double.isNaN(f) && f >= TripEnergy.FUEL_EPS;
     }
@@ -221,7 +224,7 @@ final class Stats {
     static Co2 co2Avoided(List<Trip> trips) {
         Co2 r = new Co2();
         for (Trip t : trips) {
-            double fuel = t.fuelUsed(), energy = t.energyUsed();
+            double fuel = Prefs.ATTO3_EDITION ? 0 : t.fuelUsed(), energy = t.energyUsed();
             if (Double.isNaN(fuel) || Double.isNaN(energy) || t.distanceKm < 0.5) continue;
             r.kg += t.distanceKm * PETROL_KG_PER_KM - (fuel * FUEL_KG_PER_LITRE + energy * GRID_KG_PER_KWH);
             r.trips++;

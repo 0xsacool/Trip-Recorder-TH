@@ -119,7 +119,7 @@ final class TripDetailPage {
             amount.setSingleLine(true);
             amount.setGravity(Gravity.END);
             costBox.addView(amount);
-            TextView what = k.t(Double.isNaN(t.fuelUsed()) ? L.t("Electricity only") : L.t("Trip cost"), Kit.CAPTION,
+            TextView what = k.t((Prefs.ATTO3_EDITION || Double.isNaN(t.fuelUsed())) ? L.t("Electricity only") : L.t("Trip cost"), Kit.CAPTION,
                     Kit.MUTED, Kit.REGULAR);
             what.setSingleLine(true);
             what.setGravity(Gravity.END);
@@ -150,7 +150,7 @@ final class TripDetailPage {
         r2.addView(tile(Kit.numUnit(L.f("%s kWh", Ui.f(t.energyUsed(), "%.1f")), 18f / 26f),
                 L.t("Battery") + ", " + Ui.f(t.socStart, "%.0f") + " " + L.arrow() + " " + Ui.f(t.socEnd, "%.0f") + "%"),
                 new LinearLayout.LayoutParams(0, -2, 1f));
-        if (!Double.isNaN(t.fuelUsed())) {
+        if (!Prefs.ATTO3_EDITION && !Double.isNaN(t.fuelUsed())) {
             r2.addView(tile(Kit.numUnit(L.f("%s L", Ui.f(t.fuelUsed(), "%.1f")), 18f / 26f), L.t("Fuel used")), spaced());
         } else {
             r2.addView(tile(Ui.duration((long) t.idleSec), L.t("Idle time")), spaced());
@@ -163,13 +163,13 @@ final class TripDetailPage {
         LinearLayout more = k.column();
         more.setPadding(0, dp(8), 0, 0);
         addFact(more, L.t("Time above 100 km/h"), overView);
-        if (!Double.isNaN(t.fuelUsed())) addFact(more, L.t("Idle time"), Ui.duration((long) t.idleSec));
+        if (!Prefs.ATTO3_EDITION && !Double.isNaN(t.fuelUsed())) addFact(more, L.t("Idle time"), Ui.duration((long) t.idleSec));
         addFact(more, L.t("Hard accel / braking"), t.hardAccel + " / " + t.hardBrake);
         addFact(more, L.t("Odometer change"), L.f("%s km", Ui.f(t.odometerDeltaKm(), "%.1f")));
         addFact(more, L.t("Distance measured by"),
                 !Double.isNaN(t.journeyAcc) && t.journeyAcc >= JourneyTracker.TRUST_KM
                         ? L.t("car trip counter") : L.t("speed"));
-        if (!Stats.hybridDriving(t) && !Double.isNaN(t.evKm()) && !Double.isNaN(t.hevKm())) {
+        if (!Prefs.ATTO3_EDITION && !Stats.hybridDriving(t) && !Double.isNaN(t.evKm()) && !Double.isNaN(t.hevKm())) {
             addFact(more, L.t("Electric / hybrid distance"),
                     L.f("%1$s km / %2$s km", Ui.f(t.evKm(), "%.0f"), Ui.f(t.hevKm(), "%.0f")));
         }

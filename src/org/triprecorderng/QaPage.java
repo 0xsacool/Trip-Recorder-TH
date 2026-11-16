@@ -56,12 +56,7 @@ final class QaPage {
                                 + "Documents/TripRecorderNG/backup, so the trips survive an uninstall or a "
                                 + "cleared app. Setting > Restore from backup adds any missing trips back.")},
                 {L.t("How is the cost calculated?"),
-                        L.t("Prices start at 0.010 OMR per kWh and 0.239 OMR per litre. Change them in Setting > "
-                                + "Energy prices (leave a price empty to go back to the default). A trip costs the energy it took from the battery times the electricity "
-                                + "price, plus the fuel it burned times the fuel price. This car is a plug-in "
-                                + "hybrid, so fuel is recorded with each trip made since the update (older trips "
-                                + "only get the electricity part). A charging session costs the energy it added "
-                                + "times the electricity price. Charging losses are not included.")},
+                        L.t("The Thai edition defaults to THB and 4.50 per kWh (an editable example, not a tariff). Change the price in Setting > Energy prices. Trip cost is battery energy used times electricity price. Charging cost is energy added times electricity price. Charging losses are not included.")},
                 {L.t("Why does a hybrid trip show two consumption numbers?"),
                         L.t("The car's energy counter is net: it also goes down when the engine charges the "
                                 + "battery, so one kWh/100km figure for a mixed trip is misleading. On a hybrid trip "
@@ -97,16 +92,7 @@ final class QaPage {
                                 + "roaming on\" repeats it at start-up, whenever the helper starts, and within a "
                                 + "minute if something switches roaming off.")},
                 {L.t("How are charging sessions recorded?"),
-                        L.t("With the Vehicle data link on, the app reads the car's charging state. A session "
-                                + "starts when the car begins charging and ends a minute after it stops. It "
-                                + "stores the battery level along the way. This car does not report charging "
-                                + "power or energy, so the kWh added is an estimate: the battery percentage "
-                                + "gained times the kWh per percent measured on your own trips. The head "
-                                + "unit sleeps when the car is off and the app cannot record while it sleeps: "
-                                + "a session it only saw part of is marked Partial, and the final battery "
-                                + "level is read as soon as the unit wakes. If the whole charge happened "
-                                + "while it slept, the app compares the battery level with the last one it "
-                                + "saw and records the rise as a Partial session.")},
+                        L.t("With Vehicle data link enabled, recorded charging energy is preferred. If it is unavailable, energy is estimated from battery percentage gained and the median measured on trips, or the nominal battery capacity in Setting (60 kWh initially). Sessions missed while the screen is asleep are marked Partial.")},
                 {L.t("What do the colours and charts on a trip show?"),
                         L.t("The route is coloured by speed (green slow, red fast). Red and amber dots mark "
                                 + "hard braking and hard acceleration. Under the map, pick Speed, Battery, "
@@ -118,6 +104,7 @@ final class QaPage {
         int leftLen = 0;
         int rightLen = 0;
         for (String[] q : qa) {
+            if (Prefs.ATTO3_EDITION && q[0].equals(L.t("Why does a hybrid trip show two consumption numbers?"))) continue;
             LinearLayout card = k.card();
             card.setPaddingRelative(k.d(16), k.d(14), k.d(16), k.d(14));
             TextView h = k.label(q[0], 15.5f, Kit.TEXT, Kit.BOLD);

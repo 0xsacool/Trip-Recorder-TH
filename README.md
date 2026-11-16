@@ -1,3 +1,7 @@
+# Trip Recorder TH — Thai Atto 3 edition
+
+[คู่มือภาษาไทย / Thai edition](README.th.md). This fork targets BEVs, defaults to Thai and THB, and has user-configurable nominal battery capacity. It is a test build; vehicle data compatibility has not been verified on an actual Atto 3. The original project documentation follows.
+
 **English** | [العربية](README.ar.md) | [Русский](README.ru.md)
 
 # Trip Recorder NG

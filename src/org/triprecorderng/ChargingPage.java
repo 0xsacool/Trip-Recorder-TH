@@ -63,7 +63,8 @@ final class ChargingPage {
         this.c = c;
         this.host = host;
         this.k = new Kit(c, 1f);
-        this.kwhPerPct = Charge.kwhPerPercent(host.trips());
+        double learned = Charge.kwhPerPercent(host.trips());
+        this.kwhPerPct = Double.isNaN(learned) && Prefs.ATTO3_EDITION ? Prefs.nominalBatteryKwh(c) / 100.0 : learned;
     }
 
     private int dp(float v) {
