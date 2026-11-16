@@ -419,7 +419,7 @@ public class MainActivity extends Activity {
         setContentView(root);
     }
 
-    /** The GT-R theme uses a horizontal bottom navigation bar; Classic keeps its original rail.
+    /** Sport themes use a horizontal bottom navigation bar; Classic keeps its original rail.
      * Re-layout on returning from Settings so switching themes is immediate. */
     private void updateNavigationLayout() {
         boolean bottom = Prefs.sportTheme(this);
@@ -469,6 +469,8 @@ public class MainActivity extends Activity {
     /** Full-screen pages (settings, Q&A, trip details) hide the menu like the stock app does. */
     private void setChrome(boolean fullScreenPage) {
         updateNavigationLayout();
+        navView.setBackgroundColor(bottomNav ? (Prefs.grTheme(this) ? 0xFF0D0D0D : 0xFF141B22)
+                : android.graphics.Color.TRANSPARENT);
         int vis = fullScreenPage ? View.GONE : View.VISIBLE;
         ((LinearLayout.LayoutParams) content.getLayoutParams()).leftMargin =
                 fullScreenPage ? Ui.dp(this, 24) : bottomNav ? Ui.dp(this, 12) : 0;
@@ -506,7 +508,15 @@ public class MainActivity extends Activity {
         for (int i = 0; i < tabViews.length; i++) {
             boolean sel = i == index;
             LinearLayout t = tabViews[i];
-            if (sel && Prefs.typeRTheme(this)) {
+            if (sel && Prefs.grTheme(this)) {
+                android.graphics.drawable.Drawable[] layers = {
+                    new android.graphics.drawable.ColorDrawable(0xFF181818),
+                    new android.graphics.drawable.ColorDrawable(0xFFF01829)
+                };
+                android.graphics.drawable.LayerDrawable selected = new android.graphics.drawable.LayerDrawable(layers);
+                selected.setLayerInset(1, Ui.dp(this, 8), Ui.dp(this, 52), Ui.dp(this, 8), 0);
+                t.setBackground(selected);
+            } else if (sel && Prefs.typeRTheme(this)) {
                 GradientDrawable selected = new GradientDrawable();
                 selected.setColor(0xFF2C1115);
                 selected.setStroke(Ui.dp(this, 1), 0xFFD92235);

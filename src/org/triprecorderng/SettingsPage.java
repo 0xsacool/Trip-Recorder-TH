@@ -173,8 +173,8 @@ final class SettingsPage {
         Kit.Row theme = action(L.t("Dashboard theme"),
                 Prefs.themeName(c), L.t("Change"), false, new View.OnClickListener() {
                     @Override public void onClick(View v) {
-                        final String[] keys = {Prefs.THEME_CLASSIC, Prefs.THEME_GTR, Prefs.THEME_TYPE_R};
-                        String[] choices = {L.t("Classic"), "GT-R Performance", "Type R Edition"};
+                        final String[] keys = {Prefs.THEME_CLASSIC, Prefs.THEME_GTR, Prefs.THEME_TYPE_R, Prefs.THEME_GR};
+                        String[] choices = {L.t("Classic"), "GT-R Performance", "Type R Edition", "GR Motorsport Edition"};
                         String current = Prefs.dashboardTheme(c);
                         int selected = 0;
                         for (int i = 0; i < keys.length; i++) if (keys[i].equals(current)) selected = i;

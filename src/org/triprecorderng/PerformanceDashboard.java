@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Optional GT-R and Type R inspired dashboards; consume the same read-only snapshots as ThisTripPage.
+ * Optional GT-R, Type R and GR inspired dashboards; consume the same read-only snapshots as ThisTripPage.
  * No vehicle commands. Power and thermal values are read-only, never simulated.
  */
 final class PerformanceDashboard extends View {
@@ -24,7 +24,7 @@ final class PerformanceDashboard extends View {
     private final Typeface normal = Typeface.create("sans-serif", Typeface.NORMAL);
     private final Typeface bold = Typeface.create("sans-serif-condensed", Typeface.BOLD);
     private final Context c;
-    private final boolean typeR;
+    private final boolean typeR, gr;
     private final Typeface italic = Typeface.create("sans-serif-condensed", Typeface.BOLD_ITALIC);
     private final ThisTripPage.Host host;
     private final double[] history = new double[SAMPLES];
@@ -51,9 +51,10 @@ final class PerformanceDashboard extends View {
         super(c);
         this.c = c;
         this.typeR = Prefs.typeRTheme(c);
+        this.gr = Prefs.grTheme(c);
         this.host = host;
         Arrays.fill(history, Double.NaN);
-        setBackgroundColor(typeR ? 0xFF08090B : 0xFF090D11);
+        setBackgroundColor(gr ? 0xFF080808 : typeR ? 0xFF08090B : 0xFF090D11);
         setFocusable(true);
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
         setOnClickListener(new OnClickListener() {
@@ -124,7 +125,7 @@ final class PerformanceDashboard extends View {
             }
             lastSample = live.telemetryWall;
         }
-        setContentDescription((typeR ? "Type R Edition. " : "GT-R Performance. ") + status + ". " + source + ". "
+        setContentDescription((gr ? "GR Motorsport Edition. " : typeR ? "Type R Edition. " : "GT-R Performance. ") + status + ". " + source + ". "
                 + L.t("Speed") + " " + number(speed, "%.0f") + " km/h. "
                 + L.t("Battery") + " " + number(soc, "%.0f") + "%. "
                 + "Cell temperature min/max " + number(minTemp, "%.0f") + "/"
@@ -142,6 +143,11 @@ final class PerformanceDashboard extends View {
         canvas.save();
         canvas.translate((getWidth() - 1000f * scale) / 2f, (getHeight() - 470f * scale) / 2f);
         canvas.scale(scale, scale);
+        if (gr) {
+            drawGR(canvas);
+            canvas.restore();
+            return;
+        }
         if (typeR) {
             drawTypeR(canvas);
             canvas.restore();
@@ -258,6 +264,131 @@ final class PerformanceDashboard extends View {
         typeRMetric(cv, 710, 409, 451, 272, L.t("Cost"), money, 35);
         fill(cv, 338, 396, 340, 451, TYPE_R_LINE);
         fill(cv, 695, 396, 697, 451, TYPE_R_LINE);
+    }
+
+
+    private static final int GR_RED = 0xFFF01829;
+    private static final int GR_BLUE = 0xFF29A7EF;
+    private static final int GR_BG = 0xFF080808;
+    private static final int GR_PANEL = 0xFF151515;
+    private static final int GR_LINE = 0xFF777C80;
+    private static final int GR_DIM = 0xFF35373A;
+
+    /** Rally-inspired layout, with a signed traction-power arc and live EV data only. */
+    private void drawGR(Canvas cv) {
+        fill(cv, 0, 0, 1000, 470, GR_BG);
+        fill(cv, 0, 0, 1000, 57, 0xFF101010);
+        slant(cv, 12, 7, 68, 31, INK);
+        slant(cv, 39, 7, 68, 31, GR_RED);
+        sportText(cv, "G", 28, 26, 20, GR_BG, Paint.Align.CENTER, 23);
+        sportText(cv, "R", 52, 26, 20, INK, Paint.Align.CENTER, 23);
+        sportText(cv, "MOTORSPORT EDITION", 78, 29, 23, INK, Paint.Align.LEFT, 280);
+        slant(cv, 398, 0, 454, 36, INK);
+        slant(cv, 453, 0, 509, 36, GR_RED);
+        text(cv, source, 16, 49, 14, MUTED, false, Paint.Align.LEFT, 670);
+        text(cv, status, 984, 25, 19, statusColor, true, Paint.Align.RIGHT, 300);
+        text(cv, tripLabel, 984, 47, 15, MUTED, false, Paint.Align.RIGHT, 255);
+        fill(cv, 0, 57, 1000, 59, GR_RED);
+
+        // Geometric side panels, deliberately clear of the central gauge.
+        grPolygon(cv, new float[]{16,82, 278,82, 242,329, 16,329}, GR_PANEL);
+        grPolygon(cv, new float[]{758,82, 984,82, 984,329, 722,329}, GR_PANEL);
+        slant(cv, 14, 83, 25, 130, GR_RED);
+        slant(cv, 973, 83, 985, 130, GR_RED);
+
+        text(cv, L.t("Battery") + " / SOC", 31, 114, 17, INK, true, Paint.Align.LEFT, 225);
+        sportText(cv, number(soc, "%.0f") + "%", 31, 172, 58, INK, Paint.Align.LEFT, 220);
+        fill(cv, 31, 185, 242, 199, GR_DIM);
+        if (valid(soc)) fill(cv, 31, 185, 31 + (float)soc * 2.11f, 199,
+                soc < 15 ? GR_RED : soc < 30 ? 0xFFFFB44D : 0xFF55D66A);
+        fill(cv, 31, 219, 241, 220, GR_LINE);
+        text(cv, L.t("Remaining range"), 31, 250, 17, MUTED, false, Paint.Align.LEFT, 205);
+        sportText(cv, number(range, "%.0f") + " km", 31, 303, 43, INK, Paint.Align.LEFT, 205);
+
+        text(cv, "BATTERY TEMP", 763, 113, 16, INK, true, Paint.Align.LEFT, 203);
+        text(cv, "MIN", 763, 145, 15, MUTED, true, Paint.Align.LEFT, 65);
+        sportText(cv, number(minTemp, "%.0f") + " °C", 966, 151, 32, INK, Paint.Align.RIGHT, 138);
+        text(cv, "MAX", 763, 186, 15, MUTED, true, Paint.Align.LEFT, 65);
+        sportText(cv, number(maxTemp, "%.0f") + " °C", 966, 192, 32, INK, Paint.Align.RIGHT, 138);
+        fill(cv, 750, 218, 966, 219, GR_LINE);
+        text(cv, "CELL VOLTAGE MIN / MAX", 750, 247, 14, MUTED, true, Paint.Align.LEFT, 216);
+        sportText(cv, number(minCell, "%.3f") + " / " + number(maxCell, "%.3f") + " V",
+                966, 285, 28, INK, Paint.Align.RIGHT, 220);
+        text(cv, "CHARGING VOLTAGE " + number(chargeVoltage, "%.0f") + " V", 966, 312,
+                13, MUTED, false, Paint.Align.RIGHT, 225);
+
+        // Each half of this single arc has its own scale: -100 kW regeneration, +200 kW drive.
+        // Values are never synthesized; out-of-range values saturate the arc but retain their true reading.
+        grPowerArc(cv);
+        text(cv, "POWER", 500, 180, 16, MUTED, true, Paint.Align.CENTER, 200);
+        sportText(cv, number(motorPower, "%.0f") + " kW", 500, 219, 38, INK, Paint.Align.CENTER, 240);
+        fill(cv, 411, 230, 589, 231, GR_LINE);
+        sportText(cv, number(speed, "%.0f"), 500, 306, 92, INK, Paint.Align.CENTER, 220);
+        text(cv, "km/h", 500, 329, 17, MUTED, true, Paint.Align.CENTER, 170);
+        fill(cv, 354, 337, 646, 339, GR_RED);
+
+        // Five live trip cells in a single bottom strip, as in the approved GR concept.
+        grPolygon(cv, new float[]{29,354, 984,354, 971,448, 16,448}, GR_PANEL);
+        grMetric(cv, 35, 214, L.t("Trip"), number(distance, "%.1f") + " km");
+        grMetric(cv, 214, 395, L.t("Time"), elapsed);
+        grMetric(cv, 395, 575, L.t("Energy"), number(energy, "%.1f") + " kWh");
+        grMetric(cv, 575, 789, L.t("Average consumption"), number(average, "%.1f") + " kWh/100 km");
+        grMetric(cv, 789, 965, L.t("Cost"), money);
+    }
+
+    private void grPowerArc(Canvas cv) {
+        float cx = 500, cy = 313, radius = 204;
+        RectF arc = new RectF(cx-radius, cy-radius, cx+radius, cy+radius);
+        p.setStyle(Paint.Style.STROKE); p.setStrokeCap(Paint.Cap.BUTT);
+        p.setStrokeWidth(2); p.setColor(GR_LINE);
+        RectF outer = new RectF(cx-radius-18, cy-radius-18, cx+radius+18, cy+radius+18);
+        cv.drawArc(outer, 180, 180, false, p);
+        double drive = valid(motorPower) ? Math.min(1.0, Math.max(0, motorPower / 200.0)) : 0;
+        double regen = valid(motorPower) ? Math.min(1.0, Math.max(0, -motorPower / 100.0)) : 0;
+        p.setStrokeWidth(26);
+        for (int i = 0; i < 10; i++) {
+            float a = 270 + i * 9f + 1;
+            float b = 270 - (i+1)*9f + 1;
+            p.setColor(GR_DIM);
+            cv.drawArc(arc, a, 7, false, p);
+            cv.drawArc(arc, b, 7, false, p);
+            float d = (float)Math.max(0, Math.min(1, drive*10-i));
+            float r = (float)Math.max(0, Math.min(1, regen*10-i));
+            if (d > 0) { p.setColor(GR_RED); cv.drawArc(arc, a, 7*d, false, p); }
+            if (r > 0) { p.setColor(GR_BLUE); cv.drawArc(arc, b+7*(1-r), 7*r, false, p); }
+        }
+        if (valid(motorPower)) {
+            double pos = motorPower < 0 ? -regen : drive;
+            double a = Math.toRadians(270 + 90*pos);
+            float co = (float)Math.cos(a), si = (float)Math.sin(a);
+            p.setColor(INK); p.setStrokeWidth(3);
+            cv.drawLine(cx+co*(radius-20), cy+si*(radius-20),
+                    cx+co*(radius+17), cy+si*(radius+17), p);
+        }
+        p.setStyle(Paint.Style.FILL);
+        text(cv, "0", 500, 85, 16, INK, true, Paint.Align.CENTER, 40);
+        text(cv, "-100", 283, 332, 15, GR_BLUE, true, Paint.Align.CENTER, 58);
+        text(cv, "+200", 717, 332, 15, GR_RED, true, Paint.Align.CENTER, 58);
+        text(cv, "REGEN", 316, 349, 12, GR_BLUE, true, Paint.Align.CENTER, 82);
+        text(cv, "DRIVE", 684, 349, 12, GR_RED, true, Paint.Align.CENTER, 82);
+    }
+
+    private void grPolygon(Canvas cv, float[] xy, int color) {
+        Path path = new Path();
+        path.moveTo(xy[0], xy[1]);
+        for (int i = 2; i < xy.length; i += 2) path.lineTo(xy[i], xy[i+1]);
+        path.close();
+        p.setStyle(Paint.Style.FILL); p.setColor(color); cv.drawPath(path, p);
+        p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(1.5f); p.setColor(GR_LINE);
+        cv.drawPath(path, p);
+        p.setStyle(Paint.Style.FILL);
+    }
+
+    private void grMetric(Canvas cv, float left, float right, String label, String value) {
+        float x = (left+right)/2;
+        text(cv, label, x, 380, 15, MUTED, true, Paint.Align.CENTER, right-left-14);
+        sportText(cv, value, x, 426, 31, INK, Paint.Align.CENTER, right-left-14);
+        if (right < 965) fill(cv, right-1, 366, right, 437, GR_LINE);
     }
 
     private void typeRMetric(Canvas cv, float left, float labelY, float valueY, float maxWidth,

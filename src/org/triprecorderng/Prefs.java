@@ -34,23 +34,25 @@ final class Prefs {
     static final String THEME_CLASSIC = "classic";
     static final String THEME_GTR = "gtr";
     static final String THEME_TYPE_R = "type_r";
+    static final String THEME_GR = "gr_motorsport";
 
     static String dashboardTheme(Context c) {
         SharedPreferences p = sp(c);
         String value = p.getString("dashboard_theme", "");
-        if (THEME_CLASSIC.equals(value) || THEME_GTR.equals(value) || THEME_TYPE_R.equals(value))
+        if (THEME_CLASSIC.equals(value) || THEME_GTR.equals(value) || THEME_TYPE_R.equals(value) || THEME_GR.equals(value))
             return value;
         return p.getBoolean("performance_theme_gtr", false) ? THEME_GTR : THEME_CLASSIC;
     }
 
     static void setDashboardTheme(Context c, String value) {
-        if (!THEME_CLASSIC.equals(value) && !THEME_GTR.equals(value) && !THEME_TYPE_R.equals(value)) return;
+        if (!THEME_CLASSIC.equals(value) && !THEME_GTR.equals(value) && !THEME_TYPE_R.equals(value) && !THEME_GR.equals(value)) return;
         sp(c).edit().putString("dashboard_theme", value)
                 .putBoolean("performance_theme_gtr", THEME_GTR.equals(value)).apply();
     }
 
     static String themeName(Context c) {
         String theme = dashboardTheme(c);
+        if (THEME_GR.equals(theme)) return "GR Motorsport Edition";
         if (THEME_TYPE_R.equals(theme)) return "Type R Edition";
         if (THEME_GTR.equals(theme)) return "GT-R Performance";
         return L.t("Classic");
@@ -62,6 +64,10 @@ final class Prefs {
 
     static boolean typeRTheme(Context c) {
         return THEME_TYPE_R.equals(dashboardTheme(c));
+    }
+
+    static boolean grTheme(Context c) {
+        return THEME_GR.equals(dashboardTheme(c));
     }
 
     static boolean sportTheme(Context c) {
