@@ -58,6 +58,8 @@ public class MainActivity extends Activity {
 
     private FrameLayout content;
     private View navView;
+    private TextView menuToggle;
+    private final DashboardMenu dashboardMenu = new DashboardMenu();
     private LinearLayout shellBody;
     private boolean bottomNav;
     private boolean xtremeNav;
@@ -144,6 +146,7 @@ public class MainActivity extends Activity {
         super.onResume();
         resumed = true;
         updateDashboardVisibility();
+        refreshDashboardMenu(true);
         ui.post(ticker);
         ui.postDelayed(linkCheck, 1500);
         ui.postDelayed(autoUpdateCheck, 3000);
@@ -153,6 +156,7 @@ public class MainActivity extends Activity {
         super.onPause();
         resumed = false;
         updateDashboardVisibility();
+        ui.removeCallbacks(autoHideMenu);
         ui.removeCallbacks(ticker);
         ui.removeCallbacks(linkCheck);
         ui.removeCallbacks(autoUpdateCheck);
@@ -213,6 +217,52 @@ public class MainActivity extends Activity {
 
     private void updateDashboardVisibility() {
         RecorderService.dashboardVisible = resumed && overlay == null && tab == TAB_THIS;
+    }
+
+    private final Runnable autoHideMenu = () -> {
+        if (dashboardMenu.schedule(resumed, tab == TAB_THIS, overlay != null)) {
+            dashboardMenu.hideAutomatically();
+            applyDashboardMenu();
+        }
+    };
+
+    private void restartMenuTimer() {
+        ui.removeCallbacks(autoHideMenu);
+        if (dashboardMenu.schedule(resumed, tab == TAB_THIS, overlay != null))
+            ui.postDelayed(autoHideMenu, DashboardMenu.AUTO_HIDE_MS);
+    }
+
+    private void refreshDashboardMenu(boolean entering) {
+        dashboardMenu.configure(Prefs.dashboardMenuMode(this));
+        if (entering && tab == TAB_THIS && overlay == null) dashboardMenu.enterDashboard();
+        applyDashboardMenu();
+        restartMenuTimer();
+    }
+
+    private void applyDashboardMenu() {
+        if (navView == null || menuToggle == null || content == null) return;
+        boolean dashboard = tab == TAB_THIS, fullScreen = overlay != null;
+        boolean visible = dashboardMenu.showNavigation(dashboard, fullScreen);
+        navView.setVisibility(visible ? View.VISIBLE : View.GONE);
+        menuToggle.setVisibility(dashboardMenu.showToggle(dashboard, fullScreen) ? View.VISIBLE : View.GONE);
+        // The control remains in the title bar even when the menu is collapsed.
+        menuToggle.setText(bottomNav ? (visible ? "▾" : "▴") : (visible ? "◂" : "▸"));
+        menuToggle.setContentDescription(visible ? L.t("Hide menu") : L.t("Show menu"));
+        LinearLayout.LayoutParams margins = (LinearLayout.LayoutParams) content.getLayoutParams();
+        int left = fullScreen ? Ui.dp(this, 24) : bottomNav ? Ui.dp(this, xtremeNav ? 4 : 12)
+                : visible ? 0 : Ui.dp(this, 24);
+        if (margins.leftMargin != left) {
+            margins.leftMargin = left;
+            content.requestLayout();
+        }
+    }
+
+    @Override public boolean dispatchTouchEvent(android.view.MotionEvent ev) {
+        // Count every ordinary interaction as activity, without intercepting touches or changing the trip recorder.
+        if (ev.getActionMasked() == android.view.MotionEvent.ACTION_DOWN
+                || ev.getActionMasked() == android.view.MotionEvent.ACTION_UP)
+            restartMenuTimer();
+        return super.dispatchTouchEvent(ev);
     }
 
     @Override public void onBackPressed() {
@@ -276,6 +326,16 @@ public class MainActivity extends Activity {
         titleView.setPadding(Ui.dp(this, 12), 0, 0, 0);
         titleView.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START); // the title bar stays left to right
         bar.addView(titleView, new LinearLayout.LayoutParams(0, -2, 1f));
+        menuToggle = Ui.text(this, "▾", 28, Ui.TEXT_VALUE);
+        menuToggle.setGravity(Gravity.CENTER);
+        menuToggle.setFocusable(true);
+        menuToggle.setVisibility(View.GONE);
+        menuToggle.setOnClickListener(v -> {
+            dashboardMenu.toggle();
+            applyDashboardMenu();
+            restartMenuTimer();
+        });
+        bar.addView(menuToggle, new LinearLayout.LayoutParams(Ui.dp(this, 48), Ui.dp(this, 48)));
         qaButton = barButton(GlyphView.HELP, L.t("Driving Behavior Q&A"), new View.OnClickListener() {
             @Override public void onClick(View v) {
                 showOverlay("qa");
@@ -431,10 +491,7 @@ public class MainActivity extends Activity {
         navView.setBackgroundColor(bottomNav ? (xtremeNav ? 0xFF08090A : Prefs.grTheme(this) ? 0xFF0D0D0D : Prefs.newThemeAccent(this) != 0 ? 0xFF10151B : 0xFF141B22)
                 : android.graphics.Color.TRANSPARENT);
         int vis = fullScreenPage ? View.GONE : View.VISIBLE;
-        ((LinearLayout.LayoutParams) content.getLayoutParams()).leftMargin =
-                fullScreenPage ? Ui.dp(this, 24) : bottomNav ? Ui.dp(this, xtremeNav ? 4 : 12) : 0;
-        content.requestLayout();
-        navView.setVisibility(vis);
+        refreshDashboardMenu(true);
         qaButton.setVisibility(vis);
         settingButton.setVisibility(vis);
         refreshUpdateButton();
@@ -1581,4 +1638,5 @@ public class MainActivity extends Activity {
         }
     }
 }
+
 

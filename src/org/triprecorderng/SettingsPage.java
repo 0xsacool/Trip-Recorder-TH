@@ -199,6 +199,16 @@ final class SettingsPage {
                                     host.rebuildSoon();
                                 })
                         .setNegativeButton(L.t("Cancel"), null).show());
+        String[] menuChoices = {L.t("Always Show"), L.t("Tap to Hide"), L.t("Auto Hide (5 seconds)")};
+        Kit.Row menu = action(L.t("Dashboard menu"), menuChoices[Prefs.dashboardMenuMode(c)],
+                L.t("Change"), false, v -> new AlertDialog.Builder(c)
+                        .setTitle(L.t("Dashboard menu"))
+                        .setSingleChoiceItems(menuChoices, Prefs.dashboardMenuMode(c), (dialog, which) -> {
+                            Prefs.setDashboardMenuMode(c, which);
+                            dialog.dismiss();
+                            host.rebuildSoon();
+                        })
+                        .setNegativeButton(L.t("Cancel"), null).show());
         Kit.Row updates = action(L.t("Updates"), host.updateText(), L.t("Update"), true,
                 new View.OnClickListener() {
                     @Override public void onClick(View v) {
@@ -251,7 +261,7 @@ final class SettingsPage {
             }
         });
         host.bindUpdateViews(updates.desc, channel.desc);
-        section(into, L.t("General"), language, theme, refreshMode, updates, prices, battery, range, epa, advanced, channel);
+        section(into, L.t("General"), language, theme, refreshMode, menu, updates, prices, battery, range, epa, advanced, channel);
     }
 
     private void showEpaDialog() {
@@ -410,4 +420,5 @@ final class SettingsPage {
         reconnectRow.setVisible(linkOn);
     }
 }
+
 

@@ -513,6 +513,12 @@ Invalid range	ระยะทางไม่ถูกต้อง
 Invalid battery capacity	ความจุแบตเตอรี่ไม่ถูกต้อง
 Dashboard theme	ธีมหน้าปัด
 Dashboard refresh mode	โหมดการอัปเดตหน้าปัด
+Dashboard menu	การแสดงเมนูหน้าปัด
+Always Show	แสดงตลอดเวลา
+Tap to Hide	แตะเพื่อซ่อนหรือแสดง
+Auto Hide (5 seconds)	ซ่อนอัตโนมัติ (5 วินาที)
+Hide menu	ซ่อนเมนู
+Show menu	แสดงเมนู
 Eco Mode (1,000 ms)	Eco Mode (1 วินาที)
 Performance Mode (250 ms)	Performance Mode (0.25 วินาที)
 Classic	คลาสสิก
@@ -521,3 +527,4 @@ Average consumption	อัตราสิ้นเปลืองเฉลี่
 Speed history	กราฟความเร็ว
 Waiting for vehicle data	รอข้อมูลรถ
 Auto-start not verified. Check EV TripLog in 'Disable background Apps' and restart the head unit.	ยังยืนยันการเริ่มอัตโนมัติไม่ได้ ตรวจสอบ EV TripLog ใน Disable background Apps และรีสตาร์ตหน้าจอรถ
+

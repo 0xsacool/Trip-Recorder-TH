@@ -19,6 +19,14 @@ final class Prefs {
         sp(c).edit().putBoolean("dashboard_performance_refresh", value).apply();
     }
 
+    static int dashboardMenuMode(Context c) {
+        return DashboardMenu.normalize(sp(c).getInt("dashboard_menu_mode", DashboardMenu.ALWAYS));
+    }
+
+    static void setDashboardMenuMode(Context c, int mode) {
+        sp(c).edit().putInt("dashboard_menu_mode", DashboardMenu.normalize(mode)).apply();
+    }
+
     static boolean dynamicRange(Context c) { return sp(c).getBoolean("range_dynamic", false); }
 
     static void setDynamicRange(Context c, boolean value) {
@@ -439,5 +447,6 @@ final class Prefs {
                 .putString("price_currency", currency.isEmpty() ? "THB" : currency).apply();
     }
 }
+
 
 

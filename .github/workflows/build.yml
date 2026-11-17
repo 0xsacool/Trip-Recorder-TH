@@ -59,6 +59,12 @@ jobs:
           javac -d "$RUNNER_TEMP/refresh-test" src/org/triprecorderng/DashboardRefresh.java tools/DashboardRefreshTest.java
           java -cp "$RUNNER_TEMP/refresh-test" org.triprecorderng.DashboardRefreshTest
 
+      - name: Test dashboard menu policy
+        run: |
+          mkdir -p "$RUNNER_TEMP/menu-test"
+          javac -d "$RUNNER_TEMP/menu-test" src/org/triprecorderng/DashboardMenu.java tools/DashboardMenuTest.java
+          java -cp "$RUNNER_TEMP/menu-test" org.triprecorderng.DashboardMenuTest
+
       - name: Test updater signer verification
         run: |
           mkdir -p "$RUNNER_TEMP/signer-test"
@@ -154,4 +160,5 @@ jobs:
           gh release create "$VERSION" dist/*.apk --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
             --title "EV TripLog v1.0.0 (${VERSION})" "${KIND[@]}" --generate-notes \
             --notes-file notes.md
+
 
