@@ -147,6 +147,11 @@ final class PerformanceDashboard extends View {
         canvas.save();
         canvas.translate((getWidth() - 1000f * scale) / 2f, (getHeight() - 470f * scale) / 2f);
         canvas.scale(scale, scale);
+        if (Prefs.THEME_U9_XTREME.equals(theme)) {
+            drawU9Xtreme(canvas);
+            canvas.restore();
+            return;
+        }
         if (Prefs.THEME_N.equals(theme) || Prefs.THEME_RS.equals(theme) || Prefs.THEME_TAYCAN.equals(theme)) {
             if (Prefs.THEME_N.equals(theme)) drawN(canvas);
             else if (Prefs.THEME_RS.equals(theme)) drawRS(canvas);
@@ -199,6 +204,102 @@ final class PerformanceDashboard extends View {
         cell(canvas, 510, 685, L.t("Cost"), money);
         graph(canvas, 709, 386, 983, 459);
         canvas.restore();
+    }
+
+    private static final int U9_ORANGE = 0xFFFF8536, U9_REGEN = 0xFF43D9EC;
+    private static final int U9_PANEL = 0xFF171A1E, U9_BORDER = 0xFF3B4045;
+
+    /** Hypercar-inspired theme, not a vehicle model/profile or a driving-mode control. */
+    private void drawU9Xtreme(Canvas cv) {
+        fill(cv, 0, 0, 1000, 470, 0xFF080A0C);
+        // A restrained carbon-style diagonal header, with a distinct racing-orange accent.
+        fill(cv, 0, 0, 1000, 58, 0xFF121518);
+        for (int i = 0; i < 12; i++) slant(cv, 390+i*14, 2, 400+i*14, 30, 0xFF202428);
+        slant(cv, 12, 7, 24, 31, U9_ORANGE);
+        slant(cv, 26, 7, 38, 31, U9_ORANGE);
+        sportText(cv, "YANGWANG U9 XTREME EDITION", 47, 28, 25, INK, Paint.Align.LEFT, 340);
+        text(cv, source, 18, 48, 15, MUTED, false, Paint.Align.LEFT, 650);
+        text(cv, status, 982, 25, 19, statusColor, true, Paint.Align.RIGHT, 300);
+        text(cv, tripLabel, 982, 47, 15, MUTED, false, Paint.Align.RIGHT, 260);
+        fill(cv, 0, 57, 1000, 60, U9_ORANGE);
+
+        // Keep the two signed-power directions visible at the same time. Scale grows
+        // when a car exceeds the nominal display range; the number is never clamped.
+        boolean measured = valid(motorPower);
+        double driveMax = measured ? Math.max(200, Math.ceil(Math.max(0, motorPower)/100)*100) : 200;
+        double regenMax = measured ? Math.max(100, Math.ceil(Math.max(0, -motorPower)/50)*50) : 100;
+        double drive = measured ? Math.max(0, motorPower)/driveMax : 0;
+        double regen = measured ? Math.max(0, -motorPower)/regenMax : 0;
+        text(cv, "REGEN", 20, 82, 16, U9_REGEN, true, Paint.Align.LEFT, 180);
+        text(cv, "DRIVE POWER", 980, 82, 16, U9_ORANGE, true, Paint.Align.RIGHT, 180);
+        sportText(cv, number(motorPower, "%.0f") + " kW", 500, 95, 32, INK, Paint.Align.CENTER, 240);
+        u9PowerHalf(cv, 20, 497, 105, 135, regen, U9_REGEN, true);
+        u9PowerHalf(cv, 503, 980, 105, 135, drive, U9_ORANGE, false);
+        fill(cv, 498, 103, 502, 138, INK);
+        text(cv, "-" + number(regenMax, "%.0f") + " kW", 20, 153, 13, MUTED, false, Paint.Align.LEFT, 150);
+        text(cv, "0", 500, 153, 13, MUTED, false, Paint.Align.CENTER, 50);
+        text(cv, "+" + number(driveMax, "%.0f") + " kW", 980, 153, 13, MUTED, false, Paint.Align.RIGHT, 150);
+
+        sportPanel(cv, new float[]{18,170, 280,170, 302,199, 273,344, 18,344}, U9_PANEL, U9_BORDER);
+        sportPanel(cv, new float[]{720,170, 982,170, 982,344, 727,344, 698,199}, U9_PANEL, U9_BORDER);
+        sportPanel(cv, new float[]{333,170, 667,170, 703,219, 662,344, 338,344, 297,219},
+                0xFF101317, U9_ORANGE);
+        fill(cv, 18, 171, 93, 174, U9_ORANGE);
+        fill(cv, 907, 171, 982, 174, U9_ORANGE);
+
+        metric(cv, 34, 195, 235, L.t("Battery") + " / SOC", number(soc, "%.0f") + "%", 40);
+        fill(cv, 34, 244, 248, 252, U9_BORDER);
+        if (valid(soc)) fill(cv, 34, 244, 34 + (float)soc*2.14f, 252, batteryAccent(U9_ORANGE));
+        thinLine(cv, 34, 265, 260, U9_BORDER);
+        text(cv, L.t("Remaining range"), 34, 286, 16, MUTED, false, Paint.Align.LEFT, 228);
+        sportText(cv, number(range, "%.0f") + " km", 34, 326, 37, INK, Paint.Align.LEFT, 228);
+
+        text(cv, L.t("Speed"), 500, 195, 17, MUTED, true, Paint.Align.CENTER, 260);
+        sportText(cv, number(speed, "%.0f"), 500, 289, 112, INK, Paint.Align.CENTER, 300);
+        text(cv, "km/h", 500, 317, 22, MUTED, false, Paint.Align.CENTER, 190);
+        fill(cv, 399, 331, 601, 334, U9_ORANGE);
+
+        metric(cv, 742, 191, 224, "BATTERY TEMP MIN / MAX", tempReading(), 25);
+        thinLine(cv, 740, 233, 963, U9_BORDER);
+        metric(cv, 742, 252, 224, "CELL VOLTAGE MIN / MAX", cellReading(), 24);
+        thinLine(cv, 740, 293, 963, U9_BORDER);
+        text(cv, "CHARGING VOLTAGE", 742, 312, 13, MUTED, false, Paint.Align.LEFT, 224);
+        text(cv, number(chargeVoltage, "%.0f") + " V", 963, 334, 22, INK, true, Paint.Align.RIGHT, 200);
+
+        // Same trip source and estimated-energy notation as all the other themes.
+        sportPanel(cv, new float[]{18,360, 982,360, 982,453, 18,453}, U9_PANEL, U9_BORDER);
+        fill(cv, 18, 360, 982, 363, U9_ORANGE);
+        u9TripCell(cv, 18, 200, L.t("Trip"), number(distance, "%.1f") + " km");
+        u9TripCell(cv, 200, 372, L.t("Time"), elapsed);
+        u9TripCell(cv, 372, 554, L.t("Energy"), energyNumber(energy) + " kWh");
+        u9TripCell(cv, 554, 782, L.t("Average consumption"), energyNumber(average) + " kWh/100 km");
+        u9TripCell(cv, 782, 982, L.t("Cost"), money);
+    }
+
+    private void u9PowerHalf(Canvas cv, float left, float right, float top, float bottom,
+                             double fraction, int color, boolean reverse) {
+        final int count = 12;
+        float pitch = (right-left)/count;
+        for (int i = 0; i < count; i++) {
+            float x = left + (reverse ? count-1-i : i)*pitch;
+            float end = x + pitch - 3;
+            slant(cv, x, top, end, bottom, U9_BORDER);
+            float part = (float)Math.max(0, Math.min(1, fraction*count-i));
+            if (part > 0) {
+                cv.save();
+                float width = (end-x)*part;
+                cv.clipRect(reverse ? end-width : x, top, reverse ? end : x+width, bottom);
+                slant(cv, x, top, end, bottom, color);
+                cv.restore();
+            }
+        }
+    }
+
+    private void u9TripCell(Canvas cv, float left, float right, String label, String value) {
+        float center = (left+right)/2;
+        text(cv, label, center, 388, 15, MUTED, false, Paint.Align.CENTER, right-left-16);
+        sportText(cv, value, center, 433, 32, INK, Paint.Align.CENTER, right-left-16);
+        if (right < 982) fill(cv, right-1, 375, right, 442, U9_BORDER);
     }
 
     private static final int N_BLUE = 0xFF42A9FF, N_RED = 0xFFF4525E;
