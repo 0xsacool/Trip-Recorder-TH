@@ -41,6 +41,12 @@ jobs:
       - name: Check translations
         run: python3 tools/check_translations.py
 
+      - name: Test trip energy fallback
+        run: |
+          mkdir -p "$RUNNER_TEMP/energy-test"
+          javac -d "$RUNNER_TEMP/energy-test" src/org/triprecorderng/Trip.java tools/TripEnergyFallbackTest.java
+          java -cp "$RUNNER_TEMP/energy-test" org.triprecorderng.TripEnergyFallbackTest
+
       - name: Build
         id: build
         env:
@@ -129,3 +135,4 @@ jobs:
           gh release create "$VERSION" dist/*.apk --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
             --title "EV TripLog v1.0.0 (${VERSION})" "${KIND[@]}" --generate-notes \
             --notes-file notes.md
+

@@ -170,7 +170,7 @@ final class TripChartsPanel extends LinearLayout {
         bars.set(vals, TripAnalysis.BAND_NAMES, Kit.ACCENT);
         bars.setVisibility(VISIBLE);
         String overall = trip != null && !Double.isNaN(trip.energyPer100Km())
-                ? L.f("  -  whole trip %s", Ui.f(trip.energyPer100Km(), "%.1f")) : "";
+                ? L.f("  -  whole trip %s", trip.energyText(trip.energyPer100Km(), "%.1f")) : "";
         readout.setText(L.t("kWh/100km by speed (km/h)") + overall);
     }
 
@@ -214,3 +214,4 @@ final class TripChartsPanel extends LinearLayout {
         readout.setText(sb.toString());
     }
 }
+

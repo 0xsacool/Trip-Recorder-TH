@@ -104,7 +104,7 @@ final class MyTripsPage {
             head.addView(stat(Kit.IconView.ROUTE, Kit.ACCENT,
                     L.f("%1$d trips, %2$s km", trips.size(), String.format(Locale.US, "%,.0f", km))));
             if (anyCost) {
-                View s = stat(Kit.IconView.COIN, Kit.MUTED, Cost.money(c, cost));
+                View s = stat(Kit.IconView.COIN, Kit.MUTED, (Trip.anyEstimated(trips) ? "≈" : "") + Cost.money(c, cost));
                 LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
                 lp.setMarginStart(dp(22));
                 head.addView(s, lp);
@@ -249,7 +249,7 @@ final class MyTripsPage {
         }
         String sum = (day.trips.size() == 1 ? L.f("%s km", Ui.f(km, "%.1f"))
                 : L.f("%1$d trips, %2$s km", day.trips.size(), Ui.f(km, "%.0f")))
-                + (anyCost ? L.sep() + Cost.money(c, cost) : "");
+                + (anyCost ? L.sep() + (Trip.anyEstimated(day.trips) ? "≈" : "") + Cost.money(c, cost) : "");
 
         LinearLayout outer = new LinearLayout(c);
         outer.setPadding(0, 0, 0, dp(12));
@@ -326,11 +326,11 @@ final class MyTripsPage {
         double lit = Stats.burnedFuel(t) ? t.fuelPer100Km() : Double.NaN;
         if (Double.isNaN(lit)) {
             row.addView(figure(Double.isNaN(kwh) ? "--"
-                    : Kit.numUnit(Ui.f(kwh, "%.1f") + " " + L.t("kWh"), unit), W_PER100));
+                    : Kit.numUnit(t.energyText(kwh, "%.1f") + " " + L.t("kWh"), unit), W_PER100));
         } else {
             LinearLayout two = k.column();
             TextView a = k.t("", Kit.BODY, Kit.TEXT, Kit.BOLD);
-            a.setText(Double.isNaN(kwh) ? "--" : Kit.numUnit(Ui.f(kwh, "%.1f") + " " + L.t("kWh"), Kit.CAPTION / Kit.BODY));
+            a.setText(Double.isNaN(kwh) ? "--" : Kit.numUnit(t.energyText(kwh, "%.1f") + " " + L.t("kWh"), Kit.CAPTION / Kit.BODY));
             a.setSingleLine(true);
             TextView b = k.t("", Kit.BODY, Kit.TEXT, Kit.BOLD);
             b.setText(Kit.numUnit(L.f("%s L", Ui.f(lit, "%.1f")), Kit.CAPTION / Kit.BODY));
@@ -344,7 +344,7 @@ final class MyTripsPage {
         row.addView(figure(Double.isNaN(used) ? "--" : Kit.numUnit(Ui.f(used, "%.0f") + "%", unit), W_BATTERY));
         double cost = Cost.total(t, c);
         TextView costView = k.t("", Kit.TITLE, Kit.TEXT, Kit.BOLD);
-        costView.setText(Double.isNaN(cost) ? "--" : Kit.numUnit(Cost.money(c, cost), unit));
+        costView.setText(Double.isNaN(cost) ? "--" : Kit.numUnit(t.energyLabel(Cost.money(c, cost)), unit));
         costView.setSingleLine(true);
         row.addView(costView, new LinearLayout.LayoutParams(0, -2, 1f));
         row.addView(new Kit.IconView(c, Kit.IconView.CHEVRON, Kit.MUTED), new LinearLayout.LayoutParams(dp(W_CHEVRON), dp(W_CHEVRON)));
@@ -364,3 +364,4 @@ final class MyTripsPage {
         return v;
     }
 }
+

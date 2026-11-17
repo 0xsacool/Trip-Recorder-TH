@@ -831,7 +831,7 @@ final class ThisTripPage {
             if (burned) {
                 showHybrid(show);
             } else {
-                setText(kwhValue, Double.isNaN(per100) ? "--" : Ui.f(per100, "%.1f"));
+                setText(kwhValue, Double.isNaN(per100) ? "--" : show.energyText(per100, "%.1f"));
                 showDelta(show, per100, trips);
             }
         }
@@ -848,14 +848,14 @@ final class ThisTripPage {
         boolean any = !Double.isNaN(e) || !Double.isNaN(f) || !Double.isNaN(cost);
         footer.setVisibility(any ? View.VISIBLE : View.INVISIBLE);
         float fu = Kit.CAPTION / Kit.LABEL;
-        setText(evValue, Double.isNaN(e) ? "--" : Kit.numUnit(L.f("%s kWh", Ui.f(e, "%.1f")), fu));
+        setText(evValue, Double.isNaN(e) ? "--" : Kit.numUnit(L.f("%s kWh", show.energyText(e, "%.1f")), fu));
         setText(fuelValue, Double.isNaN(f) ? "--" : Kit.numUnit(L.f("%s L", Ui.f(f, "%.1f")), fu));
-        setText(costValue, Double.isNaN(cost) ? "--" : Kit.numUnit(Cost.money(c, cost), fu));
+        setText(costValue, Double.isNaN(cost) ? "--" : Kit.numUnit(show.energyLabel(Cost.money(c, cost)), fu));
         // a trip that burned fuel: what the whole trip used per 100 km (the Energy tile has the electric and the
         // hybrid figures)
         double kwh100 = show.wholeEnergyPer100Km();
         double l100 = show.fuelPer100Km();
-        setLine(evPer100, burned && !Double.isNaN(kwh100) ? Ui.f(kwh100, "%.1f") + " " + L.t("kWh/100km") : null);
+        setLine(evPer100, burned && !Double.isNaN(kwh100) ? show.energyText(kwh100, "%.1f") + " " + L.t("kWh/100km") : null);
         setLine(fuelPer100, burned && !Double.isNaN(l100) ? Ui.f(l100, "%.1f") + " " + L.t("L/100km") : null);
     }
 
@@ -883,7 +883,7 @@ final class ThisTripPage {
      */
     private void showDelta(Trip show, double per100, List<Trip> trips) {
         deltaChip.setVisibility(View.GONE);
-        if (Double.isNaN(per100) || show.distanceKm < 2 || !Stats.electricOnly(show)) return;
+        if (show.energyIsEstimate() || Double.isNaN(per100) || show.distanceKm < 2 || !Stats.electricOnly(show)) return;
         double typical = Stats.typicalElectric(trips, show, 10, 3);
         if (Double.isNaN(typical) || typical <= 0) return;
         double pct = (per100 - typical) / typical * 100.0;
@@ -898,3 +898,4 @@ final class ThisTripPage {
         deltaChip.setVisibility(View.VISIBLE);
     }
 }
+

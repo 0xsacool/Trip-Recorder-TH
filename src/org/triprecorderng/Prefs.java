@@ -18,6 +18,7 @@ final class Prefs {
     static boolean setNominalBatteryKwh(Context c, double kwh) {
         if (Double.isNaN(kwh) || Double.isInfinite(kwh) || kwh < 10 || kwh > 150) return false;
         sp(c).edit().putFloat("nominal_battery_kwh", (float) kwh).apply();
+        Trip.setEstimateCapacity((float) kwh);
         return true;
     }
 
@@ -377,3 +378,4 @@ final class Prefs {
                 .putString("price_currency", currency.isEmpty() ? "THB" : currency).apply();
     }
 }
+

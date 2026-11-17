@@ -7,5 +7,7 @@ public class App extends Application {
     @Override public void onCreate() {
         super.onCreate();
         L.init(this);
+        Trip.setEstimateCapacity(Prefs.nominalBatteryKwh(this));
     }
 }
+

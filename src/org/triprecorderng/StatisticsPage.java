@@ -135,7 +135,7 @@ final class StatisticsPage {
     private View chartCard(Stats.Series s) {
         LinearLayout card = k.bigCard();
         card.setPaddingRelative(dp(18), dp(14), dp(18), dp(10));
-        card.addView(k.t(unit() + (monthly ? L.t(" - last 12 months") : L.t(" - last 14 days")), Kit.CAPTION,
+        card.addView(k.t((estimatedMetric() ? "≈ " : "") + unit() + (monthly ? L.t(" - last 12 months") : L.t(" - last 14 days")), Kit.CAPTION,
                 Kit.MUTED, Kit.REGULAR), new LinearLayout.LayoutParams(-1, -2));
         BarChartView chart = new BarChartView(c);
         // a number of trips is a whole number
@@ -176,6 +176,11 @@ final class StatisticsPage {
     }
 
     /** A figure of the charted metric with its unit, in the app's language. */
+    private boolean estimatedMetric() {
+        return (metric == Stats.CONSUMPTION || metric == Stats.ELECTRIC || metric == Stats.COST)
+                && Trip.anyEstimated(trips);
+    }
+
     private CharSequence format(double v) {
         float u = Kit.CAPTION / Kit.VALUE;
         switch (metric) {
@@ -183,9 +188,9 @@ final class StatisticsPage {
                 return Kit.numUnit(L.f("%s km", Ui.f(v, "%.1f")), u);
             case Stats.CONSUMPTION:
             case Stats.ELECTRIC:
-                return Kit.valueUnit(Ui.f(v, "%.1f"), L.t("kWh/100km"), u);
+                return Kit.valueUnit((estimatedMetric() ? "≈" : "") + Ui.f(v, "%.1f"), L.t("kWh/100km"), u);
             case Stats.COST:
-                return Kit.numUnit(Cost.amount(c, v) + " " + Prefs.currency(c), u);
+                return Kit.numUnit((estimatedMetric() ? "≈" : "") + Cost.amount(c, v) + " " + Prefs.currency(c), u);
             case Stats.FUEL:
                 return Kit.numUnit(L.f("%s L", Ui.f(v, "%.1f")), u);
             case Stats.ECONOMY:
@@ -213,3 +218,4 @@ final class StatisticsPage {
         return t;
     }
 }
+

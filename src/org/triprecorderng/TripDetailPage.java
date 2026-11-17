@@ -115,7 +115,7 @@ final class TripDetailPage {
             LinearLayout costBox = k.column();
             costBox.setGravity(Gravity.END);
             TextView amount = k.t("", Kit.TITLE, Kit.TEXT, Kit.BOLD);
-            amount.setText(Kit.numUnit(Cost.money(c, total), 18f / 26f));
+            amount.setText(Kit.numUnit(t.energyLabel(Cost.money(c, total)), 18f / 26f));
             amount.setSingleLine(true);
             amount.setGravity(Gravity.END);
             costBox.addView(amount);
@@ -147,7 +147,7 @@ final class TripDetailPage {
         grid.addView(r1, new LinearLayout.LayoutParams(-1, -2));
         LinearLayout r2 = new LinearLayout(c);
         r2.setOrientation(LinearLayout.HORIZONTAL);
-        r2.addView(tile(Kit.numUnit(L.f("%s kWh", Ui.f(t.energyUsed(), "%.1f")), 18f / 26f),
+        r2.addView(tile(Kit.numUnit(L.f("%s kWh", t.energyText(t.energyUsed(), "%.1f")), 18f / 26f),
                 L.t("Battery") + ", " + Ui.f(t.socStart, "%.0f") + " " + L.arrow() + " " + Ui.f(t.socEnd, "%.0f") + "%"),
                 new LinearLayout.LayoutParams(0, -2, 1f));
         if (!Prefs.ATTO3_EDITION && !Double.isNaN(t.fuelUsed())) {
@@ -174,7 +174,7 @@ final class TripDetailPage {
                     L.f("%1$s km / %2$s km", Ui.f(t.evKm(), "%.0f"), Ui.f(t.hevKm(), "%.0f")));
         }
         if (Cost.enabled(c)) {
-            if (!Double.isNaN(Cost.elec(t, c))) addFact(more, L.t("Electricity cost"), Cost.money(c, Cost.elec(t, c)));
+            if (!Double.isNaN(Cost.elec(t, c))) addFact(more, L.t("Electricity cost"), t.energyLabel(Cost.money(c, Cost.elec(t, c))));
             if (!Double.isNaN(Cost.fuel(t, c))) addFact(more, L.t("Fuel cost"), Cost.money(c, Cost.fuel(t, c)));
         }
         list.addView(more);
@@ -264,7 +264,7 @@ final class TripDetailPage {
         consumption.removeAllViews();
         double cost = Cost.driving(t, c);
         String costPer100 = Double.isNaN(cost) || t.distanceKm < 0.5 ? "--"
-                : L.per(Cost.amount(c, cost / t.distanceKm * 100.0) + " " + Prefs.currency(c), L.t("100km"));
+                : L.per(t.energyLabel(Cost.amount(c, cost / t.distanceKm * 100.0)) + " " + Prefs.currency(c), L.t("100km"));
         if (Stats.hybridDriving(t)) {
             TripEnergy e = EnergyLoader.get(c, t);
             double ev = t.evKm();
@@ -284,7 +284,7 @@ final class TripDetailPage {
             double kwh100 = t.wholeEnergyPer100Km();
             double l100 = t.fuelPer100Km();
             addFact(consumption, L.t("Whole trip per 100 km"),
-                    L.rtl(Double.isNaN(kwh100) ? "--" : L.f("%s kWh", Ui.f(kwh100, "%.1f"))) + " · "
+                    L.rtl(Double.isNaN(kwh100) ? "--" : L.f("%s kWh", t.energyText(kwh100, "%.1f"))) + " · "
                     + L.rtl(Double.isNaN(l100) ? "--" : L.f("%s L", Ui.f(l100, "%.1f"))));
             addParked();
             addFact(consumption, L.t("Cost"), costPer100);
@@ -296,9 +296,9 @@ final class TripDetailPage {
                 }, 500);
             }
         } else {
-            addFact(consumption, L.t("Energy used"), L.f("%s kWh", Ui.f(t.energyUsed(), "%.1f")));
+            addFact(consumption, L.t("Energy used"), L.f("%s kWh", t.energyText(t.energyUsed(), "%.1f")));
             addParked();
-            addFact(consumption, L.t("Consumption"), L.f("%s kWh/100km", Ui.f(t.energyPer100Km(), "%.1f")));
+            addFact(consumption, L.t(t.energyIsEstimate() ? "Whole trip per 100 km" : "Consumption"), L.f("%s kWh/100km", t.energyText(t.energyPer100Km(), "%.1f")));
             addFact(consumption, L.t("Cost"), costPer100);
         }
     }
@@ -312,3 +312,4 @@ final class TripDetailPage {
                 L.rtl(Double.isNaN(kwh) ? "--" : L.f("%s kWh", Ui.f(kwh, "%.1f"))) + " · " + L.rtl(Ui.duration(sec)));
     }
 }
+

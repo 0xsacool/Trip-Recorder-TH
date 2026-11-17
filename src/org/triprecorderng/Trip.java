@@ -2,6 +2,18 @@ package org.triprecorderng;
 
 /** One recorded trip (an ignition cycle, or a drive when ignition state is unavailable). */
 final class Trip {
+    // Read the configured capacity once at startup and whenever the user changes it. Keep the raw
+    // counters untouched so older/restored trips can be estimated without a database migration.
+    private static volatile double estimateCapacityKwh = 60.0;
+
+    static void setEstimateCapacity(double kwh) {
+        if (finite(kwh) && kwh >= 10 && kwh <= 150) estimateCapacityKwh = kwh;
+    }
+
+    private static boolean finite(double n) {
+        return !Double.isNaN(n) && !Double.isInfinite(n);
+    }
+
     String id;
     long startMs;
     long endMs;            // 0 while the trip is running
@@ -68,19 +80,52 @@ final class Trip {
     }
 
     /** Energy counter delta in the vehicle's own unit (kWh on the tested unit). */
-    double energyUsed() {
-        if (Double.isNaN(elecStart) || Double.isNaN(elecEnd)) return Double.NaN;
+    double measuredEnergy() {
+        if (!finite(elecStart) || !finite(elecEnd) || elecStart < 0 || elecEnd < 0) return Double.NaN;
+        // Some unsupported vehicle signals report a constant zero instead of being absent.
+        if (elecStart == 0 && elecEnd == 0 && socUsed() > 0) return Double.NaN;
         return Math.max(0, elecEnd - elecStart);
+    }
+
+    private double estimatedEnergy() {
+        if (!finite(socStart) || !finite(socEnd) || socStart > 100 || socEnd < 0 || socStart <= socEnd)
+            return Double.NaN;
+        return (socStart - socEnd) * estimateCapacityKwh / 100.0;
+    }
+
+    double energyUsed() {
+        double actual = measuredEnergy();
+        return Double.isNaN(actual) ? estimatedEnergy() : actual;
+    }
+
+    boolean energyIsEstimate() {
+        return Double.isNaN(measuredEnergy()) && !Double.isNaN(estimatedEnergy());
+    }
+
+    String energyLabel(String value) {
+        return energyIsEstimate() && !"--".equals(value) ? "≈" + value : value;
+    }
+
+    String energyText(double value, String format) {
+        return finite(value) ? energyLabel(String.format(java.util.Locale.US, format, value)) : "--";
+    }
+
+    static boolean anyEstimated(java.util.List<Trip> trips) {
+        for (Trip t : trips) if (t.energyIsEstimate()) return true;
+        return false;
     }
 
     /** Energy used while driving; all of it when the parked part has not been worked out. */
     double driveEnergy() {
+        // SOC can estimate net whole-trip energy, not divide it reliably into driving and parking.
+        if (energyIsEstimate()) return energyUsed();
         if (Double.isNaN(driveKwh)) return energyUsed();
         return Math.max(0, driveKwh);
     }
 
     /** Energy used while parked (air conditioning, the cable in), NaN when it cannot be told. */
     double parkedEnergy() {
+        if (energyIsEstimate()) return Double.NaN;
         double e = energyUsed();
         if (Double.isNaN(e) || Double.isNaN(driveKwh)) return Double.NaN;
         return Math.max(0, e - Math.max(0, driveKwh));
@@ -123,3 +168,4 @@ final class Trip {
         return socStart - socEnd;
     }
 }
+

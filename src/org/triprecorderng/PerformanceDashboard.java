@@ -69,6 +69,8 @@ final class PerformanceDashboard extends View {
     private static double positive(double v) { return valid(v) && v >= 0 ? v : Double.NaN; }
     private static String number(double v, String pattern) { return valid(v) ? Ui.f(v, pattern) : "--"; }
 
+    private String energyNumber(double v) { return shown == null ? "--" : shown.energyText(v, "%.1f"); }
+
     private void refresh() {
         RecorderService.Live live = RecorderService.live;
         long now = System.currentTimeMillis();
@@ -97,7 +99,7 @@ final class PerformanceDashboard extends View {
         energy = shown == null ? Double.NaN : positive(shown.energyUsed());
         elapsed = shown == null ? "--" : Ui.duration(shown.drivingSec());
         double cost = shown == null ? Double.NaN : Cost.total(shown, c);
-        money = valid(cost) ? Cost.money(c, cost) : "--";
+        money = valid(cost) ? shown.energyLabel(Cost.money(c, cost)) : "--";
 
         String charging = ChargeRecorder.status;
         if (!live.running) {
@@ -131,7 +133,7 @@ final class PerformanceDashboard extends View {
                 + "Cell temperature min/max " + number(minTemp, "%.0f") + "/"
                 + number(maxTemp, "%.0f") + " C. Power " + number(motorPower, "%.1f") + " kW. "
                 + tripLabel + ": " + number(distance, "%.1f") + " km, "
-                + L.t("Energy") + " " + number(energy, "%.1f") + " kWh, "
+                + L.t("Energy") + " " + energyNumber(energy) + " kWh, "
                 + L.t("Cost") + " " + money + ".");
         invalidate();
     }
@@ -165,7 +167,7 @@ final class PerformanceDashboard extends View {
         gauge(canvas, 176, 190, 121, -100, 200, motorPower, motorPower < 0 ? CYAN : RED,
                 motorPower < 0 ? "REGEN" : "DRIVE POWER", number(motorPower, "%.0f"), "kW", 6);
         gauge(canvas, 824, 190, 121, 0, 40, average, CYAN,
-                L.t("Average consumption"), number(average, "%.1f"), "kWh/100 km", 4);
+                L.t("Average consumption"), energyNumber(average), "kWh/100 km", 4);
         text(canvas, L.t("Speed"), 500, 88, 17, MUTED, false, Paint.Align.CENTER, 260);
         text(canvas, number(speed, "%.0f"), 500, 171, 91, INK, true, Paint.Align.CENTER, 260);
         text(canvas, "km/h", 500, 195, 20, MUTED, false, Paint.Align.CENTER, 200);
@@ -184,7 +186,7 @@ final class PerformanceDashboard extends View {
         fill(canvas, 0, 377, 1000, 379, LINE);
         cell(canvas, 0, 175, L.t("Trip"), number(distance, "%.1f") + " km");
         cell(canvas, 175, 345, L.t("Time"), elapsed);
-        cell(canvas, 345, 510, L.t("Energy"), number(energy, "%.1f") + " kWh");
+        cell(canvas, 345, 510, L.t("Energy"), energyNumber(energy) + " kWh");
         cell(canvas, 510, 685, L.t("Cost"), money);
         graph(canvas, 709, 386, 983, 459);
         canvas.restore();
@@ -258,9 +260,9 @@ final class PerformanceDashboard extends View {
         fill(cv, 695, 329, 697, 363, TYPE_R_LINE);
 
         fill(cv, 18, 381, 982, 383, TYPE_R_RED);
-        typeRMetric(cv, 22, 409, 451, 302, L.t("Energy"), number(energy, "%.1f") + " kWh", 35);
+        typeRMetric(cv, 22, 409, 451, 302, L.t("Energy"), energyNumber(energy) + " kWh", 35);
         typeRMetric(cv, 353, 409, 451, 325, L.t("Average consumption"),
-                number(average, "%.1f") + " kWh/100 km", 35);
+                energyNumber(average) + " kWh/100 km", 35);
         typeRMetric(cv, 710, 409, 451, 272, L.t("Cost"), money, 35);
         fill(cv, 338, 396, 340, 451, TYPE_R_LINE);
         fill(cv, 695, 396, 697, 451, TYPE_R_LINE);
@@ -331,8 +333,8 @@ final class PerformanceDashboard extends View {
         grPolygon(cv, new float[]{29,354, 984,354, 971,448, 16,448}, GR_PANEL);
         grMetric(cv, 35, 214, L.t("Trip"), number(distance, "%.1f") + " km");
         grMetric(cv, 214, 395, L.t("Time"), elapsed);
-        grMetric(cv, 395, 575, L.t("Energy"), number(energy, "%.1f") + " kWh");
-        grMetric(cv, 575, 789, L.t("Average consumption"), number(average, "%.1f") + " kWh/100 km");
+        grMetric(cv, 395, 575, L.t("Energy"), energyNumber(energy) + " kWh");
+        grMetric(cv, 575, 789, L.t("Average consumption"), energyNumber(average) + " kWh/100 km");
         grMetric(cv, 789, 965, L.t("Cost"), money);
     }
 
@@ -525,3 +527,4 @@ final class PerformanceDashboard extends View {
         cv.drawText(s,x,baseline,p);
     }
 }
+

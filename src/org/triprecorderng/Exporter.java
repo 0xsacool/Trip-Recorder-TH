@@ -51,7 +51,7 @@ final class Exporter {
                     + "energy_per_100km,hard_accel,hard_brake,start_lat,start_lon,end_lat,end_lon,"
                     + "mode,ended,id,fuel_used_l,fuel_per_100km,ev_km,hev_km,electricity_cost,fuel_cost,"
                     + "total_cost,currency,speed_integral_km,car_trip_counter_km,drive_s,parked_s,"
-                    + "drive_energy,parked_energy\n");
+                    + "drive_energy,parked_energy,energy_source\n");
             for (Trip t : trips) {
                 w.write(local(t.startMs) + "," + (t.endMs > 0 ? local(t.endMs) : "") + ","
                         + t.durationSec() + "," + num(t.distanceKm, "%.3f") + ","
@@ -70,8 +70,8 @@ final class Exporter {
                         + Prefs.currency(ctx) + "," + num(t.speedKm, "%.3f") + ","
                         + num(t.journeyAcc, "%.1f") + "," + (Double.isNaN(t.driveSec) ? "" : t.drivingSec()) + ","
                         + (Double.isNaN(t.driveSec) ? "" : t.parkedSec()) + ","
-                        + num(Double.isNaN(t.driveKwh) ? Double.NaN : t.driveEnergy(), "%.2f") + ","
-                        + num(t.parkedEnergy(), "%.2f") + "\n");
+                        + num(t.energyIsEstimate() || Double.isNaN(t.driveKwh) ? Double.NaN : t.driveEnergy(), "%.2f") + ","
+                        + num(t.parkedEnergy(), "%.2f") + "," + (t.energyIsEstimate() ? "soc_estimate" : Double.isNaN(t.measuredEnergy()) ? "unknown" : "vehicle_counter") + "\n");
             }
         } finally {
             w.close();
@@ -112,3 +112,4 @@ final class Exporter {
         return out;
     }
 }
+

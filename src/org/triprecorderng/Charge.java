@@ -50,7 +50,7 @@ final class Charge {
     static double kwhPerPercent(java.util.List<Trip> trips) {
         java.util.List<Double> v = new java.util.ArrayList<>();
         for (Trip t : trips) {
-            double used = t.socUsed(), e = t.energyUsed();
+            double used = t.socUsed(), e = t.measuredEnergy();
             if (!Double.isNaN(used) && !Double.isNaN(e) && used >= 8 && e > 0.5) v.add(e / used);
         }
         if (v.isEmpty()) return Double.NaN;
@@ -58,3 +58,4 @@ final class Charge {
         return v.get((v.size() - 1) / 2);
     }
 }
+
