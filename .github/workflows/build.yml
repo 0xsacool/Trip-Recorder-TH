@@ -47,6 +47,18 @@ jobs:
           javac -d "$RUNNER_TEMP/energy-test" src/org/triprecorderng/Trip.java tools/TripEnergyFallbackTest.java
           java -cp "$RUNNER_TEMP/energy-test" org.triprecorderng.TripEnergyFallbackTest
 
+      - name: Test remaining range estimate
+        run: |
+          mkdir -p "$RUNNER_TEMP/range-test"
+          javac -d "$RUNNER_TEMP/range-test" src/org/triprecorderng/Trip.java src/org/triprecorderng/RangeEstimate.java tools/RangeEstimateTest.java
+          java -cp "$RUNNER_TEMP/range-test" org.triprecorderng.RangeEstimateTest
+
+      - name: Test dashboard refresh policy
+        run: |
+          mkdir -p "$RUNNER_TEMP/refresh-test"
+          javac -d "$RUNNER_TEMP/refresh-test" src/org/triprecorderng/DashboardRefresh.java tools/DashboardRefreshTest.java
+          java -cp "$RUNNER_TEMP/refresh-test" org.triprecorderng.DashboardRefreshTest
+
       - name: Build
         id: build
         env:

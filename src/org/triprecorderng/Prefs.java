@@ -11,6 +11,34 @@ final class Prefs {
     static final boolean ATTO3_EDITION = true;
     static final double DEFAULT_BATTERY_KWH = 60.0;
 
+    static boolean performanceRefresh(Context c) {
+        return sp(c).getBoolean("dashboard_performance_refresh", false);
+    }
+
+    static void setPerformanceRefresh(Context c, boolean value) {
+        sp(c).edit().putBoolean("dashboard_performance_refresh", value).apply();
+    }
+
+    static boolean dynamicRange(Context c) { return sp(c).getBoolean("range_dynamic", false); }
+
+    static void setDynamicRange(Context c, boolean value) {
+        sp(c).edit().putBoolean("range_dynamic", value).apply();
+    }
+
+    static double epaRangeKm(Context c) {
+        return sp(c).getFloat("range_epa_km", (float) RangeEstimate.DEFAULT_EPA_KM);
+    }
+
+    static boolean setEpaRangeKm(Context c, double km) {
+        if (!RangeEstimate.validReference(km)) return false;
+        sp(c).edit().putFloat("range_epa_km", (float) km).apply();
+        return true;
+    }
+
+    static RangeEstimate.Result rangeEstimate(Context c, double soc, java.util.List<Trip> trips) {
+        return RangeEstimate.calculate(dynamicRange(c), soc, epaRangeKm(c), nominalBatteryKwh(c), trips);
+    }
+
     static double nominalBatteryKwh(Context c) {
         return sp(c).getFloat("nominal_battery_kwh", (float) DEFAULT_BATTERY_KWH);
     }

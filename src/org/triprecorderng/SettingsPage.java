@@ -188,7 +188,18 @@ final class SettingsPage {
                                 .setNegativeButton(L.t("Cancel"), null).show();
                     }
                 });
-        Kit.Row updates = action(L.t("Updates"), host.updateText(), L.t("Check for updates"), true,
+        Kit.Row refreshMode = action(L.t("Dashboard refresh mode"),
+                Prefs.performanceRefresh(c) ? L.t("Performance Mode (250 ms)") : L.t("Eco Mode (1,000 ms)"),
+                L.t("Change"), false, v -> new AlertDialog.Builder(c)
+                        .setTitle(L.t("Dashboard refresh mode"))
+                        .setSingleChoiceItems(new String[]{L.t("Eco Mode (1,000 ms)"), L.t("Performance Mode (250 ms)")},
+                                Prefs.performanceRefresh(c) ? 1 : 0, (dialog, which) -> {
+                                    Prefs.setPerformanceRefresh(c, which == 1);
+                                    dialog.dismiss();
+                                    host.rebuildSoon();
+                                })
+                        .setNegativeButton(L.t("Cancel"), null).show());
+        Kit.Row updates = action(L.t("Updates"), host.updateText(), L.t("Update"), true,
                 new View.OnClickListener() {
                     @Override public void onClick(View v) {
                         host.checkForUpdates();
@@ -210,6 +221,18 @@ final class SettingsPage {
                 new View.OnClickListener() {
                     @Override public void onClick(View v) { showBatteryDialog(); }
                 });
+        Kit.Row range = action(L.t("Range calculation"), Prefs.dynamicRange(c) ? RangeEstimate.DYNAMIC : RangeEstimate.EPA,
+                L.t("Change"), false, v -> new AlertDialog.Builder(c)
+                        .setTitle(L.t("Range calculation"))
+                        .setSingleChoiceItems(new String[]{RangeEstimate.EPA, RangeEstimate.DYNAMIC},
+                                Prefs.dynamicRange(c) ? 1 : 0, (dialog, which) -> {
+                                    Prefs.setDynamicRange(c, which == 1);
+                                    dialog.dismiss();
+                                    host.rebuildSoon();
+                                })
+                        .setNegativeButton(L.t("Cancel"), null).show());
+        Kit.Row epa = action(L.t("EPA reference at 100%"), Ui.f(Prefs.epaRangeKm(c), "%.0f") + " km",
+                L.t("Set"), false, v -> showEpaDialog());
         final Kit.Row channel = action(L.t("Update channel"), host.channelDescription(), L.t("Change"), false,
                 new View.OnClickListener() {
                     @Override public void onClick(View v) {
@@ -228,7 +251,24 @@ final class SettingsPage {
             }
         });
         host.bindUpdateViews(updates.desc, channel.desc);
-        section(into, L.t("General"), language, theme, updates, prices, battery, advanced, channel);
+        section(into, L.t("General"), language, theme, refreshMode, updates, prices, battery, range, epa, advanced, channel);
+    }
+
+    private void showEpaDialog() {
+        final android.widget.EditText input = new android.widget.EditText(c);
+        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        input.setText(Ui.f(Prefs.epaRangeKm(c), "%.0f"));
+        Ui.show(new android.app.AlertDialog.Builder(c)
+                .setTitle(L.t("EPA reference at 100%"))
+                .setMessage(L.t("Estimated full-battery range in km (50 to 1500), not a certified EPA rating. Dynamic Range uses the latest five valid trips and falls back to this estimate when history is insufficient."))
+                .setView(input)
+                .setPositiveButton(L.t("Save"), (dialog, which) -> {
+                    try {
+                        if (!Prefs.setEpaRangeKm(c, Double.parseDouble(input.getText().toString()))) throw new IllegalArgumentException();
+                        host.rebuildSoon();
+                    } catch (IllegalArgumentException ex) { host.toast(L.t("Invalid range")); }
+                })
+                .setNegativeButton(L.t("Cancel"), null));
     }
 
     private void showBatteryDialog() {
@@ -237,7 +277,7 @@ final class SettingsPage {
         input.setText(Ui.f(Prefs.nominalBatteryKwh(c), "%.2f"));
         Ui.show(new android.app.AlertDialog.Builder(c)
                 .setTitle(L.t("Nominal battery capacity"))
-                .setMessage(L.t("Enter the battery capacity in kWh (10 to 150). Used only to estimate charging energy when no measured data is available."))
+                .setMessage(L.t("Enter the battery capacity in kWh (10 to 150). Used for Dynamic Range and energy estimates when measured data is unavailable."))
                 .setView(input)
                 .setPositiveButton(L.t("Save"), (dialog, which) -> {
                     try {

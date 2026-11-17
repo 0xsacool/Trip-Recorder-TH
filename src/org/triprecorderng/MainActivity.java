@@ -72,10 +72,16 @@ public class MainActivity extends Activity {
     private int tab = TAB_THIS;
     private String overlay = null; // "detail", "settings", "qa" or null
     private volatile boolean updateBusy;
+    private boolean checkingUpdates, interactiveUpdateCheck;
+    private long lastUpdateCheck;
+    private String checkedChannel;
+    private Updates.Check cachedUpdate;
+    private TextView updateButton;
     private TextView updatesValue, channelValue;
 
     // live widgets of the currently shown page
     private Runnable pageRefresh;
+    private boolean resumed;
     private int statsMetric = Stats.MILEAGE;
     private boolean statsMonthly = false;
     private long lastLoad;
@@ -133,15 +139,30 @@ public class MainActivity extends Activity {
 
     @Override protected void onResume() {
         super.onResume();
+        resumed = true;
+        updateDashboardVisibility();
         ui.post(ticker);
         ui.postDelayed(linkCheck, 1500);
+        ui.postDelayed(autoUpdateCheck, 3000);
     }
 
     @Override protected void onPause() {
         super.onPause();
+        resumed = false;
+        updateDashboardVisibility();
         ui.removeCallbacks(ticker);
         ui.removeCallbacks(linkCheck);
+        ui.removeCallbacks(autoUpdateCheck);
     }
+
+    // A passive foreground-only check, never a download, install or automatic dialog.
+    private final Runnable autoUpdateCheck = () -> {
+        long now = android.os.SystemClock.elapsedRealtime();
+        if (lastUpdateCheck == 0 || now - lastUpdateCheck >= 30 * 60 * 1000L
+                || !Updates.channel(this).equals(checkedChannel)) {
+            checkForUpdates(false);
+        }
+    };
 
     private AlertDialog linkDialog;
 
@@ -182,9 +203,14 @@ public class MainActivity extends Activity {
             long now = System.currentTimeMillis();
             if (now - lastLoad > 8000) loadTrips(null);
             if (pageRefresh != null) pageRefresh.run();
-            ui.postDelayed(this, 1000);
+            ui.postDelayed(this, DashboardRefresh.uiMs(Prefs.performanceRefresh(MainActivity.this),
+                    resumed && overlay == null && tab == TAB_THIS));
         }
     };
+
+    private void updateDashboardVisibility() {
+        RecorderService.dashboardVisible = resumed && overlay == null && tab == TAB_THIS;
+    }
 
     @Override public void onBackPressed() {
         if (overlay != null) closeOverlay(); else super.onBackPressed();
@@ -253,6 +279,19 @@ public class MainActivity extends Activity {
             }
         });
         bar.addView(qaButton);
+        updateButton = Ui.text(this, L.t("Update"), 18, 0xFF111820);
+        updateButton.setGravity(Gravity.CENTER);
+        updateButton.setPadding(Ui.dp(this, 12), 0, Ui.dp(this, 12), 0);
+        GradientDrawable updateBg = new GradientDrawable();
+        updateBg.setColor(0xFF43D9EC);
+        updateBg.setCornerRadius(Ui.dp(this, 8));
+        updateButton.setBackground(updateBg);
+        updateButton.setVisibility(View.GONE);
+        updateButton.setOnClickListener(v -> {
+            if (!updateBusy && hasNewerUpdate()) showUpdateResult(checkedChannel, cachedUpdate);
+            else checkForUpdates();
+        });
+        bar.addView(updateButton, new LinearLayout.LayoutParams(-2, Ui.dp(this, 40)));
         settingButton = barButton(GlyphView.GEAR, L.t("Setting"), new View.OnClickListener() {
             @Override public void onClick(View v) {
                 showOverlay("settings");
@@ -376,6 +415,7 @@ public class MainActivity extends Activity {
 
     /** Full-screen pages (settings, Q&A, trip details) hide the menu like the stock app does. */
     private void setChrome(boolean fullScreenPage) {
+        updateDashboardVisibility();
         updateNavigationLayout();
         navView.setBackgroundColor(bottomNav ? (Prefs.grTheme(this) ? 0xFF0D0D0D : Prefs.newThemeAccent(this) != 0 ? 0xFF10151B : 0xFF141B22)
                 : android.graphics.Color.TRANSPARENT);
@@ -386,6 +426,7 @@ public class MainActivity extends Activity {
         navView.setVisibility(vis);
         qaButton.setVisibility(vis);
         settingButton.setVisibility(vis);
+        refreshUpdateButton();
         exportButton.setVisibility(View.GONE);
         placeButton.setVisibility(View.GONE);
         deleteButton.setVisibility(View.GONE);
@@ -818,12 +859,30 @@ public class MainActivity extends Activity {
                 .setNegativeButton(L.t("Cancel"), null));
     }
 
-    // ---- updates (manual only) ----------------------------------------------------------------
+    // ---- updates (auto check, user-confirmed install) ------------------------------------------
+
+    private boolean hasNewerUpdate() {
+        return cachedUpdate != null && cachedUpdate.error == null && cachedUpdate.latest != null
+                && Updates.channel(this).equals(checkedChannel)
+                && Updates.compare(Updates.installed(this), cachedUpdate.latest) > 0;
+    }
+
+    private void refreshUpdateButton() {
+        if (updateButton != null) {
+            updateButton.setVisibility(overlay == null && hasNewerUpdate() ? View.VISIBLE : View.GONE);
+            if (hasNewerUpdate()) {
+                updateButton.setContentDescription(L.f("Update available: %s", cachedUpdate.latest.build.name()));
+            }
+        }
+        if (updatesValue != null) updatesValue.setText(updateText());
+    }
 
     private String updateText() {
-        return L.f("Installed: %1$s%2$s   -   following: %3$s", Updates.installedName(this),
+        String text = L.f("Installed: %1$s%2$s   -   following: %3$s", Updates.installedName(this),
                 Updates.installed(this) == null ? " " + L.t("(not a release build)") : "",
                 Updates.channelTitle(Updates.channel(this)));
+        if (hasNewerUpdate()) text += "\n" + L.f("Update available: %s", cachedUpdate.latest.build.name());
+        return text;
     }
 
     private String channelDescription() {
@@ -840,7 +899,7 @@ public class MainActivity extends Activity {
                 .setItems(labels, new android.content.DialogInterface.OnClickListener() {
                     @Override public void onClick(android.content.DialogInterface d, int which) {
                         Prefs.setUpdateChannel(MainActivity.this, values[which]);
-                        if (updatesValue != null) updatesValue.setText(updateText());
+                        refreshUpdateButton();
                         if (channelValue != null) channelValue.setText(channelDescription());
                         checkForUpdates(); // offers the newest build of that channel, which may mean switching
                     }
@@ -856,17 +915,44 @@ public class MainActivity extends Activity {
     }
 
     private void checkForUpdates() {
+        checkForUpdates(true);
+    }
+
+    private void checkForUpdates(boolean interactive) {
+        if (checkingUpdates) {
+            if (interactive) {
+                interactiveUpdateCheck = true;
+                toast(L.t("Checking for updates..."));
+            }
+            return;
+        }
         if (updateBusy) return;
         updateBusy = true;
+        checkingUpdates = true;
+        interactiveUpdateCheck = interactive;
         final String channel = Updates.channel(this);
-        toast(L.t("Checking for updates..."));
+        if (interactive) toast(L.t("Checking for updates..."));
         new Thread(new Runnable() {
             @Override public void run() {
                 final Updates.Check c = Updates.check(MainActivity.this, channel);
                 ui.post(new Runnable() {
                     @Override public void run() {
                         updateBusy = false;
-                        if (!isFinishing() && !isDestroyed()) showUpdateResult(channel, c);
+                        checkingUpdates = false;
+                        boolean show = interactiveUpdateCheck;
+                        interactiveUpdateCheck = false;
+                        if (isFinishing() || isDestroyed()) return;
+                        if (!channel.equals(Updates.channel(MainActivity.this))) {
+                            checkForUpdates(show);
+                            return;
+                        }
+                        checkedChannel = channel;
+                        lastUpdateCheck = android.os.SystemClock.elapsedRealtime();
+                        // A transient network failure must not erase a known available update.
+                        if (c.error == null || cachedUpdate == null || cachedUpdate.latest == null
+                                || !channel.equals(cachedUpdate.latest.build.channel)) cachedUpdate = c;
+                        refreshUpdateButton();
+                        if (show && hasWindowFocus()) showUpdateResult(channel, c);
                     }
                 });
             }
@@ -945,14 +1031,14 @@ public class MainActivity extends Activity {
         }
         updateBusy = true;
         final Context app = getApplicationContext();
-        final boolean[] cancel = {false};
+        final java.util.concurrent.atomic.AtomicBoolean cancel = new java.util.concurrent.atomic.AtomicBoolean(false);
         final AlertDialog progress = Ui.show(new AlertDialog.Builder(this)
                 .setTitle(L.f("Installing %s", r.build.name()))
                 .setMessage(L.t("Downloading..."))
                 .setCancelable(false)
                 .setNegativeButton(L.t("Cancel"), new android.content.DialogInterface.OnClickListener() {
                     @Override public void onClick(android.content.DialogInterface d, int w) {
-                        cancel[0] = true;
+                        cancel.set(true);
                     }
                 }));
         final long[] lastShown = {0};
@@ -992,11 +1078,12 @@ public class MainActivity extends Activity {
                         }
 
                         @Override public boolean cancelled() {
-                            return cancel[0];
+                            return cancel.get();
                         }
                     });
+                    if (cancel.get()) throw new Updates.Cancelled();
                     say(L.t("Checking the file..."), true);
-                    String bad = Updates.verifyApk(app, apk);
+                    String bad = Updates.verifyApk(app, apk, r.build.name());
                     if (bad != null) {
                         fail(bad);
                         return;
@@ -1005,6 +1092,14 @@ public class MainActivity extends Activity {
                         Backup.writeMissing(app); // the trips are saved before anything is replaced
                     } catch (Throwable t) {
                         Diag.log("backup before update failed", t);
+                        fail(L.t("The update failed."));
+                        return;
+                    }
+                    if (cancel.get()) throw new Updates.Cancelled();
+                    double currentSpeed = RecorderService.live.speed;
+                    if (!Double.isNaN(currentSpeed) && currentSpeed >= 5) {
+                        fail(L.t("Update only while the car is parked."));
+                        return;
                     }
                     say(L.t("Installing... the app restarts in a moment."), true);
                     AdbLoopback.Result res = Updates.install(app, apk);

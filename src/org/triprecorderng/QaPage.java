@@ -35,8 +35,7 @@ final class QaPage {
                         L.t("Speed (several times a second), battery level and the car's energy counter, "
                                 + "plus the GPS position every few seconds. Distance comes from the car's own trip counter (from speed when that is not available).")},
                 {L.t("Does it need internet?"),
-                        L.t("No. Everything is stored on this head unit. Nothing is uploaded. The only exception is "
-                                + "Setting > Check for updates, which contacts GitHub, and only when you tap it.")},
+                        L.t("Trip data stays on this head unit. The app checks GitHub for updates while open; downloads and installation require your confirmation.")},
                 {L.t("How is the drive score calculated?"),
                         L.t("Simplified: 100 points, minus 5 for every hard acceleration or hard braking. "
                                 + "It differs from the stock app, which uses settings downloaded from BYD.")},

@@ -270,6 +270,10 @@ failed at %s	ล้มเหลวที่ %s
 %1$dh %2$dm	%1$d ชม. %2$d นาที
 %d min	%d นาที
 Updates	อัปเดต
+Update	อัปเดต
+Update available: %s	มีเวอร์ชันใหม่: %s
+The downloaded version does not match the update.	เวอร์ชันของไฟล์ที่ดาวน์โหลดไม่ตรงกับอัปเดต
+Trip data stays on this head unit. The app checks GitHub for updates while open; downloads and installation require your confirmation.	ข้อมูลการเดินทางอยู่ในเครื่องรถ แอปตรวจสอบอัปเดตจาก GitHub เมื่อเปิดใช้งาน โดยต้องยืนยันก่อนดาวน์โหลดและติดตั้ง
 Check for updates	ตรวจสอบอัปเดต
 Update channel	ช่องทางอัปเดต
 Advanced	ขั้นสูง
@@ -501,9 +505,16 @@ Up to %d km/h	ไม่เกิน %d กม./ชม.
 %d km/h and above	%d กม./ชม. ขึ้นไป
 %1$d - %2$d km/h	%1$d - %2$d กม./ชม.
 Nominal battery capacity	ความจุแบตเตอรี่ที่กำหนด
-Enter the battery capacity in kWh (10 to 150). Used only to estimate charging energy when no measured data is available.	ระบุความจุแบตเตอรี่ 10–150 kWh ใช้ประมาณพลังงานชาร์จเฉพาะเมื่อไม่มีข้อมูลพลังงานจริง
+Enter the battery capacity in kWh (10 to 150). Used for Dynamic Range and energy estimates when measured data is unavailable.	ระบุความจุแบตเตอรี่ 10–150 kWh สำหรับ Dynamic Range และการประมาณพลังงานเมื่อไม่มีข้อมูลจริง
+Range calculation	วิธีคำนวณระยะทางคงเหลือ
+EPA reference at 100%	ระยะอ้างอิง EPA ที่ 100%
+Estimated full-battery range in km (50 to 1500), not a certified EPA rating. Dynamic Range uses the latest five valid trips and falls back to this estimate when history is insufficient.	ระยะประมาณเมื่อแบตเต็ม 50–1,500 กม. ไม่ใช่ค่ารับรอง EPA โดย Dynamic Range ใช้ข้อมูลสูงสุด 5 ทริปล่าสุดที่ใช้งานได้ และใช้ค่า EPA ประมาณแทนเมื่อข้อมูลไม่เพียงพอ
+Invalid range	ระยะทางไม่ถูกต้อง
 Invalid battery capacity	ความจุแบตเตอรี่ไม่ถูกต้อง
 Dashboard theme	ธีมหน้าปัด
+Dashboard refresh mode	โหมดการอัปเดตหน้าปัด
+Eco Mode (1,000 ms)	Eco Mode (1 วินาที)
+Performance Mode (250 ms)	Performance Mode (0.25 วินาที)
 Classic	คลาสสิก
 Remaining range	ระยะทางคงเหลือ
 Average consumption	อัตราสิ้นเปลืองเฉลี่ย

@@ -61,6 +61,8 @@ final class ThisTripPage {
     private int glowShown;
     private Pill pill;
     private GaugeView gauge;
+    private TextView rangeValue;
+    private long lastSlowRefresh;
     private StatusRow gpsRow;
     private StatusRow dataRow;
     private Banner hint;
@@ -350,6 +352,10 @@ final class ThisTripPage {
         glp.topMargin = dp(6);
         glp.bottomMargin = dp(4);
         leftCard.addView(gauge, glp);
+
+        rangeValue = k.t("", Kit.BODY, Kit.SOFT, Kit.MEDIUM);
+        rangeValue.setGravity(Gravity.CENTER);
+        leftCard.addView(rangeValue, wrap(4));
 
         gpsRow = new StatusRow(L.t("GPS"));
         leftCard.addView(gpsRow.view, wrap(2));
@@ -689,7 +695,11 @@ final class ThisTripPage {
         RecorderService.Live l = RecorderService.live;
         Trip cur = RecorderService.current;
         boolean gpsOnly = "GPS only".equals(l.vehicle);
-        double speed = l.speed;
+        long now = System.currentTimeMillis();
+        boolean rangeFresh = l.running && !gpsOnly && !"none".equals(l.vehicle) && l.lastTickWall > 0
+                && now >= l.lastTickWall && now - l.lastTickWall < 10000;
+        boolean driveFresh = l.running && l.driveWall > 0 && now >= l.driveWall && now - l.driveWall < 2000;
+        double speed = driveFresh ? l.speed : Double.NaN;
         boolean moving = !Double.isNaN(speed) && speed >= 3;
         String chargingText = ChargeRecorder.status;
         boolean charging = chargingText != null && !chargingText.isEmpty();
@@ -711,7 +721,7 @@ final class ThisTripPage {
         }
 
         // the gauge: the battery when parked or charging (a trip can stay open while the car charges), the speed while driving
-        boolean energyMode = !Double.isNaN(l.soc) && !gpsOnly && !moving && (cur == null || charging);
+        boolean energyMode = rangeFresh && !Double.isNaN(l.soc) && !moving && (cur == null || charging);
         int glow = Kit.ACCENT;
         if (energyMode) {
             double soc = l.soc;
@@ -741,6 +751,12 @@ final class ThisTripPage {
             glowShown = glow;
             leftCard.setBackground(glowBackground(glow));
         }
+
+        long elapsedNow = android.os.SystemClock.elapsedRealtime();
+        if (lastSlowRefresh != 0 && elapsedNow - lastSlowRefresh < 1000) return;
+        lastSlowRefresh = elapsedNow;
+        RangeEstimate.Result range = Prefs.rangeEstimate(c, rangeFresh ? l.soc : Double.NaN, host.trips());
+        setText(rangeValue, range.label + "  " + range.text());
 
         if (!l.running) gpsRow.set("--", Kit.MUTED, false);
         else if (!l.gps) gpsRow.set(cap(L.t("off")), Kit.MUTED, false);

@@ -170,8 +170,7 @@ final class BydFrameworkVehicle implements Vehicle {
         if (!Double.isNaN(min) && !Double.isNaN(max) && min > max) {
             min = max = Double.NaN;
         }
-        double power = between(fid(engine, 1012, powerId, false), -500, 1000);
-        if (Double.isNaN(power)) power = between(num(engine, mEnginePower), -500, 1000);
+        double power = motorPowerKw();
         double voltage = between(fid(charging, 1009, chargeVoltId, false), 50, 1000);
         double cellMin = between(fid(statistic, 1014, cellMinId, false) / 1000, 1, 5);
         double cellMax = between(fid(statistic, 1014, cellMaxId, false) / 1000, 1, 5);
@@ -202,6 +201,11 @@ final class BydFrameworkVehicle implements Vehicle {
     @Override public String name() { return "BYD framework API"; }
 
     @Override public double speedKmh() { double v = between(num(speed, mSpeed), 0, 350); return Double.isNaN(v) ? between(fid(speed, 1013, speedId, true), 0, 350) : v; }
+
+    @Override public double motorPowerKw() {
+        double v = between(fid(engine, 1012, powerId, false), -500, 1000);
+        return Double.isNaN(v) ? between(num(engine, mEnginePower), -500, 1000) : v;
+    }
 
     @Override public double powerLevel() { return clean(num(bodywork, mPower)); }
 

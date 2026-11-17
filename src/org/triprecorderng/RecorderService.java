@@ -63,6 +63,9 @@ public class RecorderService extends Service {
         volatile String vehicle = "none";
         volatile String error = "";
         volatile double speed = Double.NaN;
+        volatile double motorPower = Double.NaN;
+        volatile long motorPowerWall;
+        volatile long driveWall;
         volatile double power = Double.NaN;
         volatile double soc = Double.NaN;
         volatile double elec = Double.NaN;
@@ -82,6 +85,8 @@ public class RecorderService extends Service {
     }
 
     static final Live live = new Live();
+    /** Set by the resumed Activity only while a live dashboard is visible. */
+    static volatile boolean dashboardVisible;
     /** The trip being recorded right now (read-only for the UI), or null. */
     static volatile Trip current;
     static final VehicleProviderHolder holder = new VehicleProviderHolder();
@@ -125,6 +130,7 @@ public class RecorderService extends Service {
     private long lastBrakeEvt;
     private long lastNotifMs;
     private long lastLiveMs;
+    private long lastMotorPollMs;
     private int lastTelemetryMask = -1;
     private double lastAlt;
     private double lastBearing;
@@ -279,6 +285,10 @@ public class RecorderService extends Service {
         if (v == null) {
             live.vehicle = "none";
             live.soc = live.elecRange = live.speed = Double.NaN;
+            live.motorPower = Double.NaN;
+            live.motorPowerWall = 0;
+            lastMotorPollMs = 0;
+            live.driveWall = 0;
             live.telemetryWall = 0;
             live.error = "no vehicle data path (" + provider.report().replace('\n', ' ') + ")";
             maybeNotify(now, L.t("No vehicle data"));
@@ -286,17 +296,41 @@ public class RecorderService extends Service {
         }
         if (!v.name().equals(live.vehicle)) {
             live.telemetryWall = 0;
+            live.driveWall = 0;
+            live.motorPower = Double.NaN;
+            live.motorPowerWall = 0;
+            lastMotorPollMs = 0;
             live.soc = live.elecRange = Double.NaN;
             lastLiveMs = 0;
         }
         live.vehicle = v.name();
         live.error = v.lastError();
+        // Never change speed sampling or trip recording cadence. Only optional dashboard
+        // motor-power reads are throttled by the user setting and dashboard visibility.
+        boolean visible = dashboardVisible;
+        long motorInterval = DashboardRefresh.motorMs(Prefs.performanceRefresh(this), visible);
+        boolean pollMotor = visible && DashboardRefresh.due(now, lastMotorPollMs, motorInterval);
+        double speed = v.sampleSpeed(pollMotor);
+        live.speed = speed;
+        if (pollMotor) {
+            live.motorPower = v.motorPowerKw();
+            live.motorPowerWall = System.currentTimeMillis();
+            lastMotorPollMs = now;
+        }
+        live.driveWall = System.currentTimeMillis();
+        if (!Double.isNaN(speed)) lastDataMs = now;
         charges.update(v, wall, now);
         if (now - lastLiveMs >= 5000) {
             lastLiveMs = now;
             live.soc = v.socPercent();
             live.telemetry = v.telemetry();
             live.telemetryWall = wall;
+            // Reuse the existing slow telemetry outside the dashboard, avoiding a second power read.
+            if (!visible) {
+                live.motorPower = live.telemetry[2];
+                live.motorPowerWall = System.currentTimeMillis();
+                lastMotorPollMs = now;
+            }
             int mask = 0;
             for (int i = 0; i < live.telemetry.length; i++)
                 if (Vehicle.valid(live.telemetry[i])) mask |= 1 << i;
@@ -309,10 +343,6 @@ public class RecorderService extends Service {
             live.elecRange = v.elecRangeKm();
             live.fuelRange = v.fuelRangeKm();
         }
-
-        double speed = v.speedKmh();
-        live.speed = speed;
-        if (!Double.isNaN(speed)) lastDataMs = now;
 
         if (now - lastPowerPollMs >= POWER_POLL_MS) {
             power = v.powerLevel();

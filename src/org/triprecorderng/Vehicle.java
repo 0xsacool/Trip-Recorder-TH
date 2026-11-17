@@ -11,6 +11,12 @@ interface Vehicle {
     /** Vehicle speed in km/h. */
     double speedKmh();
 
+    /** A speed sample, optionally coalesced with the motor-power read by the helper. */
+    default double sampleSpeed(boolean includeMotorPower) { return speedKmh(); }
+
+    /** Instantaneous signed motor power in kW: positive drive, negative regen; NaN if unavailable. */
+    default double motorPowerKw() { return Double.NaN; }
+
     /** Ignition level: 0 off, 1 ACC, 2 on, 3 OK, 4 fake-OK, 255 invalid. NaN if unavailable. */
     double powerLevel();
 

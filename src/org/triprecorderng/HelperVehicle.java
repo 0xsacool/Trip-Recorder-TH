@@ -17,9 +17,10 @@ final class HelperVehicle implements Vehicle {
     private Socket socket;
     private BufferedReader in;
     private PrintWriter out;
-    private static final int FIELDS = 13;
+    private static final int FIELDS = 14;
     private double[] snap = new double[FIELDS];
     private long snapAt;
+    private boolean snapIncludesMotorPower;
     private double[] chg;
     private long chgAt;
     private String error = "";
@@ -53,7 +54,7 @@ final class HelperVehicle implements Vehicle {
                 close();
                 return "helper BYD API unbound";
             }
-            return refresh() ? null : error;
+            return refresh(false) ? null : error;
         } catch (IOException e) {
             close();
             error = "helper not reachable";
@@ -61,17 +62,18 @@ final class HelperVehicle implements Vehicle {
         }
     }
 
-    private synchronized boolean refresh() {
+    private synchronized boolean refresh(boolean includeMotorPower) {
         if (socket == null) return false;
         try {
-            out.println("get");
+            out.println(includeMotorPower ? "get-drive" : "get");
             String line = in.readLine();
             if (line == null) throw new IOException("helper closed the connection");
             String[] p = line.split(" ");
-            if (p.length < FIELDS + 2 || !p[0].equals("v3")) throw new IOException("bad reply: " + line);
+            if (p.length < FIELDS + 2 || !p[0].equals("v4")) throw new IOException("bad reply: " + line);
             for (int i = 0; i < FIELDS; i++) snap[i] = parse(p[i + 1]);
             error = p[FIELDS + 1].equals("-") ? "" : p[FIELDS + 1].replace('_', ' ');
             snapAt = SystemClock.elapsedRealtime();
+            snapIncludesMotorPower = includeMotorPower;
             return true;
         } catch (IOException e) {
             error = "helper link lost (" + e.getMessage() + ")";
@@ -95,8 +97,16 @@ final class HelperVehicle implements Vehicle {
 
     private synchronized double get(int i) {
         if (socket == null) return Double.NaN;
-        if (SystemClock.elapsedRealtime() - snapAt > 150 && !refresh()) return Double.NaN;
+        if ((SystemClock.elapsedRealtime() - snapAt > 150 || (i == 13 && !snapIncludesMotorPower))
+                && !refresh(i == 13)) return Double.NaN;
         return snap[i];
+    }
+
+    @Override public synchronized double sampleSpeed(boolean includeMotorPower) {
+        if (socket == null) return Double.NaN;
+        if ((SystemClock.elapsedRealtime() - snapAt > 150 || (includeMotorPower && !snapIncludesMotorPower))
+                && !refresh(includeMotorPower)) return Double.NaN;
+        return snap[0];
     }
 
     @Override public synchronized double[] telemetry() {
@@ -189,6 +199,8 @@ final class HelperVehicle implements Vehicle {
     @Override public String name() { return "BYD API via helper"; }
 
     @Override public double speedKmh() { return get(0); }
+
+    @Override public double motorPowerKw() { return get(13); }
 
     @Override public double powerLevel() { return get(1); }
 

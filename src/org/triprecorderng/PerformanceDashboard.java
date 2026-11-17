@@ -31,7 +31,9 @@ final class PerformanceDashboard extends View {
     private final double[] history = new double[SAMPLES];
     private int sampleCount;
     private long lastSample;
-    private double speed = Double.NaN, soc = Double.NaN, range = Double.NaN;
+    private long lastSlowRefresh;
+    private double speed = Double.NaN, soc = Double.NaN;
+    private RangeEstimate.Result range = new RangeEstimate.Result(Double.NaN, RangeEstimate.EPA);
     private double average = Double.NaN, distance = Double.NaN, energy = Double.NaN;
     private double motorPower = Double.NaN, minTemp = Double.NaN, maxTemp = Double.NaN;
     private double minCell = Double.NaN, maxCell = Double.NaN, chargeVoltage = Double.NaN;
@@ -79,13 +81,26 @@ final class PerformanceDashboard extends View {
         boolean fresh = live.running && live.lastTickWall > 0
                 && now >= live.lastTickWall && now - live.lastTickWall < 10000;
         boolean linked = fresh && !"none".equals(live.vehicle) && !"GPS only".equals(live.vehicle);
-        speed = fresh ? positive(live.speed) : Double.NaN;
+        boolean driveFresh = live.running && live.driveWall > 0
+                && now >= live.driveWall && now - live.driveWall < 2000;
+        double previousSpeed = speed;
+        double previousPower = motorPower;
+        speed = driveFresh ? positive(live.speed) : Double.NaN;
+        boolean motorFresh = live.motorPowerWall > 0 && now >= live.motorPowerWall
+                && now - live.motorPowerWall < 2000;
+        motorPower = driveFresh && linked && motorFresh && valid(live.motorPower) ? live.motorPower : Double.NaN;
+        // Fast values redraw on every new reading; expensive trip summaries and labels stay at 1 Hz.
+        long elapsedNow = android.os.SystemClock.elapsedRealtime();
+        if (lastSlowRefresh != 0 && elapsedNow - lastSlowRefresh < 1000) {
+            if (Double.compare(previousSpeed, speed) != 0 || Double.compare(previousPower, motorPower) != 0)
+                invalidate();
+            return;
+        }
+        lastSlowRefresh = elapsedNow;
         soc = linked && valid(live.soc) && live.soc >= 0 && live.soc <= 100 ? live.soc : Double.NaN;
-        range = linked ? positive(live.elecRange) : Double.NaN;
         boolean telemetryFresh = linked && live.telemetryWall > 0 && now >= live.telemetryWall
                 && now - live.telemetryWall < 10000;
         double[] data = live.telemetry;
-        motorPower = telemetryFresh ? data[2] : Double.NaN;
         minTemp = telemetryFresh ? data[0] : Double.NaN;
         maxTemp = telemetryFresh ? data[1] : Double.NaN;
         chargeVoltage = telemetryFresh ? data[3] : Double.NaN;
@@ -94,6 +109,7 @@ final class PerformanceDashboard extends View {
 
         Trip current = RecorderService.current;
         List<Trip> trips = host.trips();
+        range = Prefs.rangeEstimate(c, soc, trips);
         shown = current != null ? current : (trips.isEmpty() ? null : trips.get(0));
         tripLabel = current != null ? L.t("Current trip") : L.t("Last trip");
         average = shown == null ? Double.NaN : positive(shown.energyPer100Km());
@@ -120,18 +136,19 @@ final class PerformanceDashboard extends View {
         if (Prefs.autoStartHealth(c) == Prefs.AUTOSTART_BLOCKED)
             source = L.t("Auto-start is blocked by BYD - see Setting");
 
-        if (live.telemetryWall != lastSample || (!telemetryFresh && sampleCount > 0 && valid(history[sampleCount-1]))) {
-            if (!telemetryFresh || (lastSample != 0 && (now < lastSample || now - lastSample > 12000))) sampleCount = 0;
+        if (live.driveWall != lastSample || (!driveFresh && sampleCount > 0 && valid(history[sampleCount-1]))) {
+            if (!driveFresh || (lastSample != 0 && (now < lastSample || now - lastSample > 12000))) sampleCount = 0;
             if (sampleCount < SAMPLES) history[sampleCount++] = motorPower;
             else {
                 System.arraycopy(history, 1, history, 0, SAMPLES - 1);
                 history[SAMPLES - 1] = motorPower;
             }
-            lastSample = live.telemetryWall;
+            lastSample = live.driveWall;
         }
         setContentDescription(Prefs.themeName(theme) + ". " + status + ". " + source + ". "
                 + L.t("Speed") + " " + number(speed, "%.0f") + " km/h. "
                 + L.t("Battery") + " " + number(soc, "%.0f") + "%. "
+                + L.t("Remaining range") + " " + range.label + " " + range.text() + ". "
                 + "Cell temperature min/max " + number(minTemp, "%.0f") + "/"
                 + number(maxTemp, "%.0f") + " C. Power " + number(motorPower, "%.1f") + " kW. "
                 + tripLabel + ": " + number(distance, "%.1f") + " km, "
@@ -189,8 +206,8 @@ final class PerformanceDashboard extends View {
         text(canvas, L.t("Battery") + "  " + number(soc, "%.0f") + "%", 500, 236, 29, INK, true, Paint.Align.CENTER, 250);
         fill(canvas, 370, 246, 630, 255, LINE);
         if (valid(soc)) fill(canvas, 370, 246, 370+(float)soc*2.6f, 255, batteryColor);
-        text(canvas, L.t("Remaining range"), 500, 277, 16, MUTED, false, Paint.Align.CENTER, 250);
-        text(canvas, number(range, "%.0f") + " km", 500, 307, 29, INK, true, Paint.Align.CENTER, 250);
+        text(canvas, range.label, 500, 277, 16, MUTED, false, Paint.Align.CENTER, 250);
+        text(canvas, range.text(), 500, 307, 29, INK, true, Paint.Align.CENTER, 250);
 
         fill(canvas, 0, 319, 1000, 372, PANEL);
         telemetryCell(canvas, 0, 346, "BATTERY TEMP MIN / MAX", number(minTemp, "%.0f") + " / " + number(maxTemp, "%.0f") + " °C");
@@ -251,8 +268,8 @@ final class PerformanceDashboard extends View {
         fill(cv, 34, 244, 248, 252, U9_BORDER);
         if (valid(soc)) fill(cv, 34, 244, 34 + (float)soc*2.14f, 252, batteryAccent(U9_ORANGE));
         thinLine(cv, 34, 265, 260, U9_BORDER);
-        text(cv, L.t("Remaining range"), 34, 286, 16, MUTED, false, Paint.Align.LEFT, 228);
-        sportText(cv, number(range, "%.0f") + " km", 34, 326, 37, INK, Paint.Align.LEFT, 228);
+        text(cv, range.label, 34, 286, 16, MUTED, false, Paint.Align.LEFT, 228);
+        sportText(cv, range.text(), 34, 326, 37, INK, Paint.Align.LEFT, 228);
 
         text(cv, L.t("Speed"), 500, 195, 17, MUTED, true, Paint.Align.CENTER, 260);
         sportText(cv, number(speed, "%.0f"), 500, 289, 112, INK, Paint.Align.CENTER, 300);
@@ -362,7 +379,7 @@ final class PerformanceDashboard extends View {
                 valid(motorPower) ? (regen ? TAYCAN_CYAN : N_BLUE) : MUTED, Paint.Align.CENTER, 190);
 
         metric(cv, 344, 102, 147, L.t("Battery"), number(soc, "%.0f") + "%", 36);
-        metric(cv, 501, 102, 155, L.t("Remaining range"), number(range, "%.0f") + " km", 32);
+        metric(cv, 501, 102, 155, range.label, range.text(), 32);
         fill(cv, 344, 142, 484, 150, SPORT_GREY);
         if (valid(soc)) fill(cv, 344, 142, 344 + (float)soc * 1.4f, 150, batteryAccent(N_BLUE));
         thinLine(cv, 334, 164, 656, LINE);
@@ -403,7 +420,7 @@ final class PerformanceDashboard extends View {
         fill(cv, 36, 168, 270, 182, SPORT_GREY);
         if (valid(soc)) fill(cv, 36, 168, 36 + (float)soc * 2.34f, 182, batteryAccent(0xFF60D390));
         sportPanel(cv, new float[]{13,223, 286,223, 319,284, 286,345, 13,345}, 0xFF181D24, 0xFF4A5059);
-        metric(cv, 36, 254, 247, L.t("Remaining range"), number(range, "%.0f") + " km", 40);
+        metric(cv, 36, 254, 247, range.label, range.text(), 40);
         text(cv, "CHARGING VOLTAGE", 34, 387, 15, MUTED, false, Paint.Align.LEFT, 248);
         text(cv, number(chargeVoltage, "%.0f") + " V", 34, 426, 30, INK, true, Paint.Align.LEFT, 251);
 
@@ -441,8 +458,8 @@ final class PerformanceDashboard extends View {
                 L.t("Speed"), number(speed, "%.0f"), "km/h", 81);
         curvedDial(cv, 651, 219, 102, 40, average, TAYCAN_CYAN,
                 L.t("Average consumption"), energyNumber(average), "kWh/100 km", 49);
-        text(cv, L.t("Remaining range"), 127, 344, 16, MUTED, false, Paint.Align.CENTER, 235);
-        text(cv, number(range, "%.0f") + " km", 127, 377, 28, INK, true, Paint.Align.CENTER, 225);
+        text(cv, range.label, 127, 344, 16, MUTED, false, Paint.Align.CENTER, 235);
+        text(cv, range.text(), 127, 377, 28, INK, true, Paint.Align.CENTER, 225);
         text(cv, valid(motorPower) && motorPower < 0 ? "REGEN" : "LIVE POWER", 389, 344, 16, MUTED, false, Paint.Align.CENTER, 235);
         text(cv, number(motorPower, "%.0f") + " kW", 389, 377, 29, INK, true, Paint.Align.CENTER, 235);
         text(cv, "CHARGING VOLTAGE", 651, 344, 16, MUTED, false, Paint.Align.CENTER, 230);
@@ -528,8 +545,8 @@ final class PerformanceDashboard extends View {
         if (valid(soc)) fill(cv, 22, 211, 22 + (float) soc * 2.29f, 218,
                 soc < 15 ? TYPE_R_RED : soc < 30 ? 0xFFFFB44D : INK);
         fill(cv, 22, 228, 252, 230, TYPE_R_RED);
-        text(cv, L.t("Remaining range"), 22, 255, 16, MUTED, false, Paint.Align.LEFT, 235);
-        sportText(cv, number(range, "%.0f") + " km", 22, 297, 41, INK, Paint.Align.LEFT, 235);
+        text(cv, range.label, 22, 255, 16, MUTED, false, Paint.Align.LEFT, 235);
+        sportText(cv, range.text(), 22, 297, 41, INK, Paint.Align.LEFT, 235);
 
         text(cv, L.t("Speed"), 500, 151, 16, MUTED, false, Paint.Align.CENTER, 320);
         sportText(cv, number(speed, "%.0f"), 500, 252, 119, INK, Paint.Align.CENTER, 340);
@@ -603,8 +620,8 @@ final class PerformanceDashboard extends View {
         if (valid(soc)) fill(cv, 31, 185, 31 + (float)soc * 2.11f, 199,
                 soc < 15 ? GR_RED : soc < 30 ? 0xFFFFB44D : 0xFF55D66A);
         fill(cv, 31, 219, 241, 220, GR_LINE);
-        text(cv, L.t("Remaining range"), 31, 250, 17, MUTED, false, Paint.Align.LEFT, 205);
-        sportText(cv, number(range, "%.0f") + " km", 31, 303, 43, INK, Paint.Align.LEFT, 205);
+        text(cv, range.label, 31, 250, 17, MUTED, false, Paint.Align.LEFT, 205);
+        sportText(cv, range.text(), 31, 303, 43, INK, Paint.Align.LEFT, 205);
 
         text(cv, "BATTERY TEMP", 763, 113, 16, INK, true, Paint.Align.LEFT, 203);
         text(cv, "MIN", 763, 145, 15, MUTED, true, Paint.Align.LEFT, 65);

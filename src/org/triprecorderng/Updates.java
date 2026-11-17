@@ -29,8 +29,8 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 /**
- * Manual update check and install, from the GitHub releases of this project. Nothing here runs by itself:
- * it only runs when the user taps Check for updates (or confirms an install).
+ * Update check and user-confirmed install from the GitHub releases of this project.
+ * The foreground may check release metadata automatically; downloading and installing require confirmation.
  *
  * <p>Every release is a build named "&lt;channel&gt;-&lt;number&gt;" ("dev-9", "stable-8"); CI puts the same name
  * in the APK's version name and in the release tag, and the number counts up across both channels. The
@@ -400,12 +400,13 @@ final class Updates {
     }
 
     /** Null when the file is this app signed with the same key as the installed one, else the reason it is not. */
-    static String verifyApk(Context ctx, File apk) {
+    static String verifyApk(Context ctx, File apk, String expectedVersion) {
         try {
             PackageManager pm = ctx.getPackageManager();
             PackageInfo a = pm.getPackageArchiveInfo(apk.getPath(), PackageManager.GET_SIGNING_CERTIFICATES);
             if (a == null) return L.t("The file is not a valid app");
             if (!ctx.getPackageName().equals(a.packageName)) return L.t("The file is a different app");
+            if (!expectedVersion.equals(a.versionName)) return L.t("The downloaded version does not match the update.");
             PackageInfo mine = pm.getPackageInfo(ctx.getPackageName(), PackageManager.GET_SIGNING_CERTIFICATES);
             if (a.signingInfo == null || mine.signingInfo == null) return L.t("The file's signature could not be read");
             Signature[] theirs = a.signingInfo.getApkContentsSigners();
