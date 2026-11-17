@@ -36,23 +36,41 @@ final class Prefs {
     static final String THEME_GTR = "gtr";
     static final String THEME_TYPE_R = "type_r";
     static final String THEME_GR = "gr_motorsport";
+    static final String THEME_N = "n_performance";
+    static final String THEME_RS = "rs_digital";
+    static final String THEME_TAYCAN = "taycan_sport";
+
+    static String[] dashboardThemes() {
+        return new String[]{THEME_CLASSIC, THEME_GTR, THEME_TYPE_R, THEME_GR, THEME_N, THEME_RS, THEME_TAYCAN};
+    }
+
+    private static boolean knownTheme(String value) {
+        for (String key : dashboardThemes()) if (key.equals(value)) return true;
+        return false;
+    }
 
     static String dashboardTheme(Context c) {
         SharedPreferences p = sp(c);
         String value = p.getString("dashboard_theme", "");
-        if (THEME_CLASSIC.equals(value) || THEME_GTR.equals(value) || THEME_TYPE_R.equals(value) || THEME_GR.equals(value))
+        if (knownTheme(value))
             return value;
         return p.getBoolean("performance_theme_gtr", false) ? THEME_GTR : THEME_CLASSIC;
     }
 
     static void setDashboardTheme(Context c, String value) {
-        if (!THEME_CLASSIC.equals(value) && !THEME_GTR.equals(value) && !THEME_TYPE_R.equals(value) && !THEME_GR.equals(value)) return;
+        if (!knownTheme(value)) return;
         sp(c).edit().putString("dashboard_theme", value)
                 .putBoolean("performance_theme_gtr", THEME_GTR.equals(value)).apply();
     }
 
     static String themeName(Context c) {
-        String theme = dashboardTheme(c);
+        return themeName(dashboardTheme(c));
+    }
+
+    static String themeName(String theme) {
+        if (THEME_N.equals(theme)) return "N Performance";
+        if (THEME_RS.equals(theme)) return "RS Digital Cockpit";
+        if (THEME_TAYCAN.equals(theme)) return "Taycan Sport";
         if (THEME_GR.equals(theme)) return "GR Motorsport Edition";
         if (THEME_TYPE_R.equals(theme)) return "Type R Edition";
         if (THEME_GTR.equals(theme)) return "GT-R Performance";
@@ -69,6 +87,14 @@ final class Prefs {
 
     static boolean grTheme(Context c) {
         return THEME_GR.equals(dashboardTheme(c));
+    }
+
+    static int newThemeAccent(Context c) {
+        String theme = dashboardTheme(c);
+        if (THEME_N.equals(theme)) return 0xFF42A9FF;
+        if (THEME_RS.equals(theme)) return 0xFFF4525E;
+        if (THEME_TAYCAN.equals(theme)) return 0xFF43D9EC;
+        return 0;
     }
 
     static boolean sportTheme(Context c) {
@@ -378,4 +404,5 @@ final class Prefs {
                 .putString("price_currency", currency.isEmpty() ? "THB" : currency).apply();
     }
 }
+
 

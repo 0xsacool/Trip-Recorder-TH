@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Optional GT-R, Type R and GR inspired dashboards; consume the same read-only snapshots as ThisTripPage.
+ * Optional sport-inspired dashboards; consume the same read-only snapshots as ThisTripPage.
  * No vehicle commands. Power and thermal values are read-only, never simulated.
  */
 final class PerformanceDashboard extends View {
@@ -25,6 +25,7 @@ final class PerformanceDashboard extends View {
     private final Typeface bold = Typeface.create("sans-serif-condensed", Typeface.BOLD);
     private final Context c;
     private final boolean typeR, gr;
+    private final String theme;
     private final Typeface italic = Typeface.create("sans-serif-condensed", Typeface.BOLD_ITALIC);
     private final ThisTripPage.Host host;
     private final double[] history = new double[SAMPLES];
@@ -52,6 +53,7 @@ final class PerformanceDashboard extends View {
         this.c = c;
         this.typeR = Prefs.typeRTheme(c);
         this.gr = Prefs.grTheme(c);
+        this.theme = Prefs.dashboardTheme(c);
         this.host = host;
         Arrays.fill(history, Double.NaN);
         setBackgroundColor(gr ? 0xFF080808 : typeR ? 0xFF08090B : 0xFF090D11);
@@ -127,7 +129,7 @@ final class PerformanceDashboard extends View {
             }
             lastSample = live.telemetryWall;
         }
-        setContentDescription((gr ? "GR Motorsport Edition. " : typeR ? "Type R Edition. " : "GT-R Performance. ") + status + ". " + source + ". "
+        setContentDescription(Prefs.themeName(theme) + ". " + status + ". " + source + ". "
                 + L.t("Speed") + " " + number(speed, "%.0f") + " km/h. "
                 + L.t("Battery") + " " + number(soc, "%.0f") + "%. "
                 + "Cell temperature min/max " + number(minTemp, "%.0f") + "/"
@@ -145,6 +147,13 @@ final class PerformanceDashboard extends View {
         canvas.save();
         canvas.translate((getWidth() - 1000f * scale) / 2f, (getHeight() - 470f * scale) / 2f);
         canvas.scale(scale, scale);
+        if (Prefs.THEME_N.equals(theme) || Prefs.THEME_RS.equals(theme) || Prefs.THEME_TAYCAN.equals(theme)) {
+            if (Prefs.THEME_N.equals(theme)) drawN(canvas);
+            else if (Prefs.THEME_RS.equals(theme)) drawRS(canvas);
+            else drawTaycan(canvas);
+            canvas.restore();
+            return;
+        }
         if (gr) {
             drawGR(canvas);
             canvas.restore();
@@ -190,6 +199,195 @@ final class PerformanceDashboard extends View {
         cell(canvas, 510, 685, L.t("Cost"), money);
         graph(canvas, 709, 386, 983, 459);
         canvas.restore();
+    }
+
+    private static final int N_BLUE = 0xFF42A9FF, N_RED = 0xFFF4525E;
+    private static final int RS_RED = 0xFFF4525E, SPORT_GREY = 0xFF202832;
+    private static final int TAYCAN_CYAN = 0xFF43D9EC;
+
+    private void themeHeader(Canvas cv, String label, int accent) {
+        fill(cv, 0, 0, 1000, 470, 0xFF090D11);
+        fill(cv, 0, 0, 1000, 57, 0xFF13181D);
+        slant(cv, 12, 9, 28, 30, accent);
+        slant(cv, 30, 9, 46, 30, accent);
+        sportText(cv, label, 54, 28, 25, INK, Paint.Align.LEFT, 370);
+        text(cv, source, 18, 48, 15, MUTED, false, Paint.Align.LEFT, 660);
+        text(cv, status, 982, 25, 19, statusColor, true, Paint.Align.RIGHT, 285);
+        text(cv, tripLabel, 982, 47, 15, MUTED, false, Paint.Align.RIGHT, 245);
+        fill(cv, 0, 57, 1000, 59, accent);
+    }
+
+    private void sportPanel(Canvas cv, float[] points, int color, int outline) {
+        Path path = new Path();
+        path.moveTo(points[0], points[1]);
+        for (int i = 2; i < points.length; i += 2) path.lineTo(points[i], points[i+1]);
+        path.close();
+        p.setStyle(Paint.Style.FILL); p.setColor(color); cv.drawPath(path, p);
+        p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(1.8f); p.setColor(outline); cv.drawPath(path, p);
+        p.setStyle(Paint.Style.FILL);
+    }
+
+    private void thinLine(Canvas cv, float left, float y, float right, int color) {
+        fill(cv, left, y, right, y+1, color);
+    }
+
+    private void metric(Canvas cv, float x, float y, float width, String caption, String value, float size) {
+        text(cv, caption, x, y, 15, MUTED, false, Paint.Align.LEFT, width);
+        text(cv, value, x, y+32, size, INK, true, Paint.Align.LEFT, width);
+    }
+
+    private String tempReading() { return number(minTemp, "%.0f") + " / " + number(maxTemp, "%.0f") + " °C"; }
+    private String cellReading() { return number(minCell, "%.3f") + " / " + number(maxCell, "%.3f") + " V"; }
+
+    private int batteryAccent(int accent) {
+        return valid(soc) && soc < 15 ? RED : valid(soc) && soc < 30 ? 0xFFFFB44D : accent;
+    }
+
+    /** N: asymmetric blue motorsport cockpit, large left speed and segmented signed power. */
+    private void drawN(Canvas cv) {
+        themeHeader(cv, "N PERFORMANCE", N_BLUE);
+        sportPanel(cv, new float[]{12,76, 311,76, 262,453, 12,453}, 0xFF111A25, 0xFF3D5A73);
+        sportPanel(cv, new float[]{331,76, 680,76, 631,453, 282,453}, 0xFF121A22, 0xFF354452);
+        sportPanel(cv, new float[]{700,76, 988,76, 988,453, 651,453}, 0xFF131A20, 0xFF455262);
+        slant(cv, 15, 78, 93, 102, N_BLUE);
+        fill(cv, 12, 100, 20, 285, N_BLUE);
+        slant(cv, 18, 408, 52, 451, N_BLUE);
+        text(cv, L.t("Speed"), 147, 133, 20, MUTED, true, Paint.Align.CENTER, 240);
+        sportText(cv, number(speed, "%.0f"), 148, 277, 145, INK, Paint.Align.CENTER, 250);
+        text(cv, "km/h", 148, 309, 24, INK, true, Paint.Align.CENTER, 210);
+        thinLine(cv, 64, 335, 240, N_BLUE);
+        boolean regen = valid(motorPower) && motorPower < 0;
+        sportText(cv, regen ? "REGEN" : valid(motorPower) && motorPower > 0 ? "DRIVE" : "POWER", 140, 382, 26,
+                valid(motorPower) ? (regen ? TAYCAN_CYAN : N_BLUE) : MUTED, Paint.Align.CENTER, 190);
+
+        metric(cv, 344, 102, 147, L.t("Battery"), number(soc, "%.0f") + "%", 36);
+        metric(cv, 501, 102, 155, L.t("Remaining range"), number(range, "%.0f") + " km", 32);
+        fill(cv, 344, 142, 484, 150, SPORT_GREY);
+        if (valid(soc)) fill(cv, 344, 142, 344 + (float)soc * 1.4f, 150, batteryAccent(N_BLUE));
+        thinLine(cv, 334, 164, 656, LINE);
+
+        text(cv, regen ? "REGEN" : "LIVE POWER", 332, 190, 17, MUTED, true, Paint.Align.LEFT, 145);
+        sportText(cv, number(motorPower, "%.0f") + " kW", 650, 211, 31, INK, Paint.Align.RIGHT, 155);
+        double limit = regen ? 100.0 : 200.0;
+        double progress = valid(motorPower) ? Math.min(1, Math.abs(motorPower) / limit) : 0;
+        segmentedPower(cv, 327, 222, 641, 248, progress, regen ? TAYCAN_CYAN : N_BLUE);
+        text(cv, regen ? "0 — 100 kW" : "0 — 200 kW", 327, 266, 13, MUTED, false, Paint.Align.LEFT, 250);
+        thinLine(cv, 322, 278, 635, LINE);
+        metric(cv, 321, 301, 304, "BATTERY TEMP MIN / MAX", tempReading(), 27);
+        thinLine(cv, 316, 341, 624, LINE);
+        metric(cv, 314, 362, 306, "CELL VOLTAGE MIN / MAX", cellReading(), 27);
+        thinLine(cv, 308, 402, 614, LINE);
+        text(cv, "CHARGING VOLTAGE", 307, 422, 14, MUTED, false, Paint.Align.LEFT, 170);
+        text(cv, number(chargeVoltage, "%.0f") + " V", 606, 437, 24, INK, true, Paint.Align.RIGHT, 130);
+
+        nTripRow(cv, 700, 91, L.t("Trip"), number(distance, "%.1f") + " km");
+        nTripRow(cv, 691, 163, L.t("Time"), elapsed);
+        nTripRow(cv, 682, 235, L.t("Energy"), energyNumber(energy) + " kWh");
+        nTripRow(cv, 673, 307, L.t("Average consumption"), energyNumber(average) + " kWh/100 km");
+        nTripRow(cv, 665, 379, L.t("Cost"), money);
+        fill(cv, 810, 449, 986, 453, N_RED);
+    }
+
+    private void nTripRow(Canvas cv, float x, float top, String caption, String value) {
+        text(cv, caption, x+13, top+17, 17, MUTED, false, Paint.Align.LEFT, 270);
+        text(cv, value, 967, top+51, 32, INK, true, Paint.Align.RIGHT, 967-x-13);
+        if (top < 379) thinLine(cv, x+5, top+66, 972, LINE);
+    }
+
+    /** RS: sharp geometric digital instrument, speed in the central hexagonal cluster. */
+    private void drawRS(Canvas cv) {
+        themeHeader(cv, "RS DIGITAL COCKPIT", RS_RED);
+        sportPanel(cv, new float[]{13,81, 286,81, 319,145, 286,210, 13,210}, 0xFF181D24, 0xFF4A5059);
+        metric(cv, 36, 111, 242, L.t("Battery"), number(soc, "%.0f") + "%", 43);
+        fill(cv, 36, 168, 270, 182, SPORT_GREY);
+        if (valid(soc)) fill(cv, 36, 168, 36 + (float)soc * 2.34f, 182, batteryAccent(0xFF60D390));
+        sportPanel(cv, new float[]{13,223, 286,223, 319,284, 286,345, 13,345}, 0xFF181D24, 0xFF4A5059);
+        metric(cv, 36, 254, 247, L.t("Remaining range"), number(range, "%.0f") + " km", 40);
+        text(cv, "CHARGING VOLTAGE", 34, 387, 15, MUTED, false, Paint.Align.LEFT, 248);
+        text(cv, number(chargeVoltage, "%.0f") + " V", 34, 426, 30, INK, true, Paint.Align.LEFT, 251);
+
+        sportPanel(cv, new float[]{379,86, 552,86, 638,240, 552,394, 379,394, 293,240}, 0xFF0D1116, 0xFF9DA6AF);
+        sportPanel(cv, new float[]{389,99, 542,99, 620,240, 542,381, 389,381, 311,240}, 0xFF10151A, RS_RED);
+        fill(cv, 426, 95, 507, 102, RS_RED);
+        text(cv, L.t("Speed"), 465, 151, 18, MUTED, false, Paint.Align.CENTER, 200);
+        text(cv, number(speed, "%.0f"), 465, 262, 111, INK, true, Paint.Align.CENTER, 250);
+        text(cv, "km/h", 465, 289, 22, MUTED, true, Paint.Align.CENTER, 180);
+        thinLine(cv, 378, 304, 552, LINE);
+        text(cv, valid(motorPower) && motorPower < 0 ? "REGEN" : "LIVE POWER", 465, 327, 15, MUTED, true, Paint.Align.CENTER, 180);
+        text(cv, number(motorPower, "%.0f") + " kW", 465, 362, 29, INK, true, Paint.Align.CENTER, 167);
+
+        sportPanel(cv, new float[]{659,81, 988,81, 988,211, 659,211, 623,146}, 0xFF181D24, 0xFF4A5059);
+        metric(cv, 662, 108, 304, "BATTERY TEMP MIN / MAX", tempReading(), 26);
+        thinLine(cv, 662, 150, 970, LINE);
+        metric(cv, 662, 172, 304, "CELL VOLTAGE MIN / MAX", cellReading(), 24);
+        sportPanel(cv, new float[]{659,223, 988,223, 988,451, 659,451, 623,337}, 0xFF181D24, 0xFF4A5059);
+        metric(cv, 662, 248, 145, L.t("Trip"), number(distance, "%.1f") + " km", 28);
+        metric(cv, 822, 248, 147, L.t("Time"), elapsed, 28);
+        thinLine(cv, 662, 287, 970, LINE);
+        metric(cv, 662, 311, 145, L.t("Energy"), energyNumber(energy) + " kWh", 29);
+        metric(cv, 822, 311, 147, L.t("Cost"), money, 27);
+        thinLine(cv, 662, 351, 970, LINE);
+        metric(cv, 662, 377, 304, L.t("Average consumption"), energyNumber(average) + " kWh/100 km", 31);
+        fill(cv, 13, 450, 988, 454, RS_RED);
+    }
+
+    /** Taycan: three restrained curved digital dials with clear whole-trip metrics on the right. */
+    private void drawTaycan(Canvas cv) {
+        themeHeader(cv, "TAYCAN SPORT", TAYCAN_CYAN);
+        curvedDial(cv, 127, 219, 102, 100, soc, batteryAccent(TAYCAN_CYAN),
+                L.t("Battery"), number(soc, "%.0f"), "%", 57);
+        curvedDial(cv, 389, 219, 119, 200, speed, TAYCAN_CYAN,
+                L.t("Speed"), number(speed, "%.0f"), "km/h", 81);
+        curvedDial(cv, 651, 219, 102, 40, average, TAYCAN_CYAN,
+                L.t("Average consumption"), energyNumber(average), "kWh/100 km", 49);
+        text(cv, L.t("Remaining range"), 127, 344, 16, MUTED, false, Paint.Align.CENTER, 235);
+        text(cv, number(range, "%.0f") + " km", 127, 377, 28, INK, true, Paint.Align.CENTER, 225);
+        text(cv, valid(motorPower) && motorPower < 0 ? "REGEN" : "LIVE POWER", 389, 344, 16, MUTED, false, Paint.Align.CENTER, 235);
+        text(cv, number(motorPower, "%.0f") + " kW", 389, 377, 29, INK, true, Paint.Align.CENTER, 235);
+        text(cv, "CHARGING VOLTAGE", 651, 344, 16, MUTED, false, Paint.Align.CENTER, 230);
+        text(cv, number(chargeVoltage, "%.0f") + " V", 651, 377, 28, INK, true, Paint.Align.CENTER, 230);
+
+        p.setStyle(Paint.Style.FILL); p.setColor(0xFF151B21);
+        cv.drawRoundRect(new RectF(16,394,764,456), 12, 12, p);
+        metric(cv, 32, 413, 350, "BATTERY TEMP MIN / MAX", tempReading(), 24);
+        fill(cv, 383, 405, 384, 445, LINE);
+        metric(cv, 405, 413, 340, "CELL VOLTAGE MIN / MAX", cellReading(), 24);
+
+        fill(cv, 780, 87, 781, 455, LINE);
+        taycanRow(cv, 92, L.t("Trip"), number(distance, "%.1f") + " km");
+        taycanRow(cv, 183, L.t("Time"), elapsed);
+        taycanRow(cv, 274, L.t("Energy"), energyNumber(energy) + " kWh");
+        taycanRow(cv, 365, L.t("Cost"), money);
+    }
+
+    private void taycanRow(Canvas cv, float y, String label, String reading) {
+        text(cv, label, 799, y+18, 17, MUTED, false, Paint.Align.LEFT, 180);
+        text(cv, reading, 978, y+54, 30, INK, true, Paint.Align.RIGHT, 190);
+        if (y < 365) thinLine(cv, 799, y+78, 980, LINE);
+    }
+
+    private void curvedDial(Canvas cv, float x, float y, float radius, double max, double value, int color,
+                            String caption, String reading, String unit, float readSize) {
+        RectF outer = new RectF(x-radius, y-radius, x+radius, y+radius);
+        p.setStyle(Paint.Style.STROKE); p.setStrokeCap(Paint.Cap.ROUND); p.setStrokeWidth(2); p.setColor(0xFF66737F);
+        cv.drawArc(outer, 135, 270, false, p);
+        RectF inner = new RectF(x-radius+12, y-radius+12, x+radius-12, y+radius-12);
+        p.setStrokeWidth(10); p.setColor(0xFF27313A); cv.drawArc(inner, 135, 270, false, p);
+        if (valid(value) && value >= 0) {
+            p.setColor(color);
+            cv.drawArc(inner, 135, (float)(270 * Math.min(1, value/max)), false, p);
+        }
+        p.setStrokeCap(Paint.Cap.BUTT);
+        for (int i = 0; i <= 16; i++) {
+            double a = Math.toRadians(135 + 270.0*i/16);
+            float co = (float)Math.cos(a), si = (float)Math.sin(a);
+            p.setStrokeWidth(i % 4 == 0 ? 2 : 1); p.setColor(i % 4 == 0 ? INK : MUTED);
+            cv.drawLine(x+co*(radius-22), y+si*(radius-22), x+co*(radius-(i%4==0?31:27)), y+si*(radius-(i%4==0?31:27)), p);
+        }
+        p.setStyle(Paint.Style.FILL);
+        text(cv, caption, x, y-30, 15, MUTED, false, Paint.Align.CENTER, radius*1.45f);
+        text(cv, reading, x, y+28, readSize, INK, true, Paint.Align.CENTER, radius*1.48f);
+        text(cv, unit, x, y+51, 17, MUTED, false, Paint.Align.CENTER, radius*1.55f);
     }
 
     private static final int TYPE_R_RED = 0xFFF01930;
@@ -527,4 +725,5 @@ final class PerformanceDashboard extends View {
         cv.drawText(s,x,baseline,p);
     }
 }
+
 

@@ -377,7 +377,7 @@ public class MainActivity extends Activity {
     /** Full-screen pages (settings, Q&A, trip details) hide the menu like the stock app does. */
     private void setChrome(boolean fullScreenPage) {
         updateNavigationLayout();
-        navView.setBackgroundColor(bottomNav ? (Prefs.grTheme(this) ? 0xFF0D0D0D : 0xFF141B22)
+        navView.setBackgroundColor(bottomNav ? (Prefs.grTheme(this) ? 0xFF0D0D0D : Prefs.newThemeAccent(this) != 0 ? 0xFF10151B : 0xFF141B22)
                 : android.graphics.Color.TRANSPARENT);
         int vis = fullScreenPage ? View.GONE : View.VISIBLE;
         ((LinearLayout.LayoutParams) content.getLayoutParams()).leftMargin =
@@ -413,10 +413,16 @@ public class MainActivity extends Activity {
         overlay = null;
         setChrome(false);
         titleView.setText(appTitle());
+        int newAccent = Prefs.newThemeAccent(this);
         for (int i = 0; i < tabViews.length; i++) {
             boolean sel = i == index;
             LinearLayout t = tabViews[i];
-            if (sel && Prefs.grTheme(this)) {
+            if (sel && newAccent != 0) {
+                GradientDrawable selected = new GradientDrawable();
+                selected.setColor(0xFF1B252F);
+                selected.setStroke(Ui.dp(this, 1), newAccent);
+                t.setBackground(selected);
+            } else if (sel && Prefs.grTheme(this)) {
                 android.graphics.drawable.Drawable[] layers = {
                     new android.graphics.drawable.ColorDrawable(0xFF181818),
                     new android.graphics.drawable.ColorDrawable(0xFFF01829)
@@ -432,8 +438,8 @@ public class MainActivity extends Activity {
             } else {
                 t.setBackgroundResource(sel ? res("tab_selected_bg") : 0);
             }
-            ((TextView) t.getChildAt(1)).setTextColor(sel ? Ui.TEXT_SELECTED : 0xCCFFFFFF);
-            ((ImageView) t.getChildAt(0)).setColorFilter(sel ? 0xFFFFFFFF : 0xCCFFFFFF,
+            ((TextView) t.getChildAt(1)).setTextColor(sel ? (newAccent != 0 ? newAccent : Ui.TEXT_SELECTED) : 0xCCFFFFFF);
+            ((ImageView) t.getChildAt(0)).setColorFilter(sel ? (newAccent != 0 ? newAccent : 0xFFFFFFFF) : 0xCCFFFFFF,
                     PorterDuff.Mode.SRC_IN);
         }
         renderCurrentTab();
@@ -1443,3 +1449,4 @@ public class MainActivity extends Activity {
         }
     }
 }
+
