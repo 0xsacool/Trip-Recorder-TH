@@ -25,7 +25,7 @@ final class RangeEstimate {
         double km = 0, kwh = 0;
         int count = 0;
         for (Trip t : history) {
-            if (!t.ended || !valid(t.distanceKm) || t.distanceKm < 3) continue;
+            if (!t.ended || !valid(t.distanceKm) || t.distanceKm < 3 || t.energyIsMotorEstimate()) continue;
             double energy = t.energyUsed();
             double per100 = energy / t.distanceKm * 100.0;
             if (!valid(per100) || per100 < 5 || per100 > 100) continue;
@@ -46,3 +46,4 @@ final class RangeEstimate {
                 dynamic ? EPA + " (fallback)" : EPA);
     }
 }
+

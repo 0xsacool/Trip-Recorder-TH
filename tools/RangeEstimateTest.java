@@ -32,6 +32,15 @@ public final class RangeEstimateTest {
             throw new AssertionError("missing SOC must not give a distance");
         if (!Double.isNaN(RangeEstimate.calculate(false, 101, 350, 60, Collections.emptyList()).km))
             throw new AssertionError("invalid SOC");
+        Trip motorOnly = trip(20, 0);
+        motorOnly.motorNetKwh = 2;
+        motorOnly.motorSampleSec = 100;
+        motorOnly.startMs = 1000;
+        motorOnly.lastUpdateMs = motorOnly.endMs = 101000;
+        if (!motorOnly.energyIsMotorEstimate()) throw new AssertionError("test fixture is not a motor estimate");
+        close(255, RangeEstimate.calculate(true, 85, 350, 60,
+                Arrays.asList(motorOnly, trip(10, 1), trip(20, 5))).km);
         System.out.println("RangeEstimate tests passed");
     }
 }
+

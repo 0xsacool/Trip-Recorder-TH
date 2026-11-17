@@ -131,6 +131,7 @@ public class RecorderService extends Service {
     private long lastNotifMs;
     private long lastLiveMs;
     private long lastMotorPollMs;
+    private final Trip.MotorEnergy motorEnergy = new Trip.MotorEnergy();
     private int lastTelemetryMask = -1;
     private double lastAlt;
     private double lastBearing;
@@ -283,6 +284,7 @@ public class RecorderService extends Service {
         live.gps = gps.isStarted();
         live.gpsFix = gps.fresh(5000) != null;
         if (v == null) {
+            motorEnergy.reset();
             live.vehicle = "none";
             live.soc = live.elecRange = live.speed = Double.NaN;
             live.motorPower = Double.NaN;
@@ -295,6 +297,7 @@ public class RecorderService extends Service {
             return;
         }
         if (!v.name().equals(live.vehicle)) {
+            motorEnergy.reset();
             live.telemetryWall = 0;
             live.driveWall = 0;
             live.motorPower = Double.NaN;
@@ -305,15 +308,17 @@ public class RecorderService extends Service {
         }
         live.vehicle = v.name();
         live.error = v.lastError();
-        // Never change speed sampling or trip recording cadence. Only optional dashboard
-        // motor-power reads are throttled by the user setting and dashboard visibility.
+        // Preserve speed sampling and trip recording cadence. Collect motor power at 1 Hz
+        // while recording off-screen; the visible dashboard may request faster updates.
         boolean visible = dashboardVisible;
-        long motorInterval = DashboardRefresh.motorMs(Prefs.performanceRefresh(this), visible);
-        boolean pollMotor = visible && DashboardRefresh.due(now, lastMotorPollMs, motorInterval);
+        long motorInterval = trip != null && !visible ? 1000
+                : DashboardRefresh.motorMs(Prefs.performanceRefresh(this), visible);
+        boolean pollMotor = (visible || trip != null) && DashboardRefresh.due(now, lastMotorPollMs, motorInterval);
         double speed = v.sampleSpeed(pollMotor);
         live.speed = speed;
         if (pollMotor) {
             live.motorPower = v.motorPowerKw();
+            if (trip != null) motorEnergy.add(trip, SystemClock.elapsedRealtime(), live.motorPower);
             live.motorPowerWall = System.currentTimeMillis();
             lastMotorPollMs = now;
         }
@@ -326,7 +331,7 @@ public class RecorderService extends Service {
             live.telemetry = v.telemetry();
             live.telemetryWall = wall;
             // Reuse the existing slow telemetry outside the dashboard, avoiding a second power read.
-            if (!visible) {
+            if (!visible && trip == null) {
                 live.motorPower = live.telemetry[2];
                 live.motorPowerWall = System.currentTimeMillis();
                 lastMotorPollMs = now;
@@ -447,6 +452,7 @@ public class RecorderService extends Service {
 
     // ---- trip lifecycle --------------------------------------------------------------------
     private void startTrip(Vehicle v, String mode, long now, long wall) {
+        motorEnergy.reset();
         trip = new Trip();
         trip.id = UUID.randomUUID().toString();
         trip.startMs = wall;
@@ -686,6 +692,7 @@ public class RecorderService extends Service {
             Backup.write(this, trip);
         }
         trip = null;
+        motorEnergy.reset();
         split = null;
         current = null;
         baselineLeft = 0;
@@ -701,6 +708,7 @@ public class RecorderService extends Service {
         long wall = System.currentTimeMillis();
         if (wall - open.lastUpdateMs <= RESUME_WINDOW_MS) {
             trip = open;
+            motorEnergy.reset();
             current = open;
             baselineLeft = 0;
             try {
@@ -757,3 +765,4 @@ public class RecorderService extends Service {
                 .build();
     }
 }
+

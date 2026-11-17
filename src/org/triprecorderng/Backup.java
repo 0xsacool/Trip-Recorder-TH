@@ -432,6 +432,8 @@ final class Backup {
         o.put("soc_end", num(t.socEnd));
         o.put("elec_start", num(t.elecStart));
         o.put("elec_end", num(t.elecEnd));
+        o.put("motor_net_kwh", num(t.motorNetKwh));
+        o.put("motor_sample_s", num(t.motorSampleSec));
         o.put("hard_accel", t.hardAccel);
         o.put("hard_brake", t.hardBrake);
         o.put("start_lat", num(t.startLat));
@@ -465,6 +467,8 @@ final class Backup {
         t.socEnd = dbl(o, "soc_end");
         t.elecStart = dbl(o, "elec_start");
         t.elecEnd = dbl(o, "elec_end");
+        t.motorNetKwh = dbl(o, "motor_net_kwh");
+        t.motorSampleSec = o.optDouble("motor_sample_s", 0);
         t.hardAccel = o.optInt("hard_accel");
         t.hardBrake = o.optInt("hard_brake");
         t.startLat = dbl(o, "start_lat");
@@ -480,3 +484,4 @@ final class Backup {
         return t;
     }
 }
+

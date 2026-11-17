@@ -12,7 +12,7 @@ import java.util.List;
 /** Local SQLite storage: one row per trip plus an optional GPS track per trip. */
 final class TripDb extends SQLiteOpenHelper {
     private static final String NAME = "trips.db";
-    private static final int VERSION = 7;
+    private static final int VERSION = 8;
 
     private static TripDb instance;
     private final Context appCtx;
@@ -35,7 +35,8 @@ final class TripDb extends SQLiteOpenHelper {
                 + "elec_start REAL, elec_end REAL, hard_accel INTEGER, hard_brake INTEGER,"
                 + "start_lat REAL, start_lon REAL, end_lat REAL, end_lon REAL,"
                 + "fuel_start REAL, fuel_end REAL, ev_start REAL, ev_end REAL, hev_start REAL, hev_end REAL,"
-                + "speed_km REAL, journey_acc REAL, journey_last REAL, drive_kwh REAL, drive_s REAL)");
+                + "speed_km REAL, journey_acc REAL, journey_last REAL, drive_kwh REAL, drive_s REAL,"
+                + "motor_net_kwh REAL, motor_sample_s REAL)");
         db.execSQL("CREATE TABLE points ("
                 + "trip_id TEXT, ts INTEGER, lat REAL, lon REAL, alt REAL, gps_speed REAL,"
                 + "car_speed REAL, bearing REAL, soc REAL, elec REAL)");
@@ -95,6 +96,21 @@ final class TripDb extends SQLiteOpenHelper {
                 db.execSQL("ALTER TABLE trips ADD COLUMN " + col + " REAL");
             }
         }
+        if (oldV < 8) {
+            // Additive and safe when returning from a v7 build after a downgrade.
+            addTripColumnIfMissing(db, "motor_net_kwh");
+            addTripColumnIfMissing(db, "motor_sample_s");
+        }
+    }
+
+    private static void addTripColumnIfMissing(SQLiteDatabase db, String column) {
+        Cursor c = db.rawQuery("PRAGMA table_info(trips)", null);
+        try {
+            while (c.moveToNext()) if (column.equals(c.getString(1))) return;
+        } finally {
+            c.close();
+        }
+        db.execSQL("ALTER TABLE trips ADD COLUMN " + column + " REAL");
     }
 
     private static void put(ContentValues cv, String key, double v) {
@@ -140,6 +156,8 @@ final class TripDb extends SQLiteOpenHelper {
         put(cv, "journey_last", t.journeyLast);
         put(cv, "drive_kwh", t.driveKwh);
         put(cv, "drive_s", t.driveSec);
+        put(cv, "motor_net_kwh", t.motorNetKwh);
+        put(cv, "motor_sample_s", t.motorSampleSec);
         getWritableDatabase().insertWithOnConflict("trips", null, cv,
                 SQLiteDatabase.CONFLICT_REPLACE);
     }
@@ -204,13 +222,16 @@ final class TripDb extends SQLiteOpenHelper {
         t.journeyLast = dbl(c, 30);
         t.driveKwh = dbl(c, 31);
         t.driveSec = dbl(c, 32);
+        t.motorNetKwh = dbl(c, 33);
+        t.motorSampleSec = c.isNull(34) ? 0 : c.getDouble(34);
         return t;
     }
 
     private static final String COLS = "id,start_ms,end_ms,last_update_ms,ended,mode,distance_km,"
             + "odo_start,odo_end,moving_s,idle_s,max_speed,soc_start,soc_end,elec_start,elec_end,"
             + "hard_accel,hard_brake,start_lat,start_lon,end_lat,end_lon,fuel_start,fuel_end,"
-            + "ev_start,ev_end,hev_start,hev_end,speed_km,journey_acc,journey_last,drive_kwh,drive_s";
+            + "ev_start,ev_end,hev_start,hev_end,speed_km,journey_acc,journey_last,drive_kwh,drive_s,"
+            + "motor_net_kwh,motor_sample_s";
 
     synchronized List<Trip> all() {
         List<Trip> out = new ArrayList<>();
@@ -452,3 +473,4 @@ final class TripDb extends SQLiteOpenHelper {
         Backup.remove(appCtx, chargeId);
     }
 }
+

@@ -37,6 +37,30 @@ final class Trip {
     double elecStart = Double.NaN;
     double elecEnd = Double.NaN;
 
+    // Signed net motor energy is only an estimate; it excludes auxiliary loads and conversion losses.
+    volatile double motorNetKwh = Double.NaN;
+    volatile double motorSampleSec = 0;
+
+    /** Integrate only consecutive, fresh, valid power readings. Never bridge a disconnect. */
+    static final class MotorEnergy {
+        private long lastMs = -1;
+        private double lastKw;
+
+        void reset() { lastMs = -1; }
+
+        void add(Trip trip, long now, double kw) {
+            if (!finite(kw) || kw < -500 || kw > 1000) { reset(); return; }
+            long gap = now - lastMs;
+            if (lastMs >= 0 && gap > 0 && gap <= 2500) {
+                double kwh = (lastKw + kw) * 0.5 * gap / 3600000.0;
+                trip.motorNetKwh = (finite(trip.motorNetKwh) ? trip.motorNetKwh : 0) + kwh;
+                trip.motorSampleSec = (finite(trip.motorSampleSec) ? trip.motorSampleSec : 0) + gap / 1000.0;
+            }
+            lastMs = now;
+            lastKw = kw;
+        }
+    }
+
     // plug-in hybrid counters: fuel burned (litres) and distance in electric / hybrid mode (km)
     double fuelStart = Double.NaN, fuelEnd = Double.NaN;
     double evStart = Double.NaN, evEnd = Double.NaN;
@@ -83,14 +107,32 @@ final class Trip {
     double measuredEnergy() {
         if (!finite(elecStart) || !finite(elecEnd) || elecStart < 0 || elecEnd < 0) return Double.NaN;
         // Some unsupported vehicle signals report a constant zero instead of being absent.
-        if (elecStart == 0 && elecEnd == 0 && socUsed() > 0) return Double.NaN;
-        return Math.max(0, elecEnd - elecStart);
+        if (elecEnd < elecStart || (elecStart == 0 && elecEnd == 0)) return Double.NaN;
+        if (elecEnd == elecStart && (socUsed() > 0 || distanceKm >= 0.05 || motorNetKwh > 0.001))
+            return Double.NaN;
+        return elecEnd - elecStart;
     }
 
-    private double estimatedEnergy() {
+    private double socEstimatedEnergy() {
         if (!finite(socStart) || !finite(socEnd) || socStart > 100 || socEnd < 0 || socStart <= socEnd)
             return Double.NaN;
         return (socStart - socEnd) * estimateCapacityKwh / 100.0;
+    }
+
+    private double motorEstimatedEnergy() {
+        // Do not fabricate a whole-trip value from a handful of readings or after a long outage.
+        if (!finite(motorNetKwh) || motorNetKwh <= 0.001 || !finite(motorSampleSec)
+                || motorSampleSec < Math.max(5, durationSec() * 0.8)) return Double.NaN;
+        return motorNetKwh;
+    }
+
+    private double estimatedEnergy() {
+        double soc = socEstimatedEnergy();
+        return finite(soc) ? soc : motorEstimatedEnergy();
+    }
+
+    boolean energyIsMotorEstimate() {
+        return !finite(measuredEnergy()) && !finite(socEstimatedEnergy()) && finite(motorEstimatedEnergy());
     }
 
     double energyUsed() {
@@ -117,7 +159,7 @@ final class Trip {
 
     /** Energy used while driving; all of it when the parked part has not been worked out. */
     double driveEnergy() {
-        // SOC can estimate net whole-trip energy, not divide it reliably into driving and parking.
+        // Estimates cannot reliably separate driving from parking consumption.
         if (energyIsEstimate()) return energyUsed();
         if (Double.isNaN(driveKwh)) return energyUsed();
         return Math.max(0, driveKwh);
@@ -168,4 +210,5 @@ final class Trip {
         return socStart - socEnd;
     }
 }
+
 

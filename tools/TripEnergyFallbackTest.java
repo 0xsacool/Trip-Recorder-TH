@@ -48,6 +48,46 @@ public final class TripEnergyFallbackTest {
         check(Double.isNaN(missing.energyUsed()), "Charging must not become consumed energy");
         missing.socStart = 101;
         check(Double.isNaN(missing.energyUsed()), "Invalid SOC accepted");
+
+        Trip shortTrip = new Trip();
+        shortTrip.startMs = 1000;
+        shortTrip.lastUpdateMs = 121000;
+        shortTrip.distanceKm = 2.1;
+        shortTrip.socStart = shortTrip.socEnd = 71;
+        shortTrip.elecStart = shortTrip.elecEnd = 100;
+        Trip.MotorEnergy motor = new Trip.MotorEnergy();
+        for (int i = 0; i <= 120; i++) motor.add(shortTrip, i * 1000L, 12);
+        equal(0.4, shortTrip.energyUsed());
+        equal(0.4 / 2.1 * 100, shortTrip.energyPer100Km());
+        check(shortTrip.energyIsMotorEstimate(), "Short-trip fallback source not recognized");
+        check("≈0.4".equals(shortTrip.energyText(shortTrip.energyUsed(), "%.1f")), "Motor estimate not marked");
+        check(Double.isNaN(shortTrip.parkedEnergy()), "Motor estimate cannot determine parking energy");
+
+        double saved = shortTrip.motorNetKwh;
+        motor.add(shortTrip, 121000, -12);
+        equal(saved, shortTrip.motorNetKwh); // signed trapezoid, 12 to -12
+        motor.add(shortTrip, 122000, -12);
+        equal(saved - 12.0 / 3600, shortTrip.motorNetKwh);
+        saved = shortTrip.motorNetKwh;
+        motor.add(shortTrip, 130000, 90); // gap, do not extrapolate
+        motor.add(shortTrip, 131000, Double.NaN);
+        motor.add(shortTrip, 132000, 90);
+        equal(saved, shortTrip.motorNetKwh);
+        motor.reset();
+        motor.add(shortTrip, 133000, 90);
+        equal(saved, shortTrip.motorNetKwh);
+        shortTrip.socEnd = 70;
+        equal(0.6, shortTrip.energyUsed()); // battery SOC includes more than motor load
+        check(!shortTrip.energyIsMotorEstimate(), "SOC should supersede motor estimate");
+        shortTrip.elecEnd = 101;
+        equal(1, shortTrip.energyUsed());
+        check(!shortTrip.energyIsEstimate(), "Actual counter must supersede estimates");
+        shortTrip.elecEnd = 99; // reset counter is not a zero-energy measurement
+        shortTrip.socEnd = 71;
+        equal(saved, shortTrip.energyUsed());
+        shortTrip.lastUpdateMs = 600000;
+        check(Double.isNaN(shortTrip.energyUsed()), "Sparse samples cannot estimate the entire trip");
         System.out.println("TripEnergyFallbackTest PASS");
     }
 }
+

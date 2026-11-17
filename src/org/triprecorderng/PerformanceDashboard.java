@@ -77,6 +77,10 @@ final class PerformanceDashboard extends View {
 
     private String energyNumber(double v) { return shown == null ? "--" : shown.energyText(v, "%.1f"); }
 
+    private String energyCaption() {
+        return L.t("Energy") + (shown != null && shown.energyIsMotorEstimate() ? " (Motor)" : "");
+    }
+
     private void refresh() {
         RecorderService.Live live = RecorderService.live;
         long now = System.currentTimeMillis();
@@ -154,7 +158,7 @@ final class PerformanceDashboard extends View {
                 + "Cell temperature min/max " + number(minTemp, "%.0f") + "/"
                 + number(maxTemp, "%.0f") + " C. Power " + number(motorPower, "%.1f") + " kW. "
                 + tripLabel + ": " + number(distance, "%.1f") + " km, "
-                + L.t("Energy") + " " + energyNumber(energy) + " kWh, "
+                + energyCaption() + " " + energyNumber(energy) + " kWh, "
                 + L.t("Cost") + " " + money + ".");
         invalidate();
     }
@@ -169,7 +173,7 @@ final class PerformanceDashboard extends View {
         canvas.translate((getWidth() - 1000f * sx) / 2f, (getHeight() - 470f * scale) / 2f);
         canvas.scale(sx, scale);
         if (Prefs.THEME_U9_XTREME.equals(theme)) {
-            drawU9Xtreme(canvas);
+            drawU9Xtreme(canvas, sx / scale);
             canvas.restore();
             return;
         }
@@ -221,7 +225,7 @@ final class PerformanceDashboard extends View {
         fill(canvas, 0, 377, 1000, 379, LINE);
         cell(canvas, 0, 175, L.t("Trip"), number(distance, "%.1f") + " km");
         cell(canvas, 175, 345, L.t("Time"), elapsed);
-        cell(canvas, 345, 510, L.t("Energy"), energyNumber(energy) + " kWh");
+        cell(canvas, 345, 510, energyCaption(), energyNumber(energy) + " kWh");
         cell(canvas, 510, 685, L.t("Cost"), money);
         graph(canvas, 709, 386, 983, 459);
         canvas.restore();
@@ -240,7 +244,7 @@ final class PerformanceDashboard extends View {
             0xFF14171B, 0xFF050607, Shader.TileMode.CLAMP);
 
     /** Hypercar-inspired theme, not a vehicle model/profile or a driving-mode control. */
-    private void drawU9Xtreme(Canvas cv) {
+    private void drawU9Xtreme(Canvas cv, float horizontalRatio) {
         fill(cv, 0, 0, 1000, 470, 0xFF08090A);
         // Carbon-inspired fine weave, kept subtle behind the sharply cut panels.
         p.setColor(0xFF111315); p.setStrokeWidth(1);
@@ -248,8 +252,9 @@ final class PerformanceDashboard extends View {
         // The native app bar already displays EV TripLog. Show only the edition name here.
         xtremeText(cv, "BYD", 18, 30, 31, U9_ORANGE, Paint.Align.LEFT, 85);
         xtremeText(cv, "XTREME EDITION", 111, 30, 31, INK, Paint.Align.LEFT, 385);
-        text(cv, source, 18, 50, 14, MUTED, false, Paint.Align.LEFT, 590);
-        text(cv, status + "  |  " + tripLabel, 983, 50, 14, statusColor, false, Paint.Align.RIGHT, 350);
+        xtremeHeaderText(cv, source, 18, 50, 14, MUTED, false, Paint.Align.LEFT, 590, horizontalRatio);
+        xtremeHeaderText(cv, status, 983, 25, 19, statusColor, true, Paint.Align.RIGHT, 300, horizontalRatio);
+        xtremeHeaderText(cv, tripLabel, 983, 47, 15, MUTED, false, Paint.Align.RIGHT, 245, horizontalRatio);
         // Keep the entire accent below the text baselines, including translated GPS status.
         xtremeShape(cv, new float[]{0,58, 480,58, 496,55, 517,55, 484,62, 0,62}, xtremeOrange, U9_ORANGE, 0);
         fill(cv, 484, 58, 985, 60, 0xFF713719);
@@ -323,7 +328,7 @@ final class PerformanceDashboard extends View {
         fill(cv, 15, 459, 982, 461, U9_ORANGE);
         u9TripCell(cv, 18, 200, L.t("Trip"), number(distance, "%.1f") + " km");
         u9TripCell(cv, 200, 372, L.t("Time"), elapsed);
-        u9TripCell(cv, 372, 554, L.t("Energy"), energyNumber(energy) + " kWh");
+        u9TripCell(cv, 372, 554, energyCaption(), energyNumber(energy) + " kWh");
         u9TripCell(cv, 554, 782, L.t("Average consumption"), energyNumber(average) + " kWh/100 km");
         u9TripCell(cv, 782, 982, L.t("Cost"), money);
     }
@@ -336,6 +341,16 @@ final class PerformanceDashboard extends View {
         p.setShader(shader); cv.drawPath(path,p); p.setShader(null);
         if (border > 0) { p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(border); p.setColor(color); cv.drawPath(path,p); }
         p.setStyle(Paint.Style.FILL);
+    }
+
+    // Keep header glyphs proportional even when the angular frame fills a wider screen.
+    private void xtremeHeaderText(Canvas cv, String value, float x, float y, float size, int color,
+                                 boolean heavy, Paint.Align align, float maxWidth, float horizontalRatio) {
+        cv.save();
+        cv.translate(x, y);
+        cv.scale(1f / horizontalRatio, 1f);
+        text(cv, value, 0, 0, size, color, heavy, align, maxWidth * horizontalRatio);
+        cv.restore();
     }
 
     private void xtremeText(Canvas cv,String value,float x,float y,float size,int color,Paint.Align align,float maxWidth) {
@@ -470,7 +485,7 @@ final class PerformanceDashboard extends View {
 
         nTripRow(cv, 700, 91, L.t("Trip"), number(distance, "%.1f") + " km");
         nTripRow(cv, 691, 163, L.t("Time"), elapsed);
-        nTripRow(cv, 682, 235, L.t("Energy"), energyNumber(energy) + " kWh");
+        nTripRow(cv, 682, 235, energyCaption(), energyNumber(energy) + " kWh");
         nTripRow(cv, 673, 307, L.t("Average consumption"), energyNumber(average) + " kWh/100 km");
         nTripRow(cv, 665, 379, L.t("Cost"), money);
         fill(cv, 810, 449, 986, 453, N_RED);
@@ -512,7 +527,7 @@ final class PerformanceDashboard extends View {
         metric(cv, 662, 248, 145, L.t("Trip"), number(distance, "%.1f") + " km", 28);
         metric(cv, 822, 248, 147, L.t("Time"), elapsed, 28);
         thinLine(cv, 662, 287, 970, LINE);
-        metric(cv, 662, 311, 145, L.t("Energy"), energyNumber(energy) + " kWh", 29);
+        metric(cv, 662, 311, 145, energyCaption(), energyNumber(energy) + " kWh", 29);
         metric(cv, 822, 311, 147, L.t("Cost"), money, 27);
         thinLine(cv, 662, 351, 970, LINE);
         metric(cv, 662, 377, 304, L.t("Average consumption"), energyNumber(average) + " kWh/100 km", 31);
@@ -544,7 +559,7 @@ final class PerformanceDashboard extends View {
         fill(cv, 780, 87, 781, 455, LINE);
         taycanRow(cv, 92, L.t("Trip"), number(distance, "%.1f") + " km");
         taycanRow(cv, 183, L.t("Time"), elapsed);
-        taycanRow(cv, 274, L.t("Energy"), energyNumber(energy) + " kWh");
+        taycanRow(cv, 274, energyCaption(), energyNumber(energy) + " kWh");
         taycanRow(cv, 365, L.t("Cost"), money);
     }
 
@@ -646,7 +661,7 @@ final class PerformanceDashboard extends View {
         fill(cv, 695, 329, 697, 363, TYPE_R_LINE);
 
         fill(cv, 18, 381, 982, 383, TYPE_R_RED);
-        typeRMetric(cv, 22, 409, 451, 302, L.t("Energy"), energyNumber(energy) + " kWh", 35);
+        typeRMetric(cv, 22, 409, 451, 302, energyCaption(), energyNumber(energy) + " kWh", 35);
         typeRMetric(cv, 353, 409, 451, 325, L.t("Average consumption"),
                 energyNumber(average) + " kWh/100 km", 35);
         typeRMetric(cv, 710, 409, 451, 272, L.t("Cost"), money, 35);
@@ -719,7 +734,7 @@ final class PerformanceDashboard extends View {
         grPolygon(cv, new float[]{29,354, 984,354, 971,448, 16,448}, GR_PANEL);
         grMetric(cv, 35, 214, L.t("Trip"), number(distance, "%.1f") + " km");
         grMetric(cv, 214, 395, L.t("Time"), elapsed);
-        grMetric(cv, 395, 575, L.t("Energy"), energyNumber(energy) + " kWh");
+        grMetric(cv, 395, 575, energyCaption(), energyNumber(energy) + " kWh");
         grMetric(cv, 575, 789, L.t("Average consumption"), energyNumber(average) + " kWh/100 km");
         grMetric(cv, 789, 965, L.t("Cost"), money);
     }
@@ -913,5 +928,6 @@ final class PerformanceDashboard extends View {
         cv.drawText(s,x,baseline,p);
     }
 }
+
 
 
