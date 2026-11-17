@@ -245,14 +245,15 @@ final class PerformanceDashboard extends View {
         // Carbon-inspired fine weave, kept subtle behind the sharply cut panels.
         p.setColor(0xFF111315); p.setStrokeWidth(1);
         for (int i = -470; i < 1000; i += 10) cv.drawLine(i,470,i+470,0,p);
-        xtremeText(cv, "EV", 18, 30, 35, U9_ORANGE, Paint.Align.LEFT, 62);
-        xtremeText(cv, "TripLog", 85, 30, 35, INK, Paint.Align.LEFT, 218);
-        xtremeText(cv, "BYD XTREME EDITION", 983, 29, 29, INK, Paint.Align.RIGHT, 420);
-        text(cv, source, 18, 50, 14, MUTED, false, Paint.Align.LEFT, 580);
-        text(cv, status + "  |  " + tripLabel, 983, 50, 14, statusColor, false, Paint.Align.RIGHT, 390);
-        xtremeShape(cv, new float[]{0,58, 265,58, 298,36, 315,36, 269,62, 0,62}, xtremeOrange, U9_ORANGE, 0);
-        fill(cv, 269, 58, 985, 60, 0xFF713719);
-        xtremeShape(cv, new float[]{978,58, 1000,43, 1000,48, 981,62}, xtremeOrange, U9_ORANGE, 0);
+        // The native app bar already displays EV TripLog. Show only the edition name here.
+        xtremeText(cv, "BYD", 18, 30, 31, U9_ORANGE, Paint.Align.LEFT, 85);
+        xtremeText(cv, "XTREME EDITION", 111, 30, 31, INK, Paint.Align.LEFT, 385);
+        text(cv, source, 18, 50, 14, MUTED, false, Paint.Align.LEFT, 590);
+        text(cv, status + "  |  " + tripLabel, 983, 50, 14, statusColor, false, Paint.Align.RIGHT, 350);
+        // Keep the entire accent below the text baselines, including translated GPS status.
+        xtremeShape(cv, new float[]{0,58, 480,58, 496,55, 517,55, 484,62, 0,62}, xtremeOrange, U9_ORANGE, 0);
+        fill(cv, 484, 58, 985, 60, 0xFF713719);
+        xtremeShape(cv, new float[]{978,58, 1000,55, 1000,59, 981,62}, xtremeOrange, U9_ORANGE, 0);
 
         // Angular orange bezel with a machined silver inner trim, like the approved concept.
         xtremeShape(cv, new float[]{225,177, 345,72, 733,66, 682,86, 359,98, 260,185,
