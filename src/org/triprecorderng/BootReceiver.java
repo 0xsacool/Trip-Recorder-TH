@@ -15,12 +15,12 @@ public class BootReceiver extends BroadcastReceiver {
         Diag.log("boot receiver: " + intent.getAction());
         String action = intent.getAction();
         // only a real boot broadcast shows that the car lets the app start by itself (not a manual START)
-        if (Intent.ACTION_BOOT_COMPLETED.equals(action)
-                || "android.intent.action.QUICKBOOT_POWERON".equals(action)) {
-            Prefs.markBootReceiverRan(context);
-        }
+        boolean boot = Intent.ACTION_BOOT_COMPLETED.equals(action)
+                || "android.intent.action.QUICKBOOT_POWERON".equals(action)
+                || "com.htc.intent.action.QUICKBOOT_POWERON".equals(action);
         try {
             context.startForegroundService(new Intent(context, RecorderService.class));
+            if (boot) Prefs.markBootReceiverRan(context);
         } catch (Throwable t) {
             Diag.log("could not start service from boot", t);
         }

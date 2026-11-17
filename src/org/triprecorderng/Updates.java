@@ -140,7 +140,8 @@ final class Updates {
                 JSONObject as = assets.optJSONObject(a);
                 if (as == null) continue;
                 String name = as.optString("name", "");
-                if (!name.endsWith(".apk")) continue;
+                // The earlier APKs use a different Android application ID and cannot update this app.
+                if (!name.startsWith("EVTripLog-app-") || !name.endsWith(".apk")) continue;
                 Release r = new Release();
                 r.build = b;
                 r.assetName = name;
@@ -457,7 +458,7 @@ final class Updates {
         if (!path.matches("[A-Za-z0-9/._-]+") || size <= 0) return null;
         return "rm -f " + RESULT_FILE + "; (nohup sh -c 'cat " + path + " | pm install -r --user 0 -S " + size + " > "
                 + RESULT_FILE + " 2>&1 && { pm uninstall --user 999 " + pkg + " > /dev/null 2>&1; am start -n " + pkg
-                + "/.MainActivity >> " + RESULT_FILE + " 2>&1; }; echo done >> " + RESULT_FILE
+                + "/" + MainActivity.class.getName() + " >> " + RESULT_FILE + " 2>&1; }; echo done >> " + RESULT_FILE
                 + "' > /dev/null 2>&1 < /dev/null &); "
                 + "i=0; while [ $i -lt 24 ] && ! grep -q '^done$' " + RESULT_FILE + " 2>/dev/null; "
                 + "do sleep 0.5; i=$((i+1)); done; cat " + RESULT_FILE;

@@ -18,7 +18,7 @@ import java.io.FileNotFoundException;
  * app's own cache folder are ever served.
  */
 public final class TrackProvider extends ContentProvider {
-    static final String AUTHORITY = "org.triprecorderng.tracks";
+    static final String AUTHORITY = "com.evtriplog.app.tracks";
     static final String MIME = "application/gpx+xml";
 
     static File dir(Context c) {

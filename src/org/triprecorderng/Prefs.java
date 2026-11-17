@@ -89,7 +89,8 @@ final class Prefs {
 
     /** Called by the boot receiver: remembers that the system delivered the start broadcast this boot. */
     static void markBootReceiverRan(Context c) {
-        sp(c).edit().putInt("boot_seen_v2", currentBootCount(c)).apply();
+        sp(c).edit().putInt("boot_seen_v2", currentBootCount(c))
+                .putLong("boot_seen_install", installStamp(c)).apply();
     }
 
     /**
@@ -114,21 +115,18 @@ final class Prefs {
     static final int AUTOSTART_BLOCKED = 2;
 
     /**
-     * Did the car start the app by itself after the last restart? An install or update in the current boot comes
-     * first: BYD switched its "Disable background Apps" setting back on then, so what the earlier start of this boot
-     * showed no longer counts, and nothing is confirmed until the next restart.
+     * Confirm auto-start only with a boot signal associated with the installed APK version.
+     * BYD's proprietary switch cannot be read; absence of a callback is unknown, not blocked.
      */
     static int autoStartHealth(Context c) {
         SharedPreferences p = sp(c);
-        return healthFor(currentBootCount(c), p.getInt("boot_seen_v2", -2), p.getInt("update_boot", -2));
-    }
-
-    /** The decision itself: current boot count, the boot at which the start broadcast last arrived, the boot of the last install. */
-    static int healthFor(int boot, int broadcastBoot, int installBoot) {
-        if (boot < 0) return AUTOSTART_UNKNOWN;
-        if (installBoot == boot) return AUTOSTART_UNKNOWN;
-        if (broadcastBoot == boot) return AUTOSTART_OK;
-        return AUTOSTART_BLOCKED;
+        int boot = currentBootCount(c);
+        long install = installStamp(c);
+        // A quick-boot signal received after this version was installed is valid even if
+        // BYD did not increment the physical Android boot counter.
+        if (boot >= 0 && install > 0 && p.getLong("boot_seen_install", -1) == install
+                && p.getInt("boot_seen_v2", -2) == boot) return AUTOSTART_OK;
+        return AUTOSTART_UNKNOWN;
     }
 
     static boolean linkConsented(Context c) {

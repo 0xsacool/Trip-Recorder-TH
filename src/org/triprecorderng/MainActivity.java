@@ -87,7 +87,6 @@ public class MainActivity extends Activity {
     // ---- lifecycle -------------------------------------------------------------------------
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
-        freshOpening = b == null;
         Diag.init(this);
         buildShell();
         handleExtras(getIntent());
@@ -132,43 +131,17 @@ public class MainActivity extends Activity {
         }).start();
     }
 
-    /** A new instance of the screen (not a re-creation for a language change) counts as an opening of the app. */
-    private boolean freshOpening;
-    private static long lastStopMs;
-    /**
-     * Coming back after less than this is the same visit, not a new opening: a language change re-creates the screen
-     * within a second. (Going to BYD's settings screen from the reminder has its own 10 minute pause.)
-     */
-    private static final long NEW_OPENING_AFTER_MS = 3_000;
-
     @Override protected void onResume() {
         super.onResume();
         ui.post(ticker);
-        long away = android.os.SystemClock.elapsedRealtime() - lastStopMs;
-        if (freshOpening || away > NEW_OPENING_AFTER_MS) ui.postDelayed(autoStartCheck, 1200);
-        freshOpening = false;
-        // also after coming back from a system prompt (the first launch starts with a permission question)
         ui.postDelayed(linkCheck, 1500);
-    }
-
-    @Override protected void onStop() {
-        super.onStop();
-        lastStopMs = android.os.SystemClock.elapsedRealtime();
     }
 
     @Override protected void onPause() {
         super.onPause();
         ui.removeCallbacks(ticker);
-        ui.removeCallbacks(autoStartCheck);
         ui.removeCallbacks(linkCheck);
     }
-
-    private final Runnable autoStartCheck = new Runnable() {
-        @Override public void run() {
-            // the one-time question comes first; the auto-start reminder follows on a later opening
-            if (!maybeAskLink()) maybeAutoStartAlert();
-        }
-    };
 
     private AlertDialog linkDialog;
 
@@ -190,7 +163,6 @@ public class MainActivity extends Activity {
         if (Prefs.linkEnabled(this) || Prefs.linkConsented(this) || !Prefs.linkQuestionDue(this)) return false;
         Intent in = getIntent();
         if (in != null && in.getBooleanExtra("skip_alert", false)) return false;
-        if (autoStartDialog != null && autoStartDialog.isShowing()) return false;
         Prefs.setLinkAsked(this);
         Diag.log("asking whether to turn on the vehicle data link");
         try {
@@ -202,72 +174,8 @@ public class MainActivity extends Activity {
         return linkDialog != null;
     }
 
-    private AlertDialog autoStartDialog;
-
-    /**
-     * When BYD has not let the app start by itself (its "Disable background Apps" switch is on for
-     * EV TripLog), tell the user how to fix it, every time the app is opened. The state is inferred from
-     * whether the system's start broadcast reached the app after the last restart (BYD's own switch cannot be
-     * read). Skipped while driving, in the first minutes after the head unit boots (the broadcast may simply not
-     * have arrived yet) and while the user is in BYD's settings screen. "Don't show again" mutes it, but every
-     * 15th opening it comes back anyway.
-     */
-    private void maybeAutoStartAlert() {
-        if (isFinishing() || isDestroyed()) return;
-        if (autoStartDialog != null && autoStartDialog.isShowing()) return;
-        Intent in = getIntent();
-        if (in != null && in.getBooleanExtra("skip_alert", false)) return;
-        Prefs.noteRun(this);
-        int health = Prefs.autoStartHealth(this);
-        if (health == Prefs.AUTOSTART_OK) return;
-        if (android.os.SystemClock.elapsedRealtime() < 180_000) return;
-        double speed = RecorderService.live.speed;
-        if (!Double.isNaN(speed) && speed >= 5) return;
-        if (System.currentTimeMillis() - autostartScreenOpenedMs < 10 * 60_000) return;
-        boolean reminder = false;
-        if (Prefs.autoStartAlertMuted(this)) {
-            if (!Prefs.countMutedOpening(this)) return;
-            reminder = true;
-        }
-        final boolean again = reminder;
-        String how = L.t("Open Setting > BYD auto-start apps, find EV TripLog in 'Disable background Apps' and "
-                + "turn it OFF (OFF means the app is allowed to start). Then restart the head unit once.");
-        String why = health == Prefs.AUTOSTART_BLOCKED
-                ? L.t("BYD did not start EV TripLog by itself after the last restart, so trips are not "
-                + "recorded until you open the app.\n\n")
-                : L.t("Auto-start is not confirmed yet. BYD switches it back to blocked every time Trip "
-                + "Recorder is installed or updated, and until it is allowed the app does not record "
-                + "after a restart.\n\n");
-        String note = reminder
-                ? L.f("You chose not to see this reminder again. It comes back every %d openings of the app "
-                + "while auto-start is still blocked.\n\n", Prefs.MUTED_REMINDER_EVERY)
-                : "";
-        try {
-            autoStartDialog = Ui.show(new AlertDialog.Builder(this)
-                    .setTitle(L.t("Turn off 'Disable background Apps'"))
-                    .setMessage(note + why + how)
-                    .setPositiveButton(L.t("Open BYD settings"), new android.content.DialogInterface.OnClickListener() {
-                        @Override public void onClick(android.content.DialogInterface d, int w) {
-                            openAutostart();
-                        }
-                    })
-                    .setNeutralButton(again ? L.t("Show every time") : L.t("Don't show again"),
-                            new android.content.DialogInterface.OnClickListener() {
-                        @Override public void onClick(android.content.DialogInterface d, int w) {
-                            Prefs.setAutoStartAlertMuted(MainActivity.this, !again);
-                            toast(again ? L.t("This reminder will show every time the app is opened.")
-                                    : L.f("Understood. The reminder comes back after %d openings of the app.",
-                                    Prefs.MUTED_REMINDER_EVERY));
-                        }
-                    })
-                    .setNegativeButton(L.t("Later"), null));
-        } catch (Throwable t) {
-            Diag.log("could not show the auto-start reminder", t);
-        }
-    }
-
-    /** When the user last went to BYD's auto-start screen from this app; the reminder waits a while after that. */
-    private static long autostartScreenOpenedMs;
+    // BYD does not expose the switch state. The non-blocking status is shown in Settings instead
+    // of interrupting a drive with a modal based on an unconfirmed inference.
 
     private final Runnable ticker = new Runnable() {
         @Override public void run() {
@@ -1437,7 +1345,6 @@ public class MainActivity extends Activity {
     }
 
     private void openAutostart() {
-        autostartScreenOpenedMs = System.currentTimeMillis();
         Intent i = new Intent(Intent.ACTION_MAIN);
         i.setComponent(new ComponentName("com.byd.appstartmanagement",
                 "com.byd.appstartmanagement.frame.AppStartManagement"));

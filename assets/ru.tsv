@@ -502,3 +502,4 @@ Up to %d km/h	До %d км/ч
 Nominal battery capacity	Номинальная ёмкость батареи
 Enter the battery capacity in kWh (10 to 150). Used only to estimate charging energy when no measured data is available.	Введите ёмкость батареи в кВт·ч (10–150). Используется для оценки, если измерения недоступны.
 Invalid battery capacity	Неверная ёмкость батареи
+Auto-start not verified. Check EV TripLog in 'Disable background Apps' and restart the head unit.	Автозапуск не подтверждён. Проверьте EV TripLog в Disable background Apps и перезапустите головное устройство.

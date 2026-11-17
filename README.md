@@ -12,7 +12,7 @@ on BYD's stock "Driving behavior" app: This Trip, My Trips, Attainment, Statisti
 Q&A and Setting pages. Everything stays on the car, nothing is uploaded. The app is in English, Arabic
 (with a right-to-left layout) and Russian.
 
-Package `org.triprecorderng`. Built and tested on one plug-in hybrid with DiLink 5.1 (Android 13). Other BYD
+Package `com.evtriplog.app` (Dev-9 onward). The older `org.triprecorderng` app cannot update in place: back up completed trips and charges to the shared Documents/TripRecorderNG/backup folder, stop the older app before starting this one, and restore from backup after installing. Verify restored data before removing the old app; settings must be configured again. Built and tested on one plug-in hybrid with DiLink 5.1 (Android 13). Other BYD
 models and software versions may behave differently; reports and fixes are welcome.
 
 > **Not affiliated with BYD.** "BYD" and "DiLink" belong to their owners and are used here only to say what
@@ -337,7 +337,7 @@ the APK, checks its size and SHA-256 against GitHub's digest, checks that it is 
 key as the installed one, saves a backup of the trips, and then replaces itself through the car's loopback
 debugging and starts again. So installing needs the **Vehicle data link** to be on, and the car to be parked. BYD
 resets its auto-start switch on every install, so afterwards do the same two steps as after any update (Install /
-update). The downloaded file stays in `Android/data/org.triprecorderng/files/update`. The file is streamed into the
+update). The downloaded file stays in `Android/data/com.evtriplog.app/files/update`. The file is streamed into the
 installer (`cat file | pm install -r --user 0 -S size`, as `adb install` does, for the main user only, after which the app's copy in the
 second user is removed): handing `pm install` the path failed on the
 tested unit with "Failed to load asset path from fd" because the system could not read the shared-storage file.
@@ -399,7 +399,7 @@ existing keystore set `KEYSTORE=path` and `KS_PASS=password`.
 
 **Use `--user 0`.** The head unit has a second Android user (999, the second display). A plain `adb install -r` puts the app
 there too, where it only receives boot events and does nothing. `--user 0` keeps it in the main user. To remove a copy that is
-already in user 999: `adb shell pm uninstall --user 999 org.triprecorderng`. The in-app update does both.
+already in user 999: `adb shell pm uninstall --user 999 com.evtriplog.app`. The in-app update does both.
 
 **Every install or update resets BYD's per-app start switch to "disabled"**, which blocks the
 recorder from starting by itself after a restart. After each install: in the car's Setting > BYD
@@ -408,7 +408,7 @@ restart the head unit once. The app's own Setting screen shows whether the last 
 automatically, and warns on This Trip when it did not.
 
 ## Test hook
-`adb shell am start -n org.triprecorderng/.MainActivity --ez demo_trips true` adds 7 sample trips (one of them a
+`adb shell am start -n com.evtriplog.app/org.triprecorderng.MainActivity --ez demo_trips true` adds 7 sample trips (one of them a
 hybrid trip) and 2 charging sessions; `--ez clear_demo true` removes them.
 
 ## Vehicle data link (optional, OFF by default)

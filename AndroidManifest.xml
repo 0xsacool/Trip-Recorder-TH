@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="org.triprecorderng"
+    package="com.evtriplog.app"
     android:versionCode="1"
     android:versionName="0.1">
 
@@ -42,7 +42,7 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <application
-        android:name=".App"
+        android:name="org.triprecorderng.App"
         android:supportsRtl="true"
         android:label="EV TripLog"
         android:icon="@drawable/ic_launcher"
@@ -53,13 +53,13 @@
 
         <!-- serves a trip's GPX file to the map app the user picks (access is granted per URI) -->
         <provider
-            android:name=".TrackProvider"
-            android:authorities="org.triprecorderng.tracks"
+            android:name="org.triprecorderng.TrackProvider"
+            android:authorities="com.evtriplog.app.tracks"
             android:exported="false"
             android:grantUriPermissions="true" />
 
         <activity
-            android:name=".MainActivity"
+            android:name="org.triprecorderng.MainActivity"
             android:exported="true"
             android:screenOrientation="sensorLandscape"
             android:configChanges="orientation|screenSize|keyboardHidden|uiMode|density|fontScale"
@@ -71,19 +71,19 @@
         </activity>
 
         <service
-            android:name=".RecorderService"
+            android:name="org.triprecorderng.RecorderService"
             android:exported="false"
             android:foregroundServiceType="location" />
 
         <receiver
-            android:name=".BootReceiver"
+            android:name="org.triprecorderng.BootReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
                 <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
-                <action android:name="org.triprecorderng.START" />
+                <action android:name="com.evtriplog.app.START" />
             </intent-filter>
         </receiver>
     </application>

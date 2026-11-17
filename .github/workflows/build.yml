@@ -71,7 +71,11 @@ jobs:
           "$BT/aapt2" dump badging TripRecorderNG.apk | grep -q "versionName='$VERSION_NAME'" \
             || { echo "::error::the APK's version name is not $VERSION_NAME"; exit 1; }
           mkdir -p dist
-          cp TripRecorderNG.apk "dist/EVTripLog-${VERSION_NAME}-${GITHUB_SHA::7}.apk"
+          "$BT/aapt2" dump badging TripRecorderNG.apk | grep -q "package: name='com.evtriplog.app'" \
+            || { echo "::error::wrong Android package"; exit 1; }
+          "$BT/aapt2" dump badging TripRecorderNG.apk | grep -q "launchable-activity: name='org.triprecorderng.MainActivity'" \
+            || { echo "::error::wrong launcher activity"; exit 1; }
+          cp TripRecorderNG.apk "dist/EVTripLog-app-${VERSION_NAME}-${GITHUB_SHA::7}.apk"
 
       - uses: actions/upload-artifact@v7
         with:
