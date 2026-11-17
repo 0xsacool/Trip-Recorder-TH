@@ -7,6 +7,8 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.Typeface;
+import android.graphics.LinearGradient;
+import android.graphics.Shader;
 import android.view.View;
 import java.util.Arrays;
 import java.util.List;
@@ -58,7 +60,7 @@ final class PerformanceDashboard extends View {
         this.theme = Prefs.dashboardTheme(c);
         this.host = host;
         Arrays.fill(history, Double.NaN);
-        setBackgroundColor(gr ? 0xFF080808 : typeR ? 0xFF08090B : 0xFF090D11);
+        setBackgroundColor(Prefs.THEME_U9_XTREME.equals(theme) ? 0xFF08090A : gr ? 0xFF080808 : typeR ? 0xFF08090B : 0xFF090D11);
         setFocusable(true);
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
         setOnClickListener(new OnClickListener() {
@@ -161,9 +163,11 @@ final class PerformanceDashboard extends View {
         super.onDraw(canvas);
         if (getWidth() <= 0 || getHeight() <= 0) return;
         float scale = Math.min(getWidth() / 1000f, getHeight() / 470f);
+        // Use more of the BYD widescreen without excessively stretching the instruments.
+        float sx = Prefs.THEME_U9_XTREME.equals(theme) ? Math.min(getWidth()/1000f, scale*1.20f) : scale;
         canvas.save();
-        canvas.translate((getWidth() - 1000f * scale) / 2f, (getHeight() - 470f * scale) / 2f);
-        canvas.scale(scale, scale);
+        canvas.translate((getWidth() - 1000f * sx) / 2f, (getHeight() - 470f * scale) / 2f);
+        canvas.scale(sx, scale);
         if (Prefs.THEME_U9_XTREME.equals(theme)) {
             drawU9Xtreme(canvas);
             canvas.restore();
@@ -223,69 +227,99 @@ final class PerformanceDashboard extends View {
         canvas.restore();
     }
 
-    private static final int U9_ORANGE = 0xFFFF8536, U9_REGEN = 0xFF43D9EC;
-    private static final int U9_PANEL = 0xFF171A1E, U9_BORDER = 0xFF3B4045;
+    private static final int U9_ORANGE = 0xFFFF791A, U9_REGEN = 0xFF33BFFF;
+    private static final int U9_BORDER = 0xFF54575B;
+    private final Typeface xtremeFace = Typeface.create("sans-serif-black", Typeface.BOLD_ITALIC);
+    private final LinearGradient xtremeOrange = new LinearGradient(0,80,0,360,
+            new int[]{0xFFFFB344, 0xFFFF780D, 0xFFE34B00, 0xFFFF9A26}, null, Shader.TileMode.CLAMP);
+    private final LinearGradient xtremeSteel = new LinearGradient(0,90,0,330,
+            new int[]{0xFFF8FAFF, 0xFF868E9C, 0xFFECEFF4}, null, Shader.TileMode.CLAMP);
+    private final LinearGradient xtremePanel = new LinearGradient(0,70,0,465,
+            0xFF191B1E, 0xFF08090B, Shader.TileMode.CLAMP);
+    private final LinearGradient xtremeDial = new LinearGradient(260,90,680,335,
+            0xFF14171B, 0xFF050607, Shader.TileMode.CLAMP);
 
     /** Hypercar-inspired theme, not a vehicle model/profile or a driving-mode control. */
     private void drawU9Xtreme(Canvas cv) {
-        fill(cv, 0, 0, 1000, 470, 0xFF080A0C);
-        // A restrained carbon-style diagonal header, with a distinct racing-orange accent.
-        fill(cv, 0, 0, 1000, 58, 0xFF121518);
-        for (int i = 0; i < 12; i++) slant(cv, 390+i*14, 2, 400+i*14, 30, 0xFF202428);
-        slant(cv, 12, 7, 24, 31, U9_ORANGE);
-        slant(cv, 26, 7, 38, 31, U9_ORANGE);
-        sportText(cv, "YANGWANG U9 XTREME EDITION", 47, 28, 25, INK, Paint.Align.LEFT, 340);
-        text(cv, source, 18, 48, 15, MUTED, false, Paint.Align.LEFT, 650);
-        text(cv, status, 982, 25, 19, statusColor, true, Paint.Align.RIGHT, 300);
-        text(cv, tripLabel, 982, 47, 15, MUTED, false, Paint.Align.RIGHT, 260);
-        fill(cv, 0, 57, 1000, 60, U9_ORANGE);
+        fill(cv, 0, 0, 1000, 470, 0xFF08090A);
+        // Carbon-inspired fine weave, kept subtle behind the sharply cut panels.
+        p.setColor(0xFF111315); p.setStrokeWidth(1);
+        for (int i = -470; i < 1000; i += 10) cv.drawLine(i,470,i+470,0,p);
+        xtremeText(cv, "EV", 18, 30, 35, U9_ORANGE, Paint.Align.LEFT, 62);
+        xtremeText(cv, "TripLog", 85, 30, 35, INK, Paint.Align.LEFT, 218);
+        xtremeText(cv, "BYD XTREME EDITION", 983, 29, 29, INK, Paint.Align.RIGHT, 420);
+        text(cv, source, 18, 50, 14, MUTED, false, Paint.Align.LEFT, 580);
+        text(cv, status + "  |  " + tripLabel, 983, 50, 14, statusColor, false, Paint.Align.RIGHT, 390);
+        xtremeShape(cv, new float[]{0,58, 265,58, 298,36, 315,36, 269,62, 0,62}, xtremeOrange, U9_ORANGE, 0);
+        fill(cv, 269, 58, 985, 60, 0xFF713719);
+        xtremeShape(cv, new float[]{978,58, 1000,43, 1000,48, 981,62}, xtremeOrange, U9_ORANGE, 0);
 
-        // Keep the two signed-power directions visible at the same time. Scale grows
-        // when a car exceeds the nominal display range; the number is never clamped.
+        // Angular orange bezel with a machined silver inner trim, like the approved concept.
+        xtremeShape(cv, new float[]{225,177, 345,72, 733,66, 682,86, 359,98, 260,185,
+                350,337, 633,343, 716,322, 650,363, 338,357}, xtremeOrange, U9_ORANGE, 0);
+        xtremeShape(cv, new float[]{258,183, 359,94, 710,75, 670,92, 374,110, 281,187,
+                363,310, 660,318, 642,326, 351,324}, xtremeSteel, INK, 0);
+        xtremeShape(cv, new float[]{281,187, 374,110, 713,89, 742,104, 660,318, 363,310},
+                xtremeDial, 0xFF25282C, 0);
+        xtremeShape(cv, new float[]{351,325, 645,328, 686,319, 642,348, 360,343}, xtremeDial, 0xFF25282C, 0);
+
+        // Side panels use the negative space of the bezel rather than a flat row of boxes.
+        xtremeShape(cv, new float[]{0,132, 36,96, 270,96, 218,174, 260,244, 207,350, 15,350, 0,336},
+                xtremePanel, U9_BORDER, 1.3f);
+        xtremeShape(cv, new float[]{779,76, 1000,76, 1000,334, 982,350, 702,350, 738,224},
+                xtremePanel, U9_BORDER, 1.3f);
+        fill(cv, 15, 350, 207, 352, U9_ORANGE);
+        fill(cv, 702, 350, 982, 352, U9_ORANGE);
+
+        // Scales grow with measured power. Zero remains at the junction of REGEN and DRIVE.
         boolean measured = valid(motorPower);
         double driveMax = measured ? Math.max(200, Math.ceil(Math.max(0, motorPower)/100)*100) : 200;
         double regenMax = measured ? Math.max(100, Math.ceil(Math.max(0, -motorPower)/50)*50) : 100;
         double drive = measured ? Math.max(0, motorPower)/driveMax : 0;
         double regen = measured ? Math.max(0, -motorPower)/regenMax : 0;
-        text(cv, "REGEN", 20, 82, 16, U9_REGEN, true, Paint.Align.LEFT, 180);
-        text(cv, "DRIVE POWER", 980, 82, 16, U9_ORANGE, true, Paint.Align.RIGHT, 180);
-        sportText(cv, number(motorPower, "%.0f") + " kW", 500, 95, 32, INK, Paint.Align.CENTER, 240);
-        u9PowerHalf(cv, 20, 497, 105, 135, regen, U9_REGEN, true);
-        u9PowerHalf(cv, 503, 980, 105, 135, drive, U9_ORANGE, false);
-        fill(cv, 498, 103, 502, 138, INK);
-        text(cv, "-" + number(regenMax, "%.0f") + " kW", 20, 153, 13, MUTED, false, Paint.Align.LEFT, 150);
-        text(cv, "0", 500, 153, 13, MUTED, false, Paint.Align.CENTER, 50);
-        text(cv, "+" + number(driveMax, "%.0f") + " kW", 980, 153, 13, MUTED, false, Paint.Align.RIGHT, 150);
+        xtremePowerScale(cv, regen, drive, regenMax, driveMax);
+        xtremeText(cv, number(speed, "%.0f"), 510, 277, 145, INK, Paint.Align.CENTER, 340, 1.27f);
+        xtremeText(cv, "km/h", 510, 302, 25, MUTED, Paint.Align.CENTER, 160);
+        xtremeText(cv, "‹‹  REGEN", 407, 339, 14, U9_REGEN, Paint.Align.CENTER, 106);
+        fill(cv, 510, 328, 511, 342, U9_BORDER);
+        xtremeText(cv, "POWER  ››", 600, 340, 14, U9_ORANGE, Paint.Align.CENTER, 105);
 
-        sportPanel(cv, new float[]{18,170, 280,170, 302,199, 273,344, 18,344}, U9_PANEL, U9_BORDER);
-        sportPanel(cv, new float[]{720,170, 982,170, 982,344, 727,344, 698,199}, U9_PANEL, U9_BORDER);
-        sportPanel(cv, new float[]{333,170, 667,170, 703,219, 662,344, 338,344, 297,219},
-                0xFF101317, U9_ORANGE);
-        fill(cv, 18, 171, 93, 174, U9_ORANGE);
-        fill(cv, 907, 171, 982, 174, U9_ORANGE);
+        xtremeText(cv, L.t("Battery"), 43, 123, 21, MUTED, Paint.Align.LEFT, 180);
+        xtremeText(cv, number(soc, "%.0f") + "%", 38, 183, 63, INK, Paint.Align.LEFT, 184);
+        xtremeShape(cv, new float[]{29,194, 208,194, 220,201, 211,226, 22,226, 17,219},
+                null, 0xFFB3BAC2, 1.5f);
+        for (int i=0; i<12; i++) {
+            float x=25+i*15;
+            slant(cv,x,199,x+14,221,0xFF34383D);
+            float fraction = valid(soc) ? Math.max(0, Math.min(1, (float)soc*12/100-i)) : 0;
+            if (fraction > 0) {
+                cv.save(); cv.clipRect(x,199,x+14*fraction,221);
+                slant(cv,x,199,x+14,221,batteryAccent(U9_ORANGE)); cv.restore();
+            }
+        }
+        thinLine(cv, 33, 242, 205, U9_BORDER);
+        xtremeText(cv, range.label, 33, 267, 19, MUTED, Paint.Align.LEFT, 180);
+        xtremeText(cv, range.text(), 33, 320, 48, INK, Paint.Align.LEFT, 175);
 
-        metric(cv, 34, 195, 235, L.t("Battery") + " / SOC", number(soc, "%.0f") + "%", 40);
-        fill(cv, 34, 244, 248, 252, U9_BORDER);
-        if (valid(soc)) fill(cv, 34, 244, 34 + (float)soc*2.14f, 252, batteryAccent(U9_ORANGE));
-        thinLine(cv, 34, 265, 260, U9_BORDER);
-        text(cv, range.label, 34, 286, 16, MUTED, false, Paint.Align.LEFT, 228);
-        sportText(cv, range.text(), 34, 326, 37, INK, Paint.Align.LEFT, 228);
-
-        text(cv, L.t("Speed"), 500, 195, 17, MUTED, true, Paint.Align.CENTER, 260);
-        sportText(cv, number(speed, "%.0f"), 500, 289, 112, INK, Paint.Align.CENTER, 300);
-        text(cv, "km/h", 500, 317, 22, MUTED, false, Paint.Align.CENTER, 190);
-        fill(cv, 399, 331, 601, 334, U9_ORANGE);
-
-        metric(cv, 742, 191, 224, "BATTERY TEMP MIN / MAX", tempReading(), 25);
-        thinLine(cv, 740, 233, 963, U9_BORDER);
-        metric(cv, 742, 252, 224, "CELL VOLTAGE MIN / MAX", cellReading(), 24);
-        thinLine(cv, 740, 293, 963, U9_BORDER);
-        text(cv, "CHARGING VOLTAGE", 742, 312, 13, MUTED, false, Paint.Align.LEFT, 224);
-        text(cv, number(chargeVoltage, "%.0f") + " V", 963, 334, 22, INK, true, Paint.Align.RIGHT, 200);
+        xtremeText(cv, number(motorPower, "%.0f") + " kW", 983, 129, 48,
+                valid(motorPower) && motorPower < 0 ? U9_REGEN : INK, Paint.Align.RIGHT, 206);
+        xtremeText(cv, valid(motorPower) && motorPower < 0 ? "REGEN POWER" : "LIVE POWER", 983, 151, 18, MUTED, Paint.Align.RIGHT, 210);
+        thinLine(cv, 762, 162, 983, U9_BORDER);
+        xtremeIcon(cv, 760, 190, 0);
+        xtremeText(cv, "BATTERY TEMP MIN / MAX", 800, 180, 16, MUTED, Paint.Align.LEFT, 182);
+        xtremeText(cv, tempReading(), 800, 207, 27, INK, Paint.Align.LEFT, 183);
+        thinLine(cv, 747, 219, 983, U9_BORDER);
+        xtremeIcon(cv, 742, 248, 1);
+        xtremeText(cv, "CELL VOLTAGE MIN / MAX", 788, 239, 16, MUTED, Paint.Align.LEFT, 195);
+        xtremeText(cv, cellReading(), 788, 266, 26, INK, Paint.Align.LEFT, 195);
+        thinLine(cv, 728, 278, 983, U9_BORDER);
+        xtremeIcon(cv, 725, 308, 2);
+        xtremeText(cv, "CHARGING VOLTAGE", 771, 298, 15, MUTED, Paint.Align.LEFT, 210);
+        xtremeText(cv, number(chargeVoltage, "%.0f") + " V", 771, 332, 32, INK, Paint.Align.LEFT, 210);
 
         // Same trip source and estimated-energy notation as all the other themes.
-        sportPanel(cv, new float[]{18,360, 982,360, 982,453, 18,453}, U9_PANEL, U9_BORDER);
-        fill(cv, 18, 360, 982, 363, U9_ORANGE);
+        xtremeShape(cv, new float[]{12,379, 36,371, 1000,371, 1000,443, 982,460, 15,460, 0,448}, xtremePanel, U9_BORDER, 1.3f);
+        fill(cv, 15, 459, 982, 461, U9_ORANGE);
         u9TripCell(cv, 18, 200, L.t("Trip"), number(distance, "%.1f") + " km");
         u9TripCell(cv, 200, 372, L.t("Time"), elapsed);
         u9TripCell(cv, 372, 554, L.t("Energy"), energyNumber(energy) + " kWh");
@@ -293,30 +327,65 @@ final class PerformanceDashboard extends View {
         u9TripCell(cv, 782, 982, L.t("Cost"), money);
     }
 
-    private void u9PowerHalf(Canvas cv, float left, float right, float top, float bottom,
-                             double fraction, int color, boolean reverse) {
-        final int count = 12;
-        float pitch = (right-left)/count;
-        for (int i = 0; i < count; i++) {
-            float x = left + (reverse ? count-1-i : i)*pitch;
-            float end = x + pitch - 3;
-            slant(cv, x, top, end, bottom, U9_BORDER);
-            float part = (float)Math.max(0, Math.min(1, fraction*count-i));
-            if (part > 0) {
-                cv.save();
-                float width = (end-x)*part;
-                cv.clipRect(reverse ? end-width : x, top, reverse ? end : x+width, bottom);
-                slant(cv, x, top, end, bottom, color);
-                cv.restore();
+    private void xtremeShape(Canvas cv, float[] points, Shader shader, int color, float border) {
+        Path path = new Path(); path.moveTo(points[0], points[1]);
+        for(int i=2;i<points.length;i+=2) path.lineTo(points[i],points[i+1]);
+        path.close();
+        p.setStyle(Paint.Style.FILL); p.setColor(shader == null ? 0xFF111317 : INK);
+        p.setShader(shader); cv.drawPath(path,p); p.setShader(null);
+        if (border > 0) { p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(border); p.setColor(color); cv.drawPath(path,p); }
+        p.setStyle(Paint.Style.FILL);
+    }
+
+    private void xtremeText(Canvas cv,String value,float x,float y,float size,int color,Paint.Align align,float maxWidth) {
+        xtremeText(cv,value,x,y,size,color,align,maxWidth,1.04f);
+    }
+
+    private void xtremeText(Canvas cv,String value,float x,float y,float size,int color,Paint.Align align,float maxWidth,float stretch) {
+        p.setStyle(Paint.Style.FILL); p.setTypeface(xtremeFace); p.setTextAlign(align); p.setColor(color);
+        p.setTextSize(size); p.setTextScaleX(stretch);
+        float width=p.measureText(value); if(width>maxWidth) p.setTextSize(size*maxWidth/width);
+        cv.drawText(value,x,y,p); p.setTextScaleX(1);
+    }
+
+    private void xtremePowerScale(Canvas cv,double regen,double drive,double regenMax,double driveMax) {
+        final int count=12;
+        for (int i=0;i<count*2;i++) {
+            boolean negative=i<count;
+            int n=negative?count-1-i:i-count;
+            float x=354+i*13.6f, y=163-(x-354)*0.115f;
+            int inactive=negative?0xFF21333F:0xFF3D2B23;
+            slant(cv,x,y,x+13,y+17,inactive);
+            float part=(float)Math.max(0,Math.min(1,(negative?regen:drive)*count-n));
+            if(part>0) {
+                cv.save(); cv.clipRect(negative?x+13*(1-part):x,y,negative?x+13:x+13*part,y+17);
+                slant(cv,x,y,x+13,y+17,negative?U9_REGEN:U9_ORANGE); cv.restore();
             }
+        }
+        for(int i=0;i<=4;i++) {
+            float x=356+i*81.6f, y=155-(x-354)*0.115f;
+            String label=i==2?"0":i<2?"-"+number(regenMax*(2-i)/2,"%.0f"):"+"+number(driveMax*(i-2)/2,"%.0f");
+            xtremeText(cv,label,x,y-7,14,INK,Paint.Align.CENTER,65);
+        }
+        p.setColor(INK);p.setStrokeWidth(2);cv.drawLine(519,140,515,158,p);
+    }
+
+    private void xtremeIcon(Canvas cv,float x,float y,int kind) {
+        p.setColor(U9_ORANGE);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2.6f);
+        if(kind==0) { cv.drawRoundRect(new RectF(x+8,y-13,x+16,y+7),4,4,p);cv.drawCircle(x+12,y+9,5,p); }
+        else if(kind==1) { cv.drawRoundRect(new RectF(x+2,y-10,x+27,y+11),2,2,p);cv.drawLine(x+8,y-14,x+14,y-14,p);cv.drawLine(x+18,y-14,x+24,y-14,p); }
+        p.setStyle(Paint.Style.FILL);
+        if(kind!=0) {
+            Path bolt=new Path();bolt.moveTo(x+17,y-15);bolt.lineTo(x+6,y+1);bolt.lineTo(x+13,y+1);
+            bolt.lineTo(x+9,y+15);bolt.lineTo(x+22,y-3);bolt.lineTo(x+15,y-3);bolt.close();cv.drawPath(bolt,p);
         }
     }
 
     private void u9TripCell(Canvas cv, float left, float right, String label, String value) {
         float center = (left+right)/2;
-        text(cv, label, center, 388, 15, MUTED, false, Paint.Align.CENTER, right-left-16);
-        sportText(cv, value, center, 433, 32, INK, Paint.Align.CENTER, right-left-16);
-        if (right < 982) fill(cv, right-1, 375, right, 442, U9_BORDER);
+        xtremeText(cv, label, center, 397, 17, MUTED, Paint.Align.CENTER, right-left-16);
+        xtremeText(cv, value, center, 438, 36, INK, Paint.Align.CENTER, right-left-16);
+        if (right < 982) fill(cv, right-1, 387, right, 447, U9_BORDER);
     }
 
     private static final int N_BLUE = 0xFF42A9FF, N_RED = 0xFFF4525E;

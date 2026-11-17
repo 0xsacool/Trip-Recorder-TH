@@ -59,6 +59,12 @@ jobs:
           javac -d "$RUNNER_TEMP/refresh-test" src/org/triprecorderng/DashboardRefresh.java tools/DashboardRefreshTest.java
           java -cp "$RUNNER_TEMP/refresh-test" org.triprecorderng.DashboardRefreshTest
 
+      - name: Test updater signer verification
+        run: |
+          mkdir -p "$RUNNER_TEMP/signer-test"
+          javac -d "$RUNNER_TEMP/signer-test" src/org/triprecorderng/ApkSigners.java tools/ApkSignersTest.java
+          java -cp "$RUNNER_TEMP/signer-test" org.triprecorderng.ApkSignersTest
+
       - name: Build
         id: build
         env:
@@ -83,6 +89,7 @@ jobs:
           export VERSION_NAME="${CHANNEL}-${GITHUB_RUN_NUMBER}"
           echo "version=$VERSION_NAME" >> "$GITHUB_OUTPUT"
           ./build.sh
+          java -cp "$RUNNER_TEMP/signer-test" org.triprecorderng.ApkSignersTest TripRecorderNG.apk
           # the update check identifies a build by this name, so a wrong one must fail the build
           SDK="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
           BT="$(ls -d "$SDK"/build-tools/* | sort -V | tail -1)"

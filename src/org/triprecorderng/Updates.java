@@ -22,10 +22,9 @@ import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.TimeZone;
 
 /**
@@ -403,16 +402,16 @@ final class Updates {
     static String verifyApk(Context ctx, File apk, String expectedVersion) {
         try {
             PackageManager pm = ctx.getPackageManager();
-            PackageInfo a = pm.getPackageArchiveInfo(apk.getPath(), PackageManager.GET_SIGNING_CERTIFICATES);
+            // Metadata parsing must not depend on whether this firmware implements SigningInfo.
+            PackageInfo a = pm.getPackageArchiveInfo(apk.getPath(), 0);
             if (a == null) return L.t("The file is not a valid app");
             if (!ctx.getPackageName().equals(a.packageName)) return L.t("The file is a different app");
             if (!expectedVersion.equals(a.versionName)) return L.t("The downloaded version does not match the update.");
-            PackageInfo mine = pm.getPackageInfo(ctx.getPackageName(), PackageManager.GET_SIGNING_CERTIFICATES);
-            if (a.signingInfo == null || mine.signingInfo == null) return L.t("The file's signature could not be read");
-            Signature[] theirs = a.signingInfo.getApkContentsSigners();
-            Signature[] ours = mine.signingInfo.getApkContentsSigners();
-            if (theirs == null || ours == null || theirs.length == 0
-                    || !new HashSet<>(Arrays.asList(theirs)).equals(new HashSet<>(Arrays.asList(ours)))) {
+            Set<String> theirs = readSigners(ctx, apk);
+            Set<String> ours = readSigners(ctx, null);
+            ApkSigners.Comparison comparison = ApkSigners.compare(ours, theirs);
+            if (comparison == ApkSigners.Comparison.UNREADABLE) return L.t("The file's signature could not be read");
+            if (comparison == ApkSigners.Comparison.MISMATCH) {
                 return L.t("The file is signed with a different key, so Android would not install it over this app");
             }
             return null;
@@ -420,6 +419,63 @@ final class Updates {
             Diag.log("could not verify the downloaded app", t);
             return L.t("The file could not be checked");
         }
+    }
+
+    /** Some BYD firmware returns no SigningInfo even for correctly signed APKs. Try legacy APIs,
+     * then cryptographically verify the v1-signed archive. Never retry a known signer mismatch. */
+    @SuppressWarnings("deprecation")
+    private static Set<String> readSigners(Context ctx, File archive) {
+        PackageManager pm = ctx.getPackageManager();
+        String source = archive == null ? "installed app" : "downloaded APK";
+        if (android.os.Build.VERSION.SDK_INT >= 28) {
+            try {
+                PackageInfo info = archive == null
+                        ? pm.getPackageInfo(ctx.getPackageName(), PackageManager.GET_SIGNING_CERTIFICATES)
+                        : pm.getPackageArchiveInfo(archive.getPath(), PackageManager.GET_SIGNING_CERTIFICATES);
+                if (info != null && info.signingInfo != null) {
+                    Set<String> signers = fingerprints(info.signingInfo.getApkContentsSigners());
+                    if (!signers.isEmpty()) {
+                        Diag.log("update signers: " + source + " via SigningInfo");
+                        return signers;
+                    }
+                }
+            } catch (Exception | LinkageError e) {
+                Diag.log("SigningInfo unavailable for " + source, e);
+            }
+        }
+        try {
+            PackageInfo info = archive == null
+                    ? pm.getPackageInfo(ctx.getPackageName(), PackageManager.GET_SIGNATURES)
+                    : pm.getPackageArchiveInfo(archive.getPath(), PackageManager.GET_SIGNATURES);
+            Set<String> signers = fingerprints(info == null ? null : info.signatures);
+            if (!signers.isEmpty()) {
+                Diag.log("update signers: " + source + " via GET_SIGNATURES");
+                return signers;
+            }
+        } catch (Exception | LinkageError e) {
+            Diag.log("legacy signatures unavailable for " + source, e);
+        }
+        try {
+            File file = archive == null ? new File(ctx.getApplicationInfo().sourceDir) : archive;
+            Set<String> signers = ApkSigners.readVerifiedJar(file);
+            Diag.log("update signers: " + source + " via verified v1 archive");
+            return signers;
+        } catch (Exception | LinkageError e) {
+            Diag.log("archive signature not verified for " + source, e);
+            return java.util.Collections.emptySet();
+        }
+    }
+
+    private static Set<String> fingerprints(Signature[] signatures) throws java.security.GeneralSecurityException {
+        if (signatures == null || signatures.length == 0) return java.util.Collections.emptySet();
+        Set<String> result = new java.util.HashSet<>();
+        for (Signature sig : signatures) {
+            if (sig == null) return java.util.Collections.emptySet();
+            byte[] cert = sig.toByteArray();
+            if (cert == null || cert.length == 0) return java.util.Collections.emptySet();
+            result.add(ApkSigners.fingerprint(cert));
+        }
+        return result;
     }
 
     // ---- install -----------------------------------------------------------------------------

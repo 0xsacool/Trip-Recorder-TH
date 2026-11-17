@@ -60,6 +60,7 @@ public class MainActivity extends Activity {
     private View navView;
     private LinearLayout shellBody;
     private boolean bottomNav;
+    private boolean xtremeNav;
     private View qaButton;
     private View settingButton;
     // title bar actions of the detail screens
@@ -68,6 +69,8 @@ public class MainActivity extends Activity {
     private LinearLayout deleteButton;
     private TextView titleView;
     private final LinearLayout[] tabViews = new LinearLayout[6];
+    private final android.graphics.Typeface[] tabTypefaces = new android.graphics.Typeface[6];
+    private final int[] tabGravities = new int[6];
     private final int[] tabIcons = new int[6];
     private int tab = TAB_THIS;
     private String overlay = null; // "detail", "settings", "qa" or null
@@ -338,6 +341,8 @@ public class MainActivity extends Activity {
             icon.setImageResource(tabIcons[i]);
             t.addView(icon, new LinearLayout.LayoutParams(Ui.dp(this, 30), Ui.dp(this, 30)));
             TextView label = Ui.text(this, names[i], 22, Ui.TEXT_VALUE);
+            tabTypefaces[i] = label.getTypeface();
+            tabGravities[i] = label.getGravity();
             label.setPadding(Ui.dp(this, 14), 0, 0, 0);
             t.addView(label);
             t.setOnClickListener(new View.OnClickListener() {
@@ -370,43 +375,48 @@ public class MainActivity extends Activity {
      * Re-layout on returning from Settings so switching themes is immediate. */
     private void updateNavigationLayout() {
         boolean bottom = Prefs.sportTheme(this);
-        if (bottom == bottomNav || shellBody == null || content == null) return;
+        boolean xtreme = Prefs.xtremeTheme(this);
+        if ((bottom == bottomNav && xtreme == xtremeNav) || shellBody == null || content == null) return;
         bottomNav = bottom;
+        xtremeNav = xtreme;
         LinearLayout nav = (LinearLayout) navView;
         shellBody.removeAllViews();
         shellBody.setOrientation(bottom ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL);
         nav.setOrientation(bottom ? LinearLayout.HORIZONTAL : LinearLayout.VERTICAL);
-        nav.setPadding(bottom ? Ui.dp(this, 12) : 0, bottom ? 0 : Ui.dp(this, 20),
-                bottom ? Ui.dp(this, 12) : 0, 0);
+        nav.setPadding(bottom ? Ui.dp(this, xtreme ? 4 : 12) : 0, bottom ? 0 : Ui.dp(this, 20),
+                bottom ? Ui.dp(this, xtreme ? 4 : 12) : 0, 0);
         nav.setGravity(bottom ? Gravity.CENTER_VERTICAL : Gravity.TOP);
         nav.setBackgroundColor(bottom ? 0xFF141B22 : android.graphics.Color.TRANSPARENT);
         for (int i = 0; i < tabViews.length; i++) {
             LinearLayout t = tabViews[i];
+            t.setOrientation(xtreme ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL);
             t.setGravity(bottom ? Gravity.CENTER : Gravity.CENTER_VERTICAL);
-            t.setPadding(Ui.dp(this, bottom ? 4 : 18), 0, Ui.dp(this, bottom ? 4 : 12), 0);
+            t.setPadding(Ui.dp(this, xtreme ? 12 : bottom ? 4 : 18), 0, Ui.dp(this, xtreme ? 12 : bottom ? 4 : 12), 0);
             ImageView icon = (ImageView) t.getChildAt(0);
             icon.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, bottom ? 22 : 30),
                     Ui.dp(this, bottom ? 22 : 30)));
             TextView label = (TextView) t.getChildAt(1);
-            label.setTextSize(bottom ? 16 : 22);
+            label.setTextSize(xtreme ? 14 : bottom ? 16 : 22);
+            label.setTypeface(xtreme ? android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.BOLD_ITALIC) : tabTypefaces[i]);
+            label.setGravity(xtreme ? Gravity.CENTER : tabGravities[i]);
             label.setSingleLine(bottom);
             label.setEllipsize(bottom ? android.text.TextUtils.TruncateAt.END : null);
-            label.setPadding(Ui.dp(this, bottom ? 6 : 14), 0, 0, 0);
-            label.setLayoutParams(new LinearLayout.LayoutParams(bottom ? 0 : -2, -2, bottom ? 1f : 0f));
+            label.setPadding(Ui.dp(this, xtreme ? 0 : bottom ? 6 : 14), 0, 0, 0);
+            label.setLayoutParams(new LinearLayout.LayoutParams(xtreme ? -1 : bottom ? 0 : -2, -2, bottom && !xtreme ? 1f : 0f));
             LinearLayout.LayoutParams lp = bottom
                     ? new LinearLayout.LayoutParams(0, -1, 1f)
                     : new LinearLayout.LayoutParams(-1, Ui.dp(this, 52));
             if (!bottom) lp.setMargins(Ui.dp(this, 24), Ui.dp(this, i == 0 ? 8 : 16), Ui.dp(this, 12), 0);
             t.setLayoutParams(lp);
         }
-        int margin = Ui.dp(this, bottom ? 12 : 24);
+        int margin = Ui.dp(this, xtreme ? 4 : bottom ? 12 : 24);
         LinearLayout.LayoutParams cp = bottom
                 ? new LinearLayout.LayoutParams(-1, 0, 1f)
                 : new LinearLayout.LayoutParams(0, -1, 1f);
-        cp.setMargins(bottom ? margin : 0, Ui.dp(this, 14), margin, bottom ? Ui.dp(this, 4) : margin);
+        cp.setMargins(bottom ? margin : 0, Ui.dp(this, xtreme ? 2 : 14), margin, bottom ? Ui.dp(this, 4) : margin);
         if (bottom) {
             shellBody.addView(content, cp);
-            shellBody.addView(nav, new LinearLayout.LayoutParams(-1, Ui.dp(this, 55)));
+            shellBody.addView(nav, new LinearLayout.LayoutParams(-1, Ui.dp(this, xtreme ? 60 : 55)));
         } else {
             shellBody.addView(nav, new LinearLayout.LayoutParams(Ui.dp(this, 260), -1));
             shellBody.addView(content, cp);
@@ -417,11 +427,12 @@ public class MainActivity extends Activity {
     private void setChrome(boolean fullScreenPage) {
         updateDashboardVisibility();
         updateNavigationLayout();
-        navView.setBackgroundColor(bottomNav ? (Prefs.grTheme(this) ? 0xFF0D0D0D : Prefs.newThemeAccent(this) != 0 ? 0xFF10151B : 0xFF141B22)
+        shellBody.setBackgroundColor(xtremeNav && !fullScreenPage && tab == TAB_THIS ? 0xFF08090A : android.graphics.Color.TRANSPARENT);
+        navView.setBackgroundColor(bottomNav ? (xtremeNav ? 0xFF08090A : Prefs.grTheme(this) ? 0xFF0D0D0D : Prefs.newThemeAccent(this) != 0 ? 0xFF10151B : 0xFF141B22)
                 : android.graphics.Color.TRANSPARENT);
         int vis = fullScreenPage ? View.GONE : View.VISIBLE;
         ((LinearLayout.LayoutParams) content.getLayoutParams()).leftMargin =
-                fullScreenPage ? Ui.dp(this, 24) : bottomNav ? Ui.dp(this, 12) : 0;
+                fullScreenPage ? Ui.dp(this, 24) : bottomNav ? Ui.dp(this, xtremeNav ? 4 : 12) : 0;
         content.requestLayout();
         navView.setVisibility(vis);
         qaButton.setVisibility(vis);
@@ -458,7 +469,9 @@ public class MainActivity extends Activity {
         for (int i = 0; i < tabViews.length; i++) {
             boolean sel = i == index;
             LinearLayout t = tabViews[i];
-            if (sel && newAccent != 0) {
+            if (xtremeNav) {
+                t.setBackground(new XtremeTab(sel));
+            } else if (sel && newAccent != 0) {
                 GradientDrawable selected = new GradientDrawable();
                 selected.setColor(0xFF1B252F);
                 selected.setStroke(Ui.dp(this, 1), newAccent);
@@ -479,11 +492,35 @@ public class MainActivity extends Activity {
             } else {
                 t.setBackgroundResource(sel ? res("tab_selected_bg") : 0);
             }
-            ((TextView) t.getChildAt(1)).setTextColor(sel ? (newAccent != 0 ? newAccent : Ui.TEXT_SELECTED) : 0xCCFFFFFF);
-            ((ImageView) t.getChildAt(0)).setColorFilter(sel ? (newAccent != 0 ? newAccent : 0xFFFFFFFF) : 0xCCFFFFFF,
+            ((TextView) t.getChildAt(1)).setTextColor(xtremeNav ? 0xFFF5F5F5 : sel ? (newAccent != 0 ? newAccent : Ui.TEXT_SELECTED) : 0xCCFFFFFF);
+            ((ImageView) t.getChildAt(0)).setColorFilter(xtremeNav ? 0xFFF5F5F5 : sel ? (newAccent != 0 ? newAccent : 0xFFFFFFFF) : 0xCCFFFFFF,
                     PorterDuff.Mode.SRC_IN);
         }
         renderCurrentTab();
+    }
+
+    /** Angular orange/graphite navigation tabs; the existing six real click targets remain intact. */
+    private static final class XtremeTab extends android.graphics.drawable.Drawable {
+        private final boolean active;
+        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        XtremeTab(boolean active) { this.active = active; }
+        @Override public void draw(Canvas canvas) {
+            android.graphics.Rect b=getBounds();
+            float w=b.width(),h=b.height(),skew=Math.min(w*.12f,h*.22f);
+            if(w<=0 || h<=0) return;
+            android.graphics.Path path=new android.graphics.Path();
+            path.moveTo(b.left+skew+2,b.top+2); path.lineTo(b.right-2,b.top+2);
+            path.lineTo(b.right-skew-2,b.bottom-2); path.lineTo(b.left+2,b.bottom-2); path.close();
+            paint.setStyle(Paint.Style.FILL);
+            paint.setShader(new android.graphics.LinearGradient(0,b.top,0,b.bottom,
+                    active?0xFFFF9829:0xFF282B30, active?0xFFD74A00:0xFF090A0C, android.graphics.Shader.TileMode.CLAMP));
+            canvas.drawPath(path,paint); paint.setShader(null);
+            paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(1.5f);paint.setColor(active?0xFFFFC277:0xFF55585D);
+            canvas.drawPath(path,paint);
+        }
+        @Override public void setAlpha(int alpha) { paint.setAlpha(alpha); invalidateSelf(); }
+        @Override public void setColorFilter(android.graphics.ColorFilter filter) { paint.setColorFilter(filter); invalidateSelf(); }
+        @Override public int getOpacity() { return android.graphics.PixelFormat.TRANSLUCENT; }
     }
 
     private void saveTripsScroll() {

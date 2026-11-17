@@ -100,7 +100,7 @@ final class Prefs {
         if (THEME_N.equals(theme)) return "N Performance";
         if (THEME_RS.equals(theme)) return "RS Digital Cockpit";
         if (THEME_TAYCAN.equals(theme)) return "Taycan Sport";
-        if (THEME_U9_XTREME.equals(theme)) return "YANGWANG U9 Xtreme Edition";
+        if (THEME_U9_XTREME.equals(theme)) return "BYD XTREME EDITION";
         if (THEME_GR.equals(theme)) return "GR Motorsport Edition";
         if (THEME_TYPE_R.equals(theme)) return "Type R Edition";
         if (THEME_GTR.equals(theme)) return "GT-R Performance";
@@ -119,12 +119,16 @@ final class Prefs {
         return THEME_GR.equals(dashboardTheme(c));
     }
 
+    static boolean xtremeTheme(Context c) {
+        return THEME_U9_XTREME.equals(dashboardTheme(c));
+    }
+
     static int newThemeAccent(Context c) {
         String theme = dashboardTheme(c);
         if (THEME_N.equals(theme)) return 0xFF42A9FF;
         if (THEME_RS.equals(theme)) return 0xFFF4525E;
         if (THEME_TAYCAN.equals(theme)) return 0xFF43D9EC;
-        if (THEME_U9_XTREME.equals(theme)) return 0xFFFF8536;
+        if (THEME_U9_XTREME.equals(theme)) return 0xFFFF791A;
         return 0;
     }
 
