@@ -47,6 +47,7 @@ final class EvoHybridRenderer {
         Metric historyMetric=Metric.POWER;
         int historySeconds=60;
         int historyColor=0xff28d9ec;
+        boolean historyLight;
         int statusColor;
     }
     enum GaugeMetric {
@@ -175,9 +176,12 @@ final class EvoHybridRenderer {
         history(s,samples,count,Metric.POWER,60,0xff28d9ec,x,y,width,height);
     }
     static void history(Surface s,double[] samples,int count,Metric metric,int seconds,int accent,float x,float y,float width,float height) {
+        history(s,samples,count,metric,seconds,accent,false,x,y,width,height);
+    }
+    static void history(Surface s,double[] samples,int count,Metric metric,int seconds,int accent,boolean light,float x,float y,float width,float height) {
         s.historyBounds(x,y,width,height);
         float l=x+32,r=x+width-5,t=y+15,b=y+height-4;
-        final int muted=0xffb6bbc0, grid=0xff303337;
+        final int muted=light?0xff526574:0xffb6bbc0, grid=light?0xffd0dbe2:0xff303337;
         s.text(metric.title,l,y+11,12,muted,true,true,-1,r-l-46);
         s.text(seconds==300?"5 min":"60s",r,y+11,11,muted,false,false,1,37);
         s.line(r-44,y+5,r-40,y+9,muted,1.6f);s.line(r-40,y+9,r-36,y+5,muted,1.6f);
@@ -210,15 +214,15 @@ final class EvoHybridRenderer {
         history(s,d,d.history,d.historyCount,x,y,width,height);
     }
     static void history(Surface s,Data d,double[] samples,int count,float x,float y,float width,float height){
-        if(d.historyMetric!=Metric.MOTOR_RPM){history(s,samples,count,d.historyMetric,d.historySeconds,d.historyColor,x,y,width,height);return;}
+        if(d.historyMetric!=Metric.MOTOR_RPM){history(s,samples,count,d.historyMetric,d.historySeconds,d.historyColor,d.historyLight,x,y,width,height);return;}
         // A live instrument, not a historical plot. Keep the hitbox and header in exactly the same place.
         s.historyBounds(x,y,width,height);
         float l=x+8,r=x+width-6;
-        s.text("FRONT MOTOR RPM",l,y+12,12,0xffb6bbc0,true,true,-1,r-l-55);
+        s.text("FRONT MOTOR RPM",l,y+12,12,d.historyLight?0xff526574:0xffb6bbc0,true,true,-1,r-l-55);
         s.text("LIVE",r,y+12,10,d.historyColor,true,false,1,36);
-        s.line(r-48,y+6,r-44,y+10,0xffb6bbc0,1.6f);s.line(r-44,y+10,r-40,y+6,0xffb6bbc0,1.6f);
-        s.text(valid(d.liveRpm)?Long.toString(Math.round(d.liveRpm)):"--",x+width*.52f,y+height*.79f,Math.min(42,height*.62f),0xfff3f2f3,true,true,0,width-55);
-        s.text("rpm",r,y+height*.79f,13,0xffb6bbc0,true,false,1,35);
+        s.line(r-48,y+6,r-44,y+10,d.historyLight?0xff526574:0xffb6bbc0,1.6f);s.line(r-44,y+10,r-40,y+6,d.historyLight?0xff526574:0xffb6bbc0,1.6f);
+        s.text(valid(d.liveRpm)?Long.toString(Math.round(d.liveRpm)):"--",x+width*.52f,y+height*.79f,Math.min(42,height*.62f),d.historyLight?0xff142633:0xfff3f2f3,true,true,0,width-55);
+        s.text("rpm",r,y+height*.79f,13,d.historyLight?0xff526574:0xffb6bbc0,true,false,1,35);
     }
     static boolean valid(double v) { return !Double.isNaN(v) && !Double.isInfinite(v); }
     static double angle(double value, double min, double max) {

@@ -11,6 +11,16 @@ final class Prefs {
     static final boolean ATTO3_EDITION = true;
     static final double DEFAULT_BATTERY_KWH = 60.0;
 
+    static int appearanceMode(Context c) {
+        return Appearance.normalize(sp(c).getInt("appearance_mode", Appearance.DARK));
+    }
+    static void setAppearanceMode(Context c,int mode) {
+        sp(c).edit().putInt("appearance_mode",Appearance.normalize(mode)).apply();
+    }
+    static boolean lightAppearance(Context c) {
+        return Appearance.light(appearanceMode(c),c.getResources().getConfiguration().uiMode);
+    }
+
     static boolean performanceRefresh(Context c) {
         return sp(c).getBoolean("dashboard_performance_refresh", false);
     }

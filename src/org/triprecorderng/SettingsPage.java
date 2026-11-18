@@ -22,6 +22,7 @@ final class SettingsPage {
 
         /** Draws the page again shortly (something it shows has changed). */
         void rebuildSoon();
+        void changeAppearance();
 
         String languageName();
 
@@ -170,6 +171,17 @@ final class SettingsPage {
                         host.showLanguageDialog();
                     }
                 });
+        String[] appearanceChoices={L.t("Dark"),L.t("Light"),L.t("Auto (system)")};
+        Kit.Row appearance=action(L.t("Appearance"),appearanceChoices[Prefs.appearanceMode(c)],
+                L.t("Change"),false,v->new AlertDialog.Builder(c)
+                        .setTitle(L.t("Appearance"))
+                        .setSingleChoiceItems(appearanceChoices,Prefs.appearanceMode(c),(dialog,which)->{
+                            if(Prefs.appearanceMode(c)!=which){
+                                Prefs.setAppearanceMode(c,which);
+                                dialog.dismiss();
+                                host.changeAppearance();
+                            }else dialog.dismiss();
+                        }).setNegativeButton(L.t("Cancel"),null).show());
         Kit.Row theme = action(L.t("Dashboard theme"),
                 Prefs.themeName(c), L.t("Change"), false, new View.OnClickListener() {
                     @Override public void onClick(View v) {
@@ -261,7 +273,7 @@ final class SettingsPage {
             }
         });
         host.bindUpdateViews(updates.desc, channel.desc);
-        section(into, L.t("General"), language, theme, refreshMode, menu, updates, prices, battery, range, epa, advanced, channel);
+        section(into, L.t("General"), language, appearance, theme, refreshMode, menu, updates, prices, battery, range, epa, advanced, channel);
     }
 
     private void showEpaDialog() {

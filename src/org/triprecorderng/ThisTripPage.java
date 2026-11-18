@@ -175,7 +175,7 @@ final class ThisTripPage {
     private final class Pill {
         final LinearLayout view = k.row();
         final View dot = new View(c);
-        final Kit.IconView bolt = new Kit.IconView(c, Kit.IconView.BOLT, BLUE_TEXT);
+        final Kit.IconView bolt = new Kit.IconView(c, Kit.IconView.BOLT, Ui.readable(BLUE_TEXT));
         final TextView text = k.t("", Kit.LABEL, Kit.SOFT, Kit.MEDIUM);
         final TextView extra = k.t("", Kit.LABEL, Kit.SOFT, Kit.MEDIUM);
         private int kind = -1;
@@ -218,8 +218,8 @@ final class ThisTripPage {
                     fg = Kit.SOFT;
             }
             view.setBackground(Ui.round(bg, 20, c));
-            text.setTextColor(fg);
-            extra.setTextColor(fg);
+            text.setTextColor(Ui.readable(fg));
+            extra.setTextColor(Ui.readable(fg));
             bolt.setVisibility(newKind == PILL_CHARGING ? View.VISIBLE : View.GONE);
             dot.setVisibility(newKind == PILL_CHARGING ? View.GONE : View.VISIBLE);
             dot.setBackground(oval(newKind == PILL_IDLE ? Kit.DOT_OFF : fg));
@@ -276,7 +276,7 @@ final class ThisTripPage {
             view.setBackground(Ui.round(red ? RED_SOFT : AMBER_SOFT, 16, c));
             icon = new Kit.IconView(c, iconKind, fg);
             view.addView(icon, new LinearLayout.LayoutParams(dp(24), dp(24)));
-            text.setTextColor(fg);
+            text.setTextColor(Ui.readable(fg));
             text.setMaxLines(4);
             text.setEllipsize(TextUtils.TruncateAt.END);
             text.setPaddingRelative(dp(12), 0, dp(8), 0);
@@ -327,7 +327,7 @@ final class ThisTripPage {
             clip.addRoundRect(new RectF(0, 0, w, h), h / 2f, h / 2f, Path.Direction.CW);
             cv.save();
             cv.clipPath(clip);
-            p.setColor(0x1AFFFFFF);
+            p.setColor(Ui.lightAppearance?Ui.RING_TRACK:0x1AFFFFFF);
             cv.drawRect(0, 0, w, h, p);
             p.setColor(color);
             cv.drawRect(0, 0, w * fill, h, p);
@@ -469,7 +469,7 @@ final class ThisTripPage {
         LinearLayout s = k.row();
         s.setGravity(Gravity.CENTER_VERTICAL | Gravity.END);
         score = new RingView(c, 6.8f, 24, 12);
-        score.setTrackColor(0x17FFFFFF);
+        score.setTrackColor(Ui.lightAppearance?Ui.RING_TRACK:0x17FFFFFF);
         s.addView(score, new LinearLayout.LayoutParams(dp(68), dp(68)));
         TextView l = k.t(L.t("Drive score"), Kit.CAPTION, Kit.MUTED, Kit.REGULAR);
         l.setMaxLines(2);
@@ -549,7 +549,7 @@ final class ThisTripPage {
         socValue = figure(Kit.VALUE_L);
         r1.addView(socValue);
         usedChip = k.t("", Kit.CAPTION, 0xFFC3CAD1, Kit.MEDIUM);
-        usedChip.setBackground(Ui.round(CHIP_BG, 14, c));
+        usedChip.setBackground(Ui.round(Ui.lightAppearance?Kit.NEUTRAL_BG:CHIP_BG, 14, c));
         usedChip.setPadding(dp(10), dp(2), dp(10), dp(2));
         LinearLayout.LayoutParams ulp = new LinearLayout.LayoutParams(-2, -2);
         ulp.setMarginStart(dp(8));

@@ -32,12 +32,12 @@ final class StatisticsPage {
         switch (metric) {
             case Stats.MILEAGE: return Kit.ACCENT;
             case Stats.CONSUMPTION: return Kit.BLUE;
-            case Stats.ELECTRIC: return 0xFF64B5F6;
-            case Stats.SCORE: return 0xFF8FD36A;
-            case Stats.TRIPS: return 0xFFB48CFF;
+            case Stats.ELECTRIC: return Ui.readable(0xFF64B5F6);
+            case Stats.SCORE: return Ui.readable(0xFF8FD36A);
+            case Stats.TRIPS: return Ui.readable(0xFFB48CFF);
             case Stats.COST: return Kit.AMBER;
-            case Stats.FUEL: return 0xFFFF8A65;
-            default: return 0xFFFFB05C;
+            case Stats.FUEL: return Ui.readable(0xFFFF8A65);
+            default: return Ui.readable(0xFFFFB05C);
         }
     }
 

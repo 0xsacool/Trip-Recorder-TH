@@ -22,6 +22,7 @@ final class TelemetryPicker {
     private final Context c;
     private final SharedPreferences prefs;
     private final int accent;
+    private final boolean light;
     private EvoHybridRenderer.Metric metric;
     private int seconds;
     private PopupWindow popup;
@@ -40,13 +41,14 @@ final class TelemetryPicker {
         catch(IllegalArgumentException e){metric=EvoHybridRenderer.Metric.POWER;}
         seconds=prefs.getInt("telemetry_seconds",60)==300?300:60;
         int themeAccent=Prefs.newThemeAccent(c);
-        accent=themeAccent!=0?themeAccent:0xff28d9ec;
+        light=Ui.lightAppearance&&!Prefs.sportTheme(c);
+        accent=light?Kit.ACCENT:themeAccent!=0?themeAccent:0xff28d9ec;
     }
     void sample(long elapsed,double power,double speed,double consumption,double temp,double level,double rpm){
         HISTORY.sample(elapsed,power,speed,consumption,temp,level,rpm);
     }
     void select(EvoHybridRenderer.Data d){
-        HISTORY.select(d,metric,seconds);d.historyColor=accent;
+        HISTORY.select(d,metric,seconds);d.historyColor=accent;d.historyLight=light;
         d.gauges[0]=gauges[0];d.gauges[1]=gauges[1];
     }
     private String gaugeKey(int slot){return "custom_gauge_"+gaugeTheme+"_"+slot;}
@@ -54,7 +56,7 @@ final class TelemetryPicker {
         if(slot<0||slot>=gauges.length||bounds.isEmpty())return;
         dismiss();
         LinearLayout list=new LinearLayout(c);list.setOrientation(LinearLayout.VERTICAL);list.setPadding(dp(4),dp(4),dp(4),dp(4));
-        GradientDrawable bg=new GradientDrawable();bg.setColor(0xff181c20);bg.setCornerRadius(dp(6));bg.setStroke(dp(1),0xff4f555c);list.setBackground(bg);
+        GradientDrawable bg=new GradientDrawable();bg.setColor(light?Kit.CARD:0xff181c20);bg.setCornerRadius(dp(6));bg.setStroke(dp(1),light?Kit.LINE:0xff4f555c);list.setBackground(bg);
         TextView title=row("CUSTOM GAUGE "+(slot+1),false);title.setTextColor(accent);title.setTextSize(13);list.addView(title,new LinearLayout.LayoutParams(-1,-2));
         for(EvoHybridRenderer.GaugeMetric m:EvoHybridRenderer.GaugeMetric.values()){
             TextView item=row(m.label+(m.unit.isEmpty()?"":" ("+m.unit+")"),m==gauges[slot]);list.addView(item,new LinearLayout.LayoutParams(-1,-2));
@@ -67,7 +69,7 @@ final class TelemetryPicker {
     String description(){return metric.title+", "+(metric==EvoHybridRenderer.Metric.MOTOR_RPM?"Live":seconds==300?"5 min":"60s")+". Tap to choose data";}
     private int dp(float v){return Math.round(v*c.getResources().getDisplayMetrics().density);}
     private TextView row(String label,boolean selected){
-        TextView t=new TextView(c);t.setText(label+(selected?"   ✓":""));t.setTextColor(selected?accent:Color.WHITE);
+        TextView t=new TextView(c);t.setText(label+(selected?"   ✓":""));t.setTextColor(selected?accent:light?Kit.TEXT:Color.WHITE);
         t.setGravity(Gravity.CENTER_VERTICAL);t.setTextSize(16);t.setTypeface(Typeface.DEFAULT,selected?Typeface.BOLD:Typeface.NORMAL);
         t.setPadding(dp(12),0,dp(12),0);t.setMinHeight(dp(44));return t;
     }
@@ -78,14 +80,14 @@ final class TelemetryPicker {
         if(popup!=null&&popup.isShowing()){dismiss();return;}
         if(graph.isEmpty())return;
         LinearLayout list=new LinearLayout(c);list.setOrientation(LinearLayout.VERTICAL);list.setPadding(dp(4),dp(4),dp(4),dp(4));
-        GradientDrawable bg=new GradientDrawable();bg.setColor(0xff181c20);bg.setCornerRadius(dp(6));bg.setStroke(dp(1),0xff4f555c);list.setBackground(bg);
+        GradientDrawable bg=new GradientDrawable();bg.setColor(light?Kit.CARD:0xff181c20);bg.setCornerRadius(dp(6));bg.setStroke(dp(1),light?Kit.LINE:0xff4f555c);list.setBackground(bg);
         for(EvoHybridRenderer.Metric m:EvoHybridRenderer.Metric.values()){
             if(!HISTORY.available(m)&&m!=metric)continue;
             TextView item=row(m.label,m==metric);list.addView(item,new LinearLayout.LayoutParams(-1,-2));
             item.setOnClickListener(v->{metric=m;choose(anchor);});
         }
         if(metric!=EvoHybridRenderer.Metric.MOTOR_RPM){
-        View divider=new View(c);divider.setBackgroundColor(0xff4f555c);list.addView(divider,new LinearLayout.LayoutParams(-1,dp(1)));
+        View divider=new View(c);divider.setBackgroundColor(light?Kit.LINE:0xff4f555c);list.addView(divider,new LinearLayout.LayoutParams(-1,dp(1)));
         for(int window:new int[]{60,300}){
             TextView item=row(window==60?"60s":"5 min",window==seconds);list.addView(item,new LinearLayout.LayoutParams(-1,-2));
             item.setOnClickListener(v->{seconds=window;choose(anchor);});

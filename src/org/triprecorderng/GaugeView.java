@@ -45,10 +45,10 @@ final class GaugeView extends View {
         maxDiameter = maxDiameterPx;
         track.setStyle(Paint.Style.STROKE);
         track.setStrokeCap(Paint.Cap.ROUND);
-        track.setColor(0x13FFFFFF);
+        track.setColor(Ui.lightAppearance?Ui.RING_TRACK:0x13FFFFFF);
         arc.setStyle(Paint.Style.STROKE);
         arc.setStrokeCap(Paint.Cap.ROUND);
-        knob.setColor(0xF2FFFFFF);
+        knob.setColor(Ui.lightAppearance?Kit.TEXT:0xF2FFFFFF);
         tick.setStyle(Paint.Style.STROKE);
         tick.setStrokeCap(Paint.Cap.ROUND);
         num.setTypeface(Typeface.DEFAULT_BOLD);
@@ -120,7 +120,7 @@ final class GaugeView extends View {
             double a = Math.toRadians(START + i * 15);
             float r1 = half * 0.959f;
             float r2 = half * (big ? 0.911f : 0.932f);
-            tick.setColor(big ? 0x38FFFFFF : 0x1FFFFFFF);
+            tick.setColor(Ui.lightAppearance?(big?0xFF788C9A:0xFFBCC9D2):(big ? 0x38FFFFFF : 0x1FFFFFFF));
             tick.setStrokeWidth(d * (big ? 0.011f : 0.007f));
             cv.drawLine(cx + (float) (r1 * Math.cos(a)), cy + (float) (r1 * Math.sin(a)),
                     cx + (float) (r2 * Math.cos(a)), cy + (float) (r2 * Math.sin(a)), tick);
@@ -143,9 +143,9 @@ final class GaugeView extends View {
                 arc.setShader(new LinearGradient(cx - r, 0, cx + r, 0, colorA, colorB, Shader.TileMode.CLAMP));
             }
             cv.drawArc(rect, START, sweep, false, arc);
-            knob.setColor(0xF2FFFFFF);
+            knob.setColor(Ui.lightAppearance?Kit.TEXT:0xF2FFFFFF);
         } else {
-            knob.setColor(0x8CFFFFFF);
+            knob.setColor(Ui.lightAppearance?Kit.MUTED:0x8CFFFFFF);
         }
         cv.drawCircle(kx, ky, stroke * 0.27f, knob);
 

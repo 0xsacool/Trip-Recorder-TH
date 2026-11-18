@@ -58,7 +58,7 @@ final class TripChartView extends View {
         grid.setStrokeWidth(1f * d);
         label.setColor(Kit.MUTED);
         label.setTextSize(18 * sd);
-        cursor.setColor(0xFFFFFFFF);
+        cursor.setColor(Ui.lightAppearance?Ui.TEXT_VALUE:0xFFFFFFFF);
         cursor.setStrokeWidth(1.5f * d);
         msg.setColor(Kit.MUTED);
         msg.setTextAlign(Paint.Align.CENTER);

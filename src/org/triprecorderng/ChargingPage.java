@@ -252,7 +252,7 @@ final class ChargingPage {
 
     private static StateListDrawable pressable() {
         StateListDrawable d = new StateListDrawable();
-        d.addState(new int[]{android.R.attr.state_pressed}, new ColorDrawable(0x14FFFFFF));
+        d.addState(new int[]{android.R.attr.state_pressed}, new ColorDrawable(Ui.lightAppearance?0x14000000:0x14FFFFFF));
         d.addState(new int[]{}, new ColorDrawable(0x00000000));
         return d;
     }

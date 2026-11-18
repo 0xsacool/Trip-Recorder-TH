@@ -88,6 +88,7 @@ public class MainActivity extends Activity {
     // live widgets of the currently shown page
     private Runnable pageRefresh;
     private boolean resumed;
+    private boolean appearanceLight,appearanceRecreating;
     private int statsMetric = Stats.MILEAGE;
     private boolean statsMonthly = false;
     private long lastLoad;
@@ -98,13 +99,40 @@ public class MainActivity extends Activity {
 
     // ---- lifecycle -------------------------------------------------------------------------
     @Override protected void onCreate(Bundle b) {
+        appearanceLight=Prefs.lightAppearance(this);
+        Ui.setAppearance(appearanceLight);
+        setTheme(appearanceLight?android.R.style.Theme_Material_Light_NoActionBar:android.R.style.Theme_DeviceDefault_NoActionBar);
         super.onCreate(b);
         Diag.init(this);
         buildShell();
-        handleExtras(getIntent());
-        requestPerms(false);
+        if(b==null){handleExtras(getIntent());requestPerms(false);}
         startRecorder();
-        select(TAB_THIS);
+        int restored=b==null?TAB_THIS:b.getInt("appearance_tab",TAB_THIS);
+        select(Math.max(TAB_THIS,Math.min(TAB_TWEAKS,restored)));
+        if(b!=null){
+            String page=b.getString("appearance_overlay");
+            if("settings".equals(page)||"qa".equals(page))showOverlay(page);
+        }
+    }
+
+    @Override protected void onSaveInstanceState(Bundle out){
+        out.putInt("appearance_tab",tab);
+        out.putString("appearance_overlay",overlay);
+        super.onSaveInstanceState(out);
+    }
+
+    private void refreshAppearance(boolean force){
+        // Do not interrupt an open trip or charge detail on a system mode change.
+        if(!force&&"detail".equals(overlay))return;
+        if(!appearanceRecreating&&(force||Prefs.lightAppearance(this)!=appearanceLight)){
+            appearanceRecreating=true;
+            recreate();
+        }
+    }
+
+    @Override public void onConfigurationChanged(android.content.res.Configuration config){
+        super.onConfigurationChanged(config);
+        refreshAppearance(false);
     }
 
     @Override protected void onNewIntent(Intent intent) {
@@ -145,6 +173,8 @@ public class MainActivity extends Activity {
 
     @Override protected void onResume() {
         super.onResume();
+        refreshAppearance(false);
+        if(appearanceRecreating)return;
         resumed = true;
         updateDashboardVisibility();
         refreshDashboardMenu(true);
@@ -378,8 +408,8 @@ public class MainActivity extends Activity {
         exportButton = barButton(GlyphView.SHARE, L.t("Export GPX"), null);
         placeButton = barButton(GlyphView.PIN, L.t("Show place"), null);
         deleteButton = barButton(GlyphView.TRASH, L.t("Delete"), null);
-        ((TextView) deleteButton.getChildAt(1)).setTextColor(0xFFFF8D8D);
-        ((GlyphView) deleteButton.getChildAt(0)).setColor(0xFFFF8D8D);
+        ((TextView) deleteButton.getChildAt(1)).setTextColor(Ui.readable(0xFFFF8D8D));
+        ((GlyphView) deleteButton.getChildAt(0)).setColor(Ui.readable(0xFFFF8D8D));
         exportButton.setVisibility(View.GONE);
         placeButton.setVisibility(View.GONE);
         deleteButton.setVisibility(View.GONE);
@@ -460,7 +490,7 @@ public class MainActivity extends Activity {
         nav.setPadding(bottom ? Ui.dp(this, xtreme ? 4 : 12) : 0, bottom ? 0 : Ui.dp(this, 20),
                 bottom ? Ui.dp(this, xtreme ? 4 : 12) : 0, 0);
         nav.setGravity(bottom ? Gravity.CENTER_VERTICAL : Gravity.TOP);
-        nav.setBackgroundColor(bottom ? 0xFF141B22 : android.graphics.Color.TRANSPARENT);
+        nav.setBackgroundColor(bottom ? (appearanceLight?Kit.SHEET:0xFF141B22) : android.graphics.Color.TRANSPARENT);
         for (int i = 0; i < tabViews.length; i++) {
             LinearLayout t = tabViews[i];
             t.setOrientation(xtreme ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL);
@@ -502,7 +532,7 @@ public class MainActivity extends Activity {
         updateDashboardVisibility();
         updateNavigationLayout();
         shellBody.setBackgroundColor(xtremeNav && !fullScreenPage && tab == TAB_THIS ? 0xFF08090A : android.graphics.Color.TRANSPARENT);
-        navView.setBackgroundColor(bottomNav ? (xtremeNav ? 0xFF08090A : Prefs.grTheme(this) ? 0xFF0D0D0D : Prefs.newThemeAccent(this) != 0 ? 0xFF10151B : 0xFF141B22)
+        navView.setBackgroundColor(bottomNav ? (appearanceLight?Kit.SHEET:xtremeNav ? 0xFF08090A : Prefs.grTheme(this) ? 0xFF0D0D0D : Prefs.newThemeAccent(this) != 0 ? 0xFF10151B : 0xFF141B22)
                 : android.graphics.Color.TRANSPARENT);
         int vis = fullScreenPage ? View.GONE : View.VISIBLE;
         refreshDashboardMenu(true);
@@ -540,6 +570,13 @@ public class MainActivity extends Activity {
         for (int i = 0; i < tabViews.length; i++) {
             boolean sel = i == index;
             LinearLayout t = tabViews[i];
+            if(appearanceLight){
+                t.setBackground(sel?Ui.round(Kit.ACCENT_SOFT,12,this):null);
+                int color=sel?Kit.ACCENT:Ui.TEXT_VALUE;
+                ((TextView)t.getChildAt(1)).setTextColor(color);
+                ((ImageView)t.getChildAt(0)).setColorFilter(color,PorterDuff.Mode.SRC_IN);
+                continue;
+            }
             if (xtremeNav) {
                 t.setBackground(new XtremeTab(sel));
             } else if (sel && newAccent != 0) {
@@ -633,6 +670,7 @@ public class MainActivity extends Activity {
     private void closeOverlay() {
         overlay = null;
         select(tab);
+        refreshAppearance(false);
     }
 
     /** The name of the vehicle data source as shown to the user (the code compares the English names). */
@@ -818,6 +856,7 @@ public class MainActivity extends Activity {
             @Override public void rebuildSoon() {
                 refreshSettingsSoon();
             }
+            @Override public void changeAppearance(){refreshAppearance(true);}
 
             @Override public String languageName() {
                 return MainActivity.this.languageName();

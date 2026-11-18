@@ -19,7 +19,7 @@ import java.util.Locale;
  * Export and Delete are in the title bar (MainActivity).
  */
 final class TripDetailPage {
-    private static final int AMBER_TEXT = Kit.AMBER;
+    private final int AMBER_TEXT = Kit.AMBER;
 
     private final Context c;
     private final Trip t;
@@ -97,7 +97,7 @@ final class TripDetailPage {
         LinearLayout hero = k.row();
         double sc = Stats.score(t);
         RingView ring = new RingView(c, 6.4f, 24, 12);
-        ring.setTrackColor(0x17FFFFFF);
+        ring.setTrackColor(Ui.lightAppearance?Ui.RING_TRACK:0x17FFFFFF);
         ring.set(Double.isNaN(sc) ? 0 : sc, 100, Ui.f(sc, "%.0f"), "", Kit.scoreColor(sc));
         hero.addView(ring, new LinearLayout.LayoutParams(dp(64), dp(64)));
         LinearLayout big = k.column();

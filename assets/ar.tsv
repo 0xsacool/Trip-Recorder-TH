@@ -503,3 +503,7 @@ Nominal battery capacity	السعة الاسمية للبطارية
 Enter the battery capacity in kWh (10 to 150). Used only to estimate charging energy when no measured data is available.	أدخل سعة البطارية بالكيلوواط ساعة (10 إلى 150). تُستخدم للتقدير عند غياب القياسات.
 Invalid battery capacity	سعة البطارية غير صالحة
 Auto-start not verified. Check EV TripLog in 'Disable background Apps' and restart the head unit.	لم يتم التحقق من بدء التشغيل التلقائي. تحقق من EV TripLog في Disable background Apps وأعد تشغيل وحدة الشاشة.
+Appearance	المظهر
+Dark	داكن
+Light	فاتح
+Auto (system)	تلقائي (حسب النظام)

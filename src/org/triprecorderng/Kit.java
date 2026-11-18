@@ -16,24 +16,45 @@ import android.widget.TextView;
  * Sizes follow the 800x450 design scaled to sit with the rest of the app (1.2 dp or sp per design pixel).
  */
 final class Kit {
-    static final int CARD = 0xFF161B21;
-    static final int SHEET = 0xFF1B2128;
-    static final int CODE = 0xFF0F1318;
-    static final int TEXT = 0xFFEEF1F4;
-    static final int SOFT = 0xFFD5DBE1;
-    static final int MUTED = 0xFF9AA4AE;
-    static final int ACCENT = 0xFF35D0BA;
-    static final int ACCENT_SOFT = 0x2935D0BA;
-    static final int ON_ACCENT = 0xFF04201C;
-    static final int OFF_TRACK = 0xFF3A434D;
-    static final int OFF_THUMB = 0xFFAEB7C0;
-    static final int BUSY_BG = 0xFF2A323B;
-    static final int NEUTRAL_BG = 0xFF252C34;
-    static final int AMBER = 0xFFF2B24C;
-    static final int BLUE = 0xFF5B8DEF;
-    static final int DOT_OFF = 0xFF6B7682;
-    static final int LINE = 0x12FFFFFF;
-    static final int SCRIM = 0x9E040608;
+    static int CARD = 0xFF161B21;
+    static int SHEET = 0xFF1B2128;
+    static int CODE = 0xFF0F1318;
+    static int TEXT = 0xFFEEF1F4;
+    static int SOFT = 0xFFD5DBE1;
+    static int MUTED = 0xFF9AA4AE;
+    static int ACCENT = 0xFF35D0BA;
+    static int ACCENT_SOFT = 0x2935D0BA;
+    static int ON_ACCENT = 0xFF04201C;
+    static int OFF_TRACK = 0xFF3A434D;
+    static int OFF_THUMB = 0xFFAEB7C0;
+    static int BUSY_BG = 0xFF2A323B;
+    static int NEUTRAL_BG = 0xFF252C34;
+    static int AMBER = 0xFFF2B24C;
+    static int BLUE = 0xFF5B8DEF;
+    static int DOT_OFF = 0xFF6B7682;
+    static int LINE = 0x12FFFFFF;
+    static int SCRIM = 0x9E040608;
+
+    static void applyAppearance(boolean light) {
+        CARD=light?0xFFFFFFFF:0xFF161B21;
+        SHEET=light?0xFFF8FAFC:0xFF1B2128;
+        CODE=light?0xFFEAF0F4:0xFF0F1318;
+        TEXT=light?0xFF142633:0xFFEEF1F4;
+        SOFT=light?0xFF344957:0xFFD5DBE1;
+        MUTED=light?0xFF596E7D:0xFF9AA4AE;
+        ACCENT=light?0xFF087C70:0xFF35D0BA;
+        ACCENT_SOFT=light?0x1A087C70:0x2935D0BA;
+        ON_ACCENT=light?0xFFFFFFFF:0xFF04201C;
+        OFF_TRACK=light?0xFFCBD6DF:0xFF3A434D;
+        OFF_THUMB=light?0xFF788C9A:0xFFAEB7C0;
+        BUSY_BG=light?0xFFE0E7ED:0xFF2A323B;
+        NEUTRAL_BG=light?0xFFE7EDF2:0xFF252C34;
+        AMBER=light?0xFF956000:0xFFF2B24C;
+        BLUE=light?0xFF245EA8:0xFF5B8DEF;
+        DOT_OFF=light?0xFF8395A3:0xFF6B7682;
+        LINE=light?0xFFDCE4EA:0x12FFFFFF;
+        SCRIM=light?0x800D1C29:0x9E040608;
+    }
 
     static final int REGULAR = 0;
     static final int MEDIUM = 1;
@@ -303,7 +324,7 @@ final class Kit {
             float w = getWidth();
             float h = getHeight();
             if (getLayoutDirection() == View.LAYOUT_DIRECTION_RTL) cv.scale(-1f, 1f, w / 2f, h / 2f);
-            p.setColor(0x1AFFFFFF);
+            p.setColor(Ui.lightAppearance?Ui.RING_TRACK:0x1AFFFFFF);
             r.set(0, 0, w, h);
             cv.drawRoundRect(r, h / 2f, h / 2f, p);
             if (to > from) {
@@ -406,7 +427,7 @@ final class Kit {
             }
             p.setColor(CARD);
             cv.drawCircle(x, cy, knobR + Ui.dp(getContext(), 3), p);
-            p.setColor(0xFFFFFFFF);
+            p.setColor(Ui.lightAppearance?ACCENT:0xFFFFFFFF);
             cv.drawCircle(x, cy, lifted ? knobR * 1.1f : knobR, p);
         }
 

@@ -528,3 +528,7 @@ Speed history	กราฟความเร็ว
 Waiting for vehicle data	รอข้อมูลรถ
 Auto-start not verified. Check EV TripLog in 'Disable background Apps' and restart the head unit.	ยังยืนยันการเริ่มอัตโนมัติไม่ได้ ตรวจสอบ EV TripLog ใน Disable background Apps และรีสตาร์ตหน้าจอรถ
 
+Appearance	รูปแบบการแสดงผล
+Dark	ธีมมืด
+Light	ธีมสว่าง
+Auto (system)	อัตโนมัติ (ตามระบบ)

@@ -101,6 +101,12 @@ jobs:
           javac -d "$RUNNER_TEMP/gauge-test" src/org/triprecorderng/EvoHybridRenderer.java src/org/triprecorderng/GtrHybridRenderer.java src/org/triprecorderng/TypeRHybridRenderer.java src/org/triprecorderng/AdditionalHybridRenderer.java tools/CustomGaugeTest.java
           java -cp "$RUNNER_TEMP/gauge-test" org.triprecorderng.CustomGaugeTest
 
+      - name: Test appearance policy
+        run: |
+          mkdir -p "$RUNNER_TEMP/appearance-test"
+          javac -d "$RUNNER_TEMP/appearance-test" src/org/triprecorderng/Appearance.java tools/AppearanceTest.java
+          java -cp "$RUNNER_TEMP/appearance-test" org.triprecorderng.AppearanceTest
+
       - name: Test updater signer verification
         run: |
           mkdir -p "$RUNNER_TEMP/signer-test"

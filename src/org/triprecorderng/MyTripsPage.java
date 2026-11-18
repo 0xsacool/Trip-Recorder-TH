@@ -271,7 +271,7 @@ final class MyTripsPage {
 
     private static StateListDrawable pressable() {
         StateListDrawable d = new StateListDrawable();
-        d.addState(new int[]{android.R.attr.state_pressed}, new ColorDrawable(0x14FFFFFF));
+        d.addState(new int[]{android.R.attr.state_pressed}, new ColorDrawable(Ui.lightAppearance?0x14000000:0x14FFFFFF));
         d.addState(new int[]{}, new ColorDrawable(0x00000000));
         return d;
     }
@@ -292,7 +292,7 @@ final class MyTripsPage {
 
         double sc = Stats.score(t);
         RingView ring = new RingView(c, 4.8f, 18, 10);
-        ring.setTrackColor(0x17FFFFFF);
+        ring.setTrackColor(Ui.lightAppearance?Ui.RING_TRACK:0x17FFFFFF);
         ring.set(Double.isNaN(sc) ? 0 : sc, 100, Ui.f(sc, "%.0f"), "", Kit.scoreColor(sc));
         row.addView(ring, new LinearLayout.LayoutParams(dp(W_RING), dp(W_RING)));
 
