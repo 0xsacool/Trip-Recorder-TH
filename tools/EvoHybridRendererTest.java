@@ -43,6 +43,10 @@ public final class EvoHybridRendererTest {
         check(history.available(EvoHybridRenderer.Metric.BATTERY_TEMP)&&chart.history.length==300&&chart.historyCount==300&&chart.history[0]==34&&Double.isNaN(chart.history[299]),"five-minute history and stale readings");
         history.select(chart,EvoHybridRenderer.Metric.BATTERY_LEVEL,60);
         check(chart.historyMetric==EvoHybridRenderer.Metric.BATTERY_LEVEL&&chart.history[59]==71,"all metrics sampled together");
+        check(!history.available(EvoHybridRenderer.Metric.MOTOR_RPM),"RPM hidden until supported");
+        history.sample(313000,45,55,17.1,34,71,3900);
+        history.select(chart,EvoHybridRenderer.Metric.MOTOR_RPM,60);
+        check(history.available(EvoHybridRenderer.Metric.MOTOR_RPM)&&chart.historyCount==0,"RPM is available as a live number only");
         check(EvoHybridRenderer.angle(-100,-100,200)==140,"regen limit");
         check(EvoHybridRenderer.angle(200,-100,200)==400,"power limit");
         check(EvoHybridRenderer.angle(900,-100,200)==400,"high clamp");

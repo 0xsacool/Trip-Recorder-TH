@@ -16,6 +16,13 @@ final class BydFrameworkVehicle implements Vehicle {
     private final Context ctx;
     private Object speed, statistic, bodywork, charging, instrument, engine, manager;
     private Method mEnginePower;
+    private Integer frontRpmId;
+    private boolean rpmListenerTried;
+    private final MotorRpm.Confirmation rpmConfirmation=new MotorRpm.Confirmation();
+    private Object rpmListener;
+    private volatile MotorRpm.Sample rpmEvent;
+    private MotorRpm.Sample rpmPoll;
+    private long lastRpmPoll;
     private Integer tempMinId, tempMaxId, cellMinId, cellMaxId, chargeVoltId, powerId, speedId, socId;
     private Method[] mCharging;
     private Method mFuel, mEvKm, mHevKm, mFuelPct, mElecRange, mFuelRange, mJourney;
@@ -43,6 +50,7 @@ final class BydFrameworkVehicle implements Vehicle {
             cellMaxId = feature("Statistic", "STATISTIC_HIGHEST_BATTERY_VOLTAGE");
             chargeVoltId = feature("Charging", "CHARGING_CHARGE_BATTERY_VOLT");
             powerId = feature("Engine", "ENGINE_POWER");
+            frontRpmId = feature("Engine", "ENGINE_FRONT_MOTOR_SPEED");
             speedId = feature("Speed", "SPEED_AUTO_SPEED");
             socId = feature("Statistic", "STATISTIC_ELEC_PERCENTAGE");
             mSpeed = optional(speed, "getCurrentSpeed");
@@ -205,6 +213,51 @@ final class BydFrameworkVehicle implements Vehicle {
     @Override public double motorPowerKw() {
         double v = between(fid(engine, 1012, powerId, false), -500, 1000);
         return Double.isNaN(v) ? between(num(engine, mEnginePower), -500, 1000) : v;
+    }
+
+    /** Explicit read-event subscription; no set/control request. Only the long-lived shell helper
+     * subscribes, so transient direct-provider probes cannot leak listeners. */
+    private void bindRpmListener(){
+        rpmListenerTried=true;
+        if(engine==null||android.os.Process.myUid()!=2000)return;
+        final int id=frontRpmId==null?MotorRpm.FRONT_FEATURE:frontRpmId;
+        try {
+            Class<?> iface=Class.forName(P+"IBYDAutoListener");
+            Object listener=java.lang.reflect.Proxy.newProxyInstance(iface.getClassLoader(),new Class<?>[]{iface},(proxy,method,args)->{
+                if("onDataEventChanged".equals(method.getName())&&args!=null&&args.length>=2&&args[0] instanceof Number&&((Number)args[0]).intValue()==id&&args[1]!=null){
+                    Object ev=args[1];double raw=Double.NaN;
+                    try{raw=((Number)ev.getClass().getField("intValue").get(ev)).doubleValue();}
+                    catch(Throwable ignored){try{raw=((Number)ev.getClass().getField("doubleValue").get(ev)).doubleValue();}catch(Throwable ignoredToo){}}
+                    rpmEvent=new MotorRpm.Sample(raw,android.os.SystemClock.elapsedRealtime());
+                }
+                if("hashCode".equals(method.getName()))return System.identityHashCode(proxy);
+                if("equals".equals(method.getName()))return args!=null&&args.length==1&&proxy==args[0];
+                if("toString".equals(method.getName()))return "FrontRpmListener";
+                return null;
+            });
+            for(Method method:engine.getClass().getMethods()){
+                Class<?>[] params=method.getParameterTypes();
+                if(method.getName().equals("registerListener")&&params.length==2&&params[0].isAssignableFrom(listener.getClass())&&params[1]==int[].class){
+                    method.invoke(engine,listener,new int[]{id});rpmListener=listener;break;
+                }
+            }
+        }catch(Throwable ignored){}
+    }
+
+    @Override public synchronized double frontMotorRpm(){
+        if(!rpmListenerTried)bindRpmListener();
+        long now=android.os.SystemClock.elapsedRealtime();
+        MotorRpm.Sample event=rpmEvent;
+        double n=event==null?Double.NaN:event.fresh(now);
+        if(!Double.isFinite(n)){
+            // Only use a synchronous getter when the FID was resolved on this car.
+            if(frontRpmId!=null&&(rpmPoll==null||now-lastRpmPoll>=1000)){
+                lastRpmPoll=now;
+                rpmPoll=new MotorRpm.Sample(fid(engine,1012,frontRpmId,false),now);
+            }
+            n=rpmPoll==null?Double.NaN:rpmPoll.fresh(now);
+        }
+        return rpmConfirmation.accept(n);
     }
 
     @Override public double powerLevel() { return clean(num(bodywork, mPower)); }

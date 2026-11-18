@@ -35,6 +35,7 @@ final class EvoHybridRenderer {
     }
     static final class Data {
         double soc, speed, power;
+        double liveRpm=Double.NaN;
         String range, source, status, tripLabel, temp, cells, voltage;
         String distance, elapsed, energy, average, money;
         String batteryLabel, rangeLabel, tripCaption, timeCaption, energyCaption, avgCaption, costCaption;
@@ -72,7 +73,8 @@ final class EvoHybridRenderer {
         SPEED("Speed (km/h)","SPEED HISTORY (km/h)",0,120,40),
         CONSUMPTION("Avg. consumption (kWh/100 km)","AVG. CONSUMPTION (kWh/100 km)",0,30,10),
         BATTERY_TEMP("Battery temp (max °C)","BATTERY TEMP (MAX °C)",0,60,20),
-        BATTERY_LEVEL("Battery level (%)","BATTERY LEVEL (%)",0,100,25);
+        BATTERY_LEVEL("Battery level (%)","BATTERY LEVEL (%)",0,100,25),
+        MOTOR_RPM("Front motor RPM (Live)","FRONT MOTOR RPM",0,12000,4000);
         final String label,title;final double min,max,step;
         Metric(String label,String title,double min,double max,double step){this.label=label;this.title=title;this.min=min;this.max=max;this.step=step;}
     }
@@ -81,13 +83,18 @@ final class EvoHybridRenderer {
         private final History[] series=new History[Metric.values().length];
         private final boolean[] seen=new boolean[series.length];
         TelemetryHistory(){for(int i=0;i<series.length;i++)series[i]=new History(300);}
-        void sample(long elapsed,double power,double speed,double consumption,double temp,double level){
-            double[] values={power,speed,consumption,temp,level};
-            for(int i=0;i<series.length;i++){series[i].sample(elapsed,values[i]);if(valid(values[i]))seen[i]=true;}
+        void sample(long elapsed,double power,double speed,double consumption,double temp,double level){sample(elapsed,power,speed,consumption,temp,level,Double.NaN);}
+        void sample(long elapsed,double power,double speed,double consumption,double temp,double level,double rpm){
+            double[] values={power,speed,consumption,temp,level,rpm};
+            for(int i=0;i<series.length;i++){
+                if(i!=Metric.MOTOR_RPM.ordinal())series[i].sample(elapsed,values[i]);
+                if(valid(values[i])&&(i!=Metric.MOTOR_RPM.ordinal()||values[i]>0))seen[i]=true;
+            }
         }
         boolean available(Metric m){return m==Metric.POWER||m==Metric.SPEED||seen[m.ordinal()];}
         void select(Data d,Metric m,int seconds){
             int capacity=seconds==300?300:60;
+            if(m==Metric.MOTOR_RPM){d.historyCount=0;d.historyMetric=m;d.historySeconds=capacity;return;}
             History h=series[m.ordinal()];
             if(d.history==null||d.history.length!=capacity)d.history=new double[capacity];
             d.historyCount=Math.min(capacity,h.count);
@@ -132,7 +139,18 @@ final class EvoHybridRenderer {
         }
     }
     static void history(Surface s,Data d,float x,float y,float width,float height){
-        history(s,d.history,d.historyCount,d.historyMetric,d.historySeconds,d.historyColor,x,y,width,height);
+        history(s,d,d.history,d.historyCount,x,y,width,height);
+    }
+    static void history(Surface s,Data d,double[] samples,int count,float x,float y,float width,float height){
+        if(d.historyMetric!=Metric.MOTOR_RPM){history(s,samples,count,d.historyMetric,d.historySeconds,d.historyColor,x,y,width,height);return;}
+        // A live instrument, not a historical plot. Keep the hitbox and header in exactly the same place.
+        s.historyBounds(x,y,width,height);
+        float l=x+8,r=x+width-6;
+        s.text("FRONT MOTOR RPM",l,y+12,12,0xffb6bbc0,true,true,-1,r-l-55);
+        s.text("LIVE",r,y+12,10,d.historyColor,true,false,1,36);
+        s.line(r-48,y+6,r-44,y+10,0xffb6bbc0,1.6f);s.line(r-44,y+10,r-40,y+6,0xffb6bbc0,1.6f);
+        s.text(valid(d.liveRpm)?Long.toString(Math.round(d.liveRpm)):"--",x+width*.52f,y+height*.79f,Math.min(42,height*.62f),0xfff3f2f3,true,true,0,width-55);
+        s.text("rpm",r,y+height*.79f,13,0xffb6bbc0,true,false,1,35);
     }
     static boolean valid(double v) { return !Double.isNaN(v) && !Double.isInfinite(v); }
     static double angle(double value, double min, double max) {

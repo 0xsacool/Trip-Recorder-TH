@@ -40,6 +40,7 @@ final class PerformanceDashboard extends View {
     private RangeEstimate.Result range = new RangeEstimate.Result(Double.NaN, RangeEstimate.EPA);
     private double average = Double.NaN, distance = Double.NaN, energy = Double.NaN;
     private double motorPower = Double.NaN, minTemp = Double.NaN, maxTemp = Double.NaN;
+    private double frontRpm=Double.NaN;
     private double minCell = Double.NaN, maxCell = Double.NaN, chargeVoltage = Double.NaN;
     private String elapsed = "--", tripLabel = "", status = "", source = "";
     private int statusColor = MUTED;
@@ -98,14 +99,18 @@ final class PerformanceDashboard extends View {
                 && now >= live.driveWall && now - live.driveWall < 2000;
         double previousSpeed = speed;
         double previousPower = motorPower;
+        double previousRpm=frontRpm;
         speed = driveFresh ? positive(live.speed) : Double.NaN;
         boolean motorFresh = live.motorPowerWall > 0 && now >= live.motorPowerWall
                 && now - live.motorPowerWall < 2000;
         motorPower = driveFresh && linked && motorFresh && valid(live.motorPower) ? live.motorPower : Double.NaN;
+        boolean rpmFresh=linked&&driveFresh&&live.frontRpmWall>0&&now>=live.frontRpmWall&&now-live.frontRpmWall<2000;
+        frontRpm=rpmFresh?live.frontRpm:Double.NaN;
+        evoData.liveRpm=frontRpm;
         // Fast values redraw on every new reading; expensive trip summaries and labels stay at 1 Hz.
         long elapsedNow = android.os.SystemClock.elapsedRealtime();
         if (lastSlowRefresh != 0 && elapsedNow - lastSlowRefresh < 1000) {
-            if (Double.compare(previousSpeed, speed) != 0 || Double.compare(previousPower, motorPower) != 0)
+            if (Double.compare(previousSpeed, speed) != 0 || Double.compare(previousPower, motorPower) != 0 || Double.compare(previousRpm,frontRpm)!=0)
                 invalidate();
             return;
         }
@@ -130,7 +135,8 @@ final class PerformanceDashboard extends View {
         energy = shown == null ? Double.NaN : positive(shown.energyUsed());
         elapsed = shown == null ? "--" : Ui.duration(shown.drivingSec());
         telemetry.sample(elapsedNow,motorPower,speed,
-                linked && current!=null ? positive(current.energyPer100Km()) : Double.NaN,maxTemp,soc);
+                linked && current!=null ? positive(current.energyPer100Km()) : Double.NaN,maxTemp,soc,
+                frontRpm);
 
         String charging = ChargeRecorder.status;
         if (!live.running) {

@@ -18,8 +18,8 @@ import java.util.Locale;
  * app over a loopback socket protected by a shared token. The one thing it writes is the instrument-projection
  * flag, and only when the app's blind-spot option asks for a picture on the instrument cluster.
  *
- * Protocol (one request per line): "get" -> "v4 speed power soc elec drive odo fuel ev hev fuelPct
- * elecRange fuelRange journey motorKw error"; "get-drive" includes motorKw, "get" skips its sensor read;
+ * Protocol (one request per line): "get" -> "v5 speed power soc elec drive odo fuel ev hev fuelPct
+ * elecRange fuelRange journey motorKw frontRpm error"; "get-drive" includes motorKw and frontRpm;
  * "chg" -> "c1 bms gun work power kwh" (charging device, nan where unavailable);
  * "net" -> "n1 apn2real apn2state apn3real apn3state networkType simState" (the car's two mobile connections
  * and the radio, read from system properties; "-" where empty);
@@ -29,7 +29,7 @@ import java.util.Locale;
  * cluster; the state read back, nan when unreadable).
  */
 public final class Helper {
-    static final String VERSION = "10";
+    static final String VERSION = "11";
     private static BydFrameworkVehicle vehicle;
     private static String bindError;
     private static String token;
@@ -248,17 +248,18 @@ public final class Helper {
 
     private static String snapshot(boolean includeMotorPower) {
         if (vehicle == null || bindError != null) {
-            return "v4 nan nan nan nan nan nan nan nan nan nan nan nan nan nan " + String.valueOf(bindError).replace(' ', '_');
+            return "v5 nan nan nan nan nan nan nan nan nan nan nan nan nan nan nan " + String.valueOf(bindError).replace(' ', '_');
         }
         String err = "";
         double[] v = {vehicle.speedKmh(), vehicle.powerLevel(), vehicle.socPercent(),
                 vehicle.totalElecConsumption(), vehicle.totalDrivingTime(), vehicle.odometerKm(),
                 vehicle.totalFuelLitres(), vehicle.evMileageKm(), vehicle.hevMileageKm(),
                 vehicle.fuelPercent(), vehicle.elecRangeKm(), vehicle.fuelRangeKm(),
-                vehicle.journeyKm(), includeMotorPower ? vehicle.motorPowerKw() : Double.NaN};
+                vehicle.journeyKm(), includeMotorPower ? vehicle.motorPowerKw() : Double.NaN,
+                includeMotorPower ? vehicle.frontMotorRpm() : Double.NaN};
         String e = vehicle.lastError();
         if (e != null && e.length() > 0) err = e.replace(' ', '_');
-        StringBuilder sb = new StringBuilder("v4");
+        StringBuilder sb = new StringBuilder("v5");
         for (double x : v) sb.append(' ').append(num(x));
         sb.append(' ').append(err.length() == 0 ? "-" : err);
         return sb.toString();

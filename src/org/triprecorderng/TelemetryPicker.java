@@ -35,13 +35,13 @@ final class TelemetryPicker {
         int themeAccent=Prefs.newThemeAccent(c);
         accent=themeAccent!=0?themeAccent:0xff28d9ec;
     }
-    void sample(long elapsed,double power,double speed,double consumption,double temp,double level){
-        HISTORY.sample(elapsed,power,speed,consumption,temp,level);
+    void sample(long elapsed,double power,double speed,double consumption,double temp,double level,double rpm){
+        HISTORY.sample(elapsed,power,speed,consumption,temp,level,rpm);
     }
     void select(EvoHybridRenderer.Data d){
         HISTORY.select(d,metric,seconds);d.historyColor=accent;
     }
-    String description(){return metric.title+", "+(seconds==300?"5 min":"60s")+". Tap to choose graph";}
+    String description(){return metric.title+", "+(metric==EvoHybridRenderer.Metric.MOTOR_RPM?"Live":seconds==300?"5 min":"60s")+". Tap to choose data";}
     private int dp(float v){return Math.round(v*c.getResources().getDisplayMetrics().density);}
     private TextView row(String label,boolean selected){
         TextView t=new TextView(c);t.setText(label+(selected?"   ✓":""));t.setTextColor(selected?accent:Color.WHITE);
@@ -61,10 +61,12 @@ final class TelemetryPicker {
             TextView item=row(m.label,m==metric);list.addView(item,new LinearLayout.LayoutParams(-1,-2));
             item.setOnClickListener(v->{metric=m;choose(anchor);});
         }
+        if(metric!=EvoHybridRenderer.Metric.MOTOR_RPM){
         View divider=new View(c);divider.setBackgroundColor(0xff4f555c);list.addView(divider,new LinearLayout.LayoutParams(-1,dp(1)));
         for(int window:new int[]{60,300}){
             TextView item=row(window==60?"60s":"5 min",window==seconds);list.addView(item,new LinearLayout.LayoutParams(-1,-2));
             item.setOnClickListener(v->{seconds=window;choose(anchor);});
+        }
         }
         Rect visible=new Rect();anchor.getWindowVisibleDisplayFrame(visible);
         int width=Math.min(visible.width(),Math.max(dp(275),Math.round(graph.width())));

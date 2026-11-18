@@ -17,6 +17,9 @@ interface Vehicle {
     /** Instantaneous signed motor power in kW: positive drive, negative regen; NaN if unavailable. */
     default double motorPowerKw() { return Double.NaN; }
 
+    /** Read-only front traction motor speed (rpm), not ICE engine speed. */
+    default double frontMotorRpm() { return Double.NaN; }
+
     /** Ignition level: 0 off, 1 ACC, 2 on, 3 OK, 4 fake-OK, 255 invalid. NaN if unavailable. */
     double powerLevel();
 

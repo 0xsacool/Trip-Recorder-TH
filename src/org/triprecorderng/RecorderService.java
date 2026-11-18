@@ -65,6 +65,8 @@ public class RecorderService extends Service {
         volatile double speed = Double.NaN;
         volatile double motorPower = Double.NaN;
         volatile long motorPowerWall;
+        volatile double frontRpm = Double.NaN;
+        volatile long frontRpmWall;
         volatile long driveWall;
         volatile double power = Double.NaN;
         volatile double soc = Double.NaN;
@@ -131,6 +133,7 @@ public class RecorderService extends Service {
     private long lastNotifMs;
     private long lastLiveMs;
     private long lastMotorPollMs;
+    private boolean rpmAvailable;
     private final Trip.MotorEnergy motorEnergy = new Trip.MotorEnergy();
     private int lastTelemetryMask = -1;
     private double lastAlt;
@@ -289,6 +292,7 @@ public class RecorderService extends Service {
             live.soc = live.elecRange = live.speed = Double.NaN;
             live.motorPower = Double.NaN;
             live.motorPowerWall = 0;
+            live.frontRpm=Double.NaN;live.frontRpmWall=0;rpmAvailable=false;
             lastMotorPollMs = 0;
             live.driveWall = 0;
             live.telemetryWall = 0;
@@ -302,6 +306,7 @@ public class RecorderService extends Service {
             live.driveWall = 0;
             live.motorPower = Double.NaN;
             live.motorPowerWall = 0;
+            live.frontRpm=Double.NaN;live.frontRpmWall=0;rpmAvailable=false;
             lastMotorPollMs = 0;
             live.soc = live.elecRange = Double.NaN;
             lastLiveMs = 0;
@@ -318,6 +323,10 @@ public class RecorderService extends Service {
         live.speed = speed;
         if (pollMotor) {
             live.motorPower = v.motorPowerKw();
+            live.frontRpm = MotorRpm.plausible(v.frontMotorRpm(),speed);
+            live.frontRpmWall = System.currentTimeMillis();
+            boolean available=Double.isFinite(live.frontRpm);
+            if(available!=rpmAvailable){rpmAvailable=available;Diag.log("front motor RPM "+(available?"available ("+Math.round(live.frontRpm)+" rpm)":"unavailable")+" via "+v.name());}
             if (trip != null) motorEnergy.add(trip, SystemClock.elapsedRealtime(), live.motorPower);
             live.motorPowerWall = System.currentTimeMillis();
             lastMotorPollMs = now;

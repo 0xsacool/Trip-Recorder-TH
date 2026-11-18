@@ -47,7 +47,9 @@ public final class AdditionalHybridRendererTest {
             check(t.red==0&&t.blue==0&&t.cyan==0&&t.orange==0,"offline no active gauges "+theme);
             for(EvoHybridRenderer.Metric m:EvoHybridRenderer.Metric.values()){
                 d.historyMetric=m;d.historySeconds=300;d.history=new double[]{12,Double.NaN,18};d.historyCount=3;
-                t=render(theme,d,Double.NaN);check(t.text.contains(m.title)&&t.text.contains("5 min"),"selected graph "+theme+" "+m);
+                d.liveRpm=4250;
+                t=render(theme,d,Double.NaN);check(t.text.contains(m.title)&&t.text.contains(m==EvoHybridRenderer.Metric.MOTOR_RPM?"LIVE":"5 min"),"selected data "+theme+" "+m);
+                if(m==EvoHybridRenderer.Metric.MOTOR_RPM)check(t.text.contains("4250")&&!t.text.contains("5 min"),"RPM number only "+theme);
             }
         }
         System.out.println("AdditionalHybridRendererTest PASS (five themes, drive/regen/offline)");

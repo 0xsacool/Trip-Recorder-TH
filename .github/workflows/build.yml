@@ -65,6 +65,12 @@ jobs:
           javac -d "$RUNNER_TEMP/menu-test" src/org/triprecorderng/DashboardMenu.java tools/DashboardMenuTest.java
           java -cp "$RUNNER_TEMP/menu-test" org.triprecorderng.DashboardMenuTest
 
+      - name: Test motor RPM validation
+        run: |
+          mkdir -p "$RUNNER_TEMP/rpm-test"
+          javac -d "$RUNNER_TEMP/rpm-test" src/org/triprecorderng/MotorRpm.java tools/MotorRpmTest.java
+          java -cp "$RUNNER_TEMP/rpm-test" org.triprecorderng.MotorRpmTest
+
       - name: Test EVO hybrid renderer
         run: |
           mkdir -p "$RUNNER_TEMP/evo-test"

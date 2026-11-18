@@ -17,7 +17,7 @@ final class HelperVehicle implements Vehicle {
     private Socket socket;
     private BufferedReader in;
     private PrintWriter out;
-    private static final int FIELDS = 14;
+    private static final int FIELDS = 15;
     private double[] snap = new double[FIELDS];
     private long snapAt;
     private boolean snapIncludesMotorPower;
@@ -69,7 +69,7 @@ final class HelperVehicle implements Vehicle {
             String line = in.readLine();
             if (line == null) throw new IOException("helper closed the connection");
             String[] p = line.split(" ");
-            if (p.length < FIELDS + 2 || !p[0].equals("v4")) throw new IOException("bad reply: " + line);
+            if (p.length < FIELDS + 2 || !p[0].equals("v5")) throw new IOException("bad reply: " + line);
             for (int i = 0; i < FIELDS; i++) snap[i] = parse(p[i + 1]);
             error = p[FIELDS + 1].equals("-") ? "" : p[FIELDS + 1].replace('_', ' ');
             snapAt = SystemClock.elapsedRealtime();
@@ -97,8 +97,9 @@ final class HelperVehicle implements Vehicle {
 
     private synchronized double get(int i) {
         if (socket == null) return Double.NaN;
-        if ((SystemClock.elapsedRealtime() - snapAt > 150 || (i == 13 && !snapIncludesMotorPower))
-                && !refresh(i == 13)) return Double.NaN;
+        boolean drive=i==13||i==14;
+        if ((SystemClock.elapsedRealtime() - snapAt > 150 || (drive && !snapIncludesMotorPower))
+                && !refresh(drive)) return Double.NaN;
         return snap[i];
     }
 
@@ -201,6 +202,7 @@ final class HelperVehicle implements Vehicle {
     @Override public double speedKmh() { return get(0); }
 
     @Override public double motorPowerKw() { return get(13); }
+    @Override public double frontMotorRpm() { return get(14); }
 
     @Override public double powerLevel() { return get(1); }
 

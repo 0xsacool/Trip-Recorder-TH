@@ -766,6 +766,9 @@ final class ThisTripPage {
         }
 
         long elapsedNow = android.os.SystemClock.elapsedRealtime();
+        boolean rpmFresh=rangeFresh&&driveFresh&&l.frontRpmWall>0&&now>=l.frontRpmWall&&now-l.frontRpmWall<2000;
+        double rpm=rpmFresh?l.frontRpm:Double.NaN;
+        if(Double.compare(historyData.liveRpm,rpm)!=0){historyData.liveRpm=rpm;powerHistoryView.invalidate();}
         if (lastSlowRefresh != 0 && elapsedNow - lastSlowRefresh < 1000) return;
         lastSlowRefresh = elapsedNow;
         boolean motorFresh = l.motorPowerWall > 0 && now >= l.motorPowerWall
@@ -774,7 +777,8 @@ final class ThisTripPage {
         double consumption=rangeFresh&&cur!=null?cur.energyPer100Km():Double.NaN;
         telemetryPicker.sample(elapsedNow, rangeFresh && driveFresh && motorFresh ? l.motorPower : Double.NaN,
                 speed>=0?speed:Double.NaN,consumption>=0?consumption:Double.NaN,
-                telemetryFresh?l.telemetry[1]:Double.NaN,rangeFresh&&l.soc>=0&&l.soc<=100?l.soc:Double.NaN);
+                telemetryFresh?l.telemetry[1]:Double.NaN,rangeFresh&&l.soc>=0&&l.soc<=100?l.soc:Double.NaN,
+                rpm);
         powerHistoryView.setContentDescription(telemetryPicker.description());
         powerHistoryView.invalidate();
         RangeEstimate.Result range = Prefs.rangeEstimate(c, rangeFresh ? l.soc : Double.NaN, host.trips());
