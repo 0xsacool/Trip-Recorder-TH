@@ -13,3 +13,7 @@ fi
   tools/charging-test/android/{content/Context,location/Location,os/SystemClock}.java \
   tools/charging-test/RecorderFakes.java tools/charging-test/ChargeRecorderTest.java
 java -cp "$classes" org.triprecorderng.ChargeRecorderTest
+mkdir -p "$classes/provider"
+"${compiler[@]}" "${level[@]}" -d "$classes/provider" src/org/triprecorderng/{VehicleProvider,Vehicle}.java \
+  tools/charging-test/android/content/Context.java tools/provider-test/{ProviderFakes,VehicleProviderTest}.java
+java -cp "$classes/provider" org.triprecorderng.VehicleProviderTest

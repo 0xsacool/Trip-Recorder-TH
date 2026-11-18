@@ -60,16 +60,20 @@ final class VehicleProvider {
 
     /** Re-run the selection immediately (also used by the self-test button). */
     synchronized String probe() {
-        lastProbeMs = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
+        boolean directDue = lastDirectProbeMs == 0 || now - lastDirectProbeMs >= 30_000;
+        Vehicle previous = current;
+        boolean keep = previous != null && !(previous instanceof GpsVehicle)
+                && (!(previous instanceof HelperVehicle)
+                    || (Prefs.linkEnabled(ctx) && ((HelperVehicle) previous).connected()))
+                && usable(previous);
+        // A self-test during backoff must never discard a working vehicle data source.
+        if (!directDue && keep) return report;
+        lastProbeMs = now;
         StringBuilder sb = new StringBuilder();
-        if (current instanceof HelperVehicle) {
-            HelperVehicle h = (HelperVehicle) current;
-            if (Prefs.linkEnabled(ctx) && h.connected() && usable(h)) return report;
-            h.close();
-        }
         current = null;
 
-        if (lastDirectProbeMs == 0 || lastProbeMs - lastDirectProbeMs >= 30_000) {
+        if (directDue) {
             lastDirectProbeMs = lastProbeMs;
             BydFrameworkVehicle fw = new BydFrameworkVehicle(ctx);
             String err = fw.bind();
@@ -96,6 +100,14 @@ final class VehicleProvider {
         } else {
             sb.append("direct BYD API: retry on backoff\n");
         }
+
+        // Keep the prior source if rebinding fails. A working helper may be upgraded
+        // to direct API at the next scheduled probe, but is not closed until then.
+        if (current == null && keep) {
+            current = previous;
+            sb.append("retained: ").append(previous.name()).append('\n');
+        }
+        if (previous instanceof HelperVehicle && current != previous) ((HelperVehicle) previous).close();
 
         if (current == null && Prefs.linkEnabled(ctx)) {
             HelperVehicle hv = new HelperVehicle(HelperLauncher.token(ctx));

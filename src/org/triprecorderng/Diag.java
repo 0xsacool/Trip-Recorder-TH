@@ -30,6 +30,26 @@ final class Diag {
         return file;
     }
 
+    /** User-triggered export: only charging/source selection diagnostics, not trip location data. */
+    static synchronized File exportCharging(Context ctx) throws java.io.IOException {
+        init(ctx);
+        String stamp = new SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(new Date());
+        File out = new File(Exporter.dir(ctx), "charging-diagnostics-" + stamp + ".log");
+        try (FileWriter w = new FileWriter(out)) {
+            for (File src : new File[]{new File(file.getPath() + ".1"), file}) {
+                if (!src.isFile()) continue;
+                try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.FileReader(src))) {
+                    String line;
+                    while ((line = r.readLine()) != null) {
+                        if (line.contains("  charge: ") || line.contains("  probe -> ")
+                                || line.contains("  tick error")) w.write(line + "\n");
+                    }
+                }
+            }
+        }
+        return out;
+    }
+
     static synchronized void log(String msg) {
         Log.i(TAG, msg);
         if (file == null) return;

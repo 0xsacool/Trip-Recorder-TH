@@ -24,7 +24,19 @@ final class CockpitPaletteTest {
             check(day.stroke(0xffd0dbe2)==0xffd0dbe2,theme+" graph grid not remapped");
             check(day.text(0xff526574)==0xff526574,theme+" graph labels not remapped");
             check((day.platePixel(0x8a090909)>>>24)==0x8a,theme+" alpha intact");
+            int darkest=255,brightest=0;
+            for(int y=100;y<136;y++)for(int x=40;x<76;x++){
+                int raw=0xff090909,actual=day.platePixel(raw,x,y,1200);
+                check(night.platePixel(raw,x,y,1200)==raw,theme+" night weave disabled");
+                check(day.platePixel(0xffff821d,x,y,1200)==0xffff821d,theme+" weave ignores accent");
+                check(day.platePixel(0xffdddddd,x,y,1200)==day.platePixel(0xffdddddd),theme+" weave ignores highlights");
+                check(contrast(day.text(0xfff5f5f6),actual)>7,theme+" weave primary ink");
+                check(contrast(day.text(0xffb6bbc0),actual)>4.5,theme+" weave secondary ink");
+                int green=(actual>>>8)&255;darkest=Math.min(darkest,green);brightest=Math.max(brightest,green);
+            }
+            check(brightest-darkest>=20,theme+" visible twill relief");
+            check(day.platePixel(0xff090909,45,105,1200)==day.platePixel(0xff090909,90,210,2400),theme+" scale independent weave");
         }
-        System.out.println("CockpitPaletteTest PASS (eight material palettes, nighttime identity, contrast and graph ink)");
+        System.out.println("CockpitPaletteTest PASS (eight day carbon palettes, nighttime identity, trim, scale and ink contrast)");
     }
 }

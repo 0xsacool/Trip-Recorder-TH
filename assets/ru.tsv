@@ -52,6 +52,8 @@ Cost	Стоимость
 Partial: charging was inferred from the battery level. The exact start and end are unknown, so the times shown are an observation window, not the actual charging duration.	Неполная запись: зарядка определена по уровню батареи. Точное начало и конец неизвестны, поэтому показано окно наблюдения, а не фактическая длительность зарядки.
 Partial: the app missed part of this session (the head unit was asleep or the app was not running), so the battery gain and energy can be lower than the real total.	Неполная запись: приложение пропустило часть этой сессии (головное устройство было в спящем режиме или приложение не работало), поэтому прирост заряда и энергия могут быть ниже реальных.
 Charging	Зарядка
+Charging diagnostics	Диагностика зарядки
+Export log	Экспорт журнала
  - paused	 — пауза
 %d session(s)	Сессий зарядки: %d
 about %s added	добавлено около %s

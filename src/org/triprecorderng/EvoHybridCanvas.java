@@ -50,7 +50,7 @@ final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
                     int w=b.getWidth();int[] row=new int[w];
                     for(int y=0;y<b.getHeight();y++){
                         b.getPixels(row,0,w,0,y,w,1);
-                        for(int x=0;x<w;x++)row[x]=palette.platePixel(row[x]);
+                        for(int x=0;x<w;x++)row[x]=palette.platePixel(row[x],x,y,w);
                         b.setPixels(row,0,w,0,y,w,1);
                     }
                 }

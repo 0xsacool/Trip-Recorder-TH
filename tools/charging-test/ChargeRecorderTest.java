@@ -8,7 +8,7 @@ public final class ChargeRecorderTest {
     private static final long START = 1_800_000_000_000L;
     private static void check(boolean ok,String label) { if(!ok) throw new AssertionError(label); }
     private static final class Car implements Vehicle {
-        double soc=49, speed=0, odo=1000; double[] charging;
+        double soc=49, speed=0, odo=1000, signed=N; double[] charging;
         public String name(){return "test";}
         public double speedKmh(){return speed;}
         public double socPercent(){return soc;}
@@ -18,6 +18,7 @@ public final class ChargeRecorderTest {
         public double totalDrivingTime(){return N;}
         public String lastError(){return "";}
         public double[] charging(){return charging;}
+        public double motorPowerKw(){return signed;}
     }
     private static final class Fixture {
         final Car car=new Car(); final TripDb db=new TripDb(); final ChargeRecorder r;
@@ -82,5 +83,26 @@ public final class ChargeRecorderTest {
         f.car.soc=64;f.seconds(790);check(f.one().ended && f.one().socEnd==64,"quiet fallback closes");
         System.out.println("PASS: intermittent SOC and quiet completion");
     }
-    public static void main(String[] args){awakeDcNoBms();plugAndPower();normalAc();noFalseCharge();sleepingCharge();fallbackQuietEnd();briefReadFailureAndQuietEnd();}
+    private static void actualAttoAc() {
+        Fixture f=new Fixture(); f.car.soc=39;f.car.odo=N;f.car.signed=-6;f.seconds(300);
+        check(f.db.rows.isEmpty(),"signed power alone cannot create record");
+        f.car.soc=40;f.seconds(35);Charge c=f.one();
+        check(c.socStart==39 && c.socEnd==40 && c.maxPowerKw==6 && c.partial,"AC -6kW and 1% gain captured");
+        f.car.signed=N;f.seconds(10); f.car.signed=-6;f.car.soc=41;f.seconds(35);
+        check(f.one().socEnd==41 && !f.one().ended,"AC continues after brief missing power");
+        f.car.signed=0;f.seconds(70);c=f.one();check(c.ended && c.socEnd==41,"AC stops when power stops");
+        check(Math.abs(c.energyKwh(.6)-1.2)<.001,"energy estimated, not charger-measured");
+        System.out.println("PASS: actual Atto AC 39->41, -6 kW, unknown charge API, unplug");
+    }
+    private static void actualAttoDcAndRegen() {
+        Fixture f=new Fixture();f.car.soc=49;f.car.signed=-60;f.car.speed=22;f.seconds(60);
+        f.car.soc=51;f.seconds(60);check(f.db.rows.isEmpty(),"moving negative power rejected");
+        f.car.soc=49;f.car.speed=0;f.car.signed=-60;f.seconds(60);
+        check(f.db.rows.isEmpty(),"stale negative power while stopped rejected");
+        f.car.soc=50;f.seconds(35);check(f.one().socStart==49,"DC inferred after SOC increase");
+        f.car.soc=64;f.seconds(35);f.car.speed=30;f.car.soc=66;f.tick();
+        check(f.one().ended && f.one().socEnd==64,"regen after DC not counted");
+        System.out.println("PASS: DC -60 kW 49->64 and regen/stale power guard");
+    }
+    public static void main(String[] args){awakeDcNoBms();plugAndPower();normalAc();noFalseCharge();sleepingCharge();fallbackQuietEnd();briefReadFailureAndQuietEnd();actualAttoAc();actualAttoDcAndRegen();}
 }

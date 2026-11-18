@@ -1,5 +1,7 @@
 # Thai translation for EV TripLog
 Charging	กำลังชาร์จ
+Charging diagnostics	ตรวจสอบระบบชาร์จ
+Export log	ส่งออก Log
  - paused	 - หยุดชั่วคราว
 Off	ปิด
 Connected - helper running	เชื่อมต่อแล้ว - ตัวช่วยทำงานอยู่

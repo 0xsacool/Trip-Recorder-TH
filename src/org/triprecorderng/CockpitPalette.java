@@ -5,14 +5,16 @@ final class CockpitPalette {
     final boolean light;
     private final int tintR,tintG,tintB;
     private final int signature;
+    private final boolean flatHousing;
 
     CockpitPalette(String theme,boolean light){
         this.light=light;
+        flatHousing="type_r".equals(theme);
         // Each cockpit keeps its own material tint and racing accent.
         switch(theme==null?"":theme){
             case "n_performance": tintR=-13;tintG=0;tintB=9;signature=0xff176eab;break;
-            case "taycan_sport": tintR=5;tintG=2;tintB=-9;signature=0xff006a72;break;
-            case "yangwang_u9_xtreme": tintR=6;tintG=2;tintB=-5;signature=0xffb84d00;break;
+            case "taycan_sport": tintR=1;tintG=2;tintB=3;signature=0xff006a72;break;
+            case "yangwang_u9_xtreme": tintR=0;tintG=1;tintB=4;signature=0xffb84d00;break;
             case "type_r": tintR=2;tintG=2;tintB=3;signature=0xffbc142a;break;
             case "gr_motorsport": tintR=3;tintG=3;tintB=3;signature=0xffba1930;break;
             case "rs_digital": tintR=-2;tintG=0;tintB=5;signature=0xffbb1828;break;
@@ -27,7 +29,8 @@ final class CockpitPalette {
 
     /** Tone-map the immutable housing, keeping metallic highlights and chromatic accents.
      * Only the original plate pixels are changed; no layout or reading is baked into it. */
-    int platePixel(int c){
+    int platePixel(int c){return platePixel(c,0,0,0);}
+    int platePixel(int c,int x,int py,int width){
         if(!light)return c;
         int r=(c>>>16)&255,g=(c>>>8)&255,b=c&255;
         int max=Math.max(r,Math.max(g,b)),min=Math.min(r,Math.min(g,b));
@@ -35,9 +38,30 @@ final class CockpitPalette {
         // Strong colour (red motorsport stripe, blue N trim, orange XTREME frame)
         // stays the same hue, including its shading, rather than becoming a negative.
         if(max>=55&&max-min>=36&&max-min>=max*.37f)return c;
-        // Carbon and gauge faces become satin light material; original highlights remain
-        // bright and existing dark bezel details become contrasting embossed silver.
+        // Silver composite retains the original painted highlights and bezel shading.
         int v=y<=105?243-(y*68/105):175+(y-105)*77/150;
+        // 2-over-2 twill: alternating perpendicular fibre tows with fine relief.
+        // Use logical coordinates so differently sized housing assets have the same weave.
+        // Metallic bevels and coloured trim are excluded from the composite material.
+        if(width>0&&y<80){
+            int u=x*1200/width,w=py*1200/width;
+            int tu=u/7,tw=w/7;
+            boolean warp=((tu-tw)&3)<2;
+            int across=warp?u%7:w%7;
+            int along=warp?w%7:u%7;
+            int relief=across==0||across==6?-10:across==1||across==5?-4:across==2||across==4?2:5;
+            int weave=(warp?5:-6)+relief+(across%2==0?2:-2)-(along==0?3:0);
+            // Side panels carry a more pronounced weave; the central speed display
+            // remains quieter. Fade out at metallic highlights to avoid hard edges.
+            int edge=Math.abs(u-600);
+            int strength=42+Math.min(58,Math.max(0,(edge-180)*58/270));
+            if(w<46||w>365)strength=Math.max(strength,85);
+            // Near-black dial recesses become smooth satin faces, not patterned glass.
+            int floor=flatHousing&&edge>260?65:25;
+            strength=strength*(floor+Math.min(8,y)*(100-floor)/8)/100;
+            strength=strength*Math.min(40,80-y)/40;
+            v+=(-19+weave)*strength/100;
+        }
         return (c&0xff000000)|(neutral(v)&0x00ffffff);
     }
 

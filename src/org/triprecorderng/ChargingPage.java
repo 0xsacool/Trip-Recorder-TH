@@ -75,6 +75,7 @@ final class ChargingPage {
         LinearLayout col = k.column();
         List<Charge> charges = host.charges();
         col.addView(header(charges), new LinearLayout.LayoutParams(-1, dp(56)));
+        col.addView(diagnosticsRow(), new LinearLayout.LayoutParams(-1, -2));
         if (charges.isEmpty()) {
             col.addView(empty(), new LinearLayout.LayoutParams(-1, 0, 1f));
             return col;
@@ -84,6 +85,33 @@ final class ChargingPage {
         body.topMargin = dp(4);
         col.addView(list(charges), body);
         return col;
+    }
+
+    private View diagnosticsRow() {
+        LinearLayout row = k.row();
+        row.setPaddingRelative(dp(12), dp(4), dp(12), dp(6));
+        LinearLayout info = k.column();
+        info.addView(k.t(L.t("Charging diagnostics"), Kit.CAPTION, BLUE_TEXT, Kit.MEDIUM));
+        String sample = ChargeRecorder.diagnostics;
+        if (sample.isEmpty() || System.currentTimeMillis() - ChargeRecorder.diagnosticsWall > 15_000)
+            sample = "--";
+        TextView data = k.t(sample, Kit.CAPTION, Kit.MUTED, Kit.REGULAR);
+        data.setMaxLines(3);
+        info.addView(data);
+        row.addView(info, new LinearLayout.LayoutParams(0, -2, 1));
+        TextView export = k.t(L.t("Export log"), Kit.BODY, BLUE_TEXT, Kit.MEDIUM);
+        export.setPaddingRelative(dp(14), dp(8), dp(14), dp(8));
+        export.setBackground(Ui.round(BLUE_SOFT, 12, c));
+        export.setOnClickListener(v -> {
+            try {
+                java.io.File file = Diag.exportCharging(c);
+                android.widget.Toast.makeText(c, L.f("Saved %s", L.ltr(file.getPath())), android.widget.Toast.LENGTH_LONG).show();
+            } catch (Exception e) {
+                android.widget.Toast.makeText(c, L.f("Export failed: %s", e.getMessage()), android.widget.Toast.LENGTH_LONG).show();
+            }
+        });
+        row.addView(export, gapped());
+        return row;
     }
 
     private View header(List<Charge> charges) {

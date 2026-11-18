@@ -4,11 +4,15 @@ package org.triprecorderng;
 final class ChargeDetection {
     private static final long PARKED_MS = 60_000;
     private static final long QUIET_MS = 12 * 60_000;
-    static final int NONE = 0, BMS = 1, PLUG_POWER = 2, SOC_GAIN = 3;
+    static final int NONE = 0, BMS = 1, PLUG_POWER = 2, SOC_GAIN = 3, BATTERY_INFLOW = 4;
+    private static final long INFLOW_CONFIRM_MS = 30_000;
     private long parkedSince = -1, baseWall, lastGainWall, lastValidSocWall;
     private double baseSoc = Double.NaN, highSoc = Double.NaN, parkedOdo = Double.NaN;
     private int rises;
     private boolean inferred, sawPlug;
+    private long inflowSince = -1, lastInflowWall;
+    private double inflowSoc = Double.NaN;
+    private boolean inflowConfirmed;
 
     static double field(double[] c, int i) {
         return c != null && i < c.length && Double.isFinite(c[i]) ? c[i] : Double.NaN;
@@ -37,9 +41,18 @@ final class ChargeDetection {
         baseWall = lastGainWall = lastValidSocWall = 0;
         rises = 0;
         inferred = sawPlug = false;
+        clearInflow();
     }
 
-    int update(double[] c, double speed, double odo, double soc, long wall) {
+    private void clearInflow() {
+        inflowSince = -1; lastInflowWall = 0; inflowSoc = Double.NaN; inflowConfirmed = false;
+    }
+
+    static boolean validInflow(double speed, double signedPower) {
+        return speed >= 0 && speed < 0.5 && signedPower <= -1 && signedPower >= -500;
+    }
+
+    int update(double[] c, double speed, double odo, double soc, double signedPower, long wall) {
         int direct = signal(c, speed);
         boolean cable = plugged(code(c, 1));
         if (direct != NONE) { reset(); return direct; }
@@ -47,6 +60,32 @@ final class ChargeDetection {
         if (!(speed >= 0 && speed < 1)) { reset(); return NONE; }
         if (parkedSince >= 0 && validOdo(parkedOdo) && validOdo(odo)
                 && Math.abs(odo - parkedOdo) > 0.05) { reset(); return NONE; }
+        // Atto 3 reports charging as negative signed battery/drive power even when its
+        // dedicated charging API is unavailable. Never trust a negative value by itself:
+        // require stationary samples for >=30s and cable or an observed SOC increase.
+        boolean inflow = validInflow(speed, signedPower);
+        if (inflow) lastInflowWall = wall;
+        // A temporary unavailable power sample is not a known zero; tolerate up to 15s
+        // only for a confirmed stationary session (never start from missing power).
+        if (inflowConfirmed && Double.isNaN(signedPower) && speed >= 0 && speed < 0.5
+                && wall - lastInflowWall <= 15_000) return BATTERY_INFLOW;
+        if (!inflow) {
+            if (inflowConfirmed) { reset(); return NONE; }
+            clearInflow();
+        } else if (validSoc(soc)) {
+            if (inflowSince < 0 || wall < inflowSince || soc < inflowSoc - 1) {
+                clearInflow(); inflowSince = lastInflowWall = wall; inflowSoc = soc;
+            }
+            if (wall - inflowSince >= INFLOW_CONFIRM_MS && (cable || soc - inflowSoc >= 0.99))
+                inflowConfirmed = true;
+        }
+        if (inflowConfirmed && inflow) {
+            // A momentary missing SOC is acceptable only after confirmation; motion or a
+            // non-negative power sample ends this evidence and lets the recorder debounce.
+            if (validSoc(soc)) lastValidSocWall = wall;
+            if (wall - lastValidSocWall <= 60_000) return BATTERY_INFLOW;
+            reset(); return NONE;
+        }
         if (!validSoc(soc)) {
             // A brief SOC read failure must not erase the pre-charge baseline.
             if (parkedSince >= 0 && wall - lastValidSocWall <= 60_000)
@@ -54,7 +93,7 @@ final class ChargeDetection {
             reset(); return NONE;
         }
         if (parkedSince < 0 || wall < baseWall) {
-            reset(); parkedSince = wall; baseWall = wall; lastGainWall = lastValidSocWall = wall;
+            parkedSince = wall; baseWall = wall; lastGainWall = lastValidSocWall = wall;
             baseSoc = highSoc = soc; parkedOdo = odo; sawPlug = cable;
             return NONE;
         }
@@ -81,6 +120,7 @@ final class ChargeDetection {
         return inferred ? SOC_GAIN : NONE;
     }
 
-    double startSoc() { return baseSoc; }
-    long startWall() { return baseWall; }
+    double startSoc() { return inflowConfirmed ? inflowSoc : baseSoc; }
+    long startWall() { return inflowConfirmed ? inflowSince : baseWall; }
+    boolean checkingInflow() { return inflowSince >= 0 && !inflowConfirmed; }
 }

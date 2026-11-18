@@ -43,6 +43,8 @@ final class ChargeRecorder {
     static volatile Charge current;
     /** One line for the This Trip screen, empty when not charging. */
     static volatile String status = "";
+    static volatile String diagnostics = "";
+    static volatile long diagnosticsWall;
 
     private final Context ctx;
     private final TripDb db;
@@ -122,16 +124,23 @@ final class ChargeRecorder {
         double speed = v.speedKmh();
         double soc = v.socPercent();
         if (!ChargeDetection.validSoc(soc)) soc = Double.NaN;
-        int evidence = detection.update(c, speed, v.odometerKm(), soc, wall);
+        double odo = v.odometerKm();
+        // Read the same live signed power as the dashboard, not a stale UI cache.
+        double signedPower = speed >= 0 && speed < 1 ? v.motorPowerKw() : Double.NaN;
+        int evidence = detection.update(c, speed, odo, soc, signedPower, wall);
         boolean active = evidence != ChargeDetection.NONE;
-        boolean inferred = evidence == ChargeDetection.SOC_GAIN;
+        boolean inflow = evidence == ChargeDetection.BATTERY_INFLOW;
+        boolean inferred = evidence == ChargeDetection.SOC_GAIN || inflow;
 
         String snapshot = v.name() + " bms=" + bms + " gun=" + gun
                 + " work=" + ChargeDetection.code(c, 2) + " evidence=" + evidence;
-        if (!snapshot.equals(lastEvidence) || wall - lastEvidenceWall >= 300_000) {
+        diagnostics = snapshot + " | charger=" + val(ChargeDetection.field(c, 3)) + " kW"
+                + " | signed=" + val(signedPower) + " kW | SOC=" + val(soc) + "% | speed=" + val(speed)
+                + " | odo=" + val(odo) + (detection.checkingInflow() ? " | checking inflow" : "");
+        diagnosticsWall = wall;
+        if (!snapshot.equals(lastEvidence) || wall - lastEvidenceWall >= 30_000) {
             lastEvidence = snapshot; lastEvidenceWall = wall;
-            Diag.log("charge: " + snapshot + " power=" + ChargeDetection.field(c, 3)
-                    + " soc=" + soc + " speed=" + speed);
+            Diag.log("charge: " + diagnostics);
         }
 
         if (wakeCheckPending && !Double.isNaN(soc)) {
@@ -158,7 +167,7 @@ final class ChargeRecorder {
                 cur.socEnd = soc;
             }
             double kwh = inferred ? Double.NaN : ChargeDetection.field(c, 4);
-            double power = inferred ? Double.NaN : ChargeDetection.field(c, 3);
+            double power = inflow ? -signedPower : inferred ? Double.NaN : ChargeDetection.field(c, 3);
             if (!Double.isNaN(kwh) && (Double.isNaN(cur.kwhSignal) || kwh > cur.kwhSignal)) cur.kwhSignal = kwh;
             if (!Double.isNaN(power) && power > 0
                     && (Double.isNaN(cur.maxPowerKw) || power > cur.maxPowerKw)) cur.maxPowerKw = power;
@@ -189,6 +198,10 @@ final class ChargeRecorder {
                 if (nowMs - inactiveSinceMs >= END_DEBOUNCE_MS) end(soc, wall);
             }
         }
+    }
+
+    private static String val(double value) {
+        return Double.isFinite(value) ? String.format(Locale.US, "%.1f", value) : "--";
     }
 
     /** Remembers the latest battery level (persisted) so a charge that happens while we sleep can be noticed. */
