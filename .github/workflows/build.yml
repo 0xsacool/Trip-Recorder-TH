@@ -71,6 +71,12 @@ jobs:
           javac -d "$RUNNER_TEMP/evo-test" src/org/triprecorderng/EvoHybridRenderer.java tools/EvoHybridRendererTest.java
           java -cp "$RUNNER_TEMP/evo-test" org.triprecorderng.EvoHybridRendererTest
 
+      - name: Test GT-R hybrid renderer
+        run: |
+          mkdir -p "$RUNNER_TEMP/gtr-test"
+          javac -d "$RUNNER_TEMP/gtr-test" src/org/triprecorderng/EvoHybridRenderer.java src/org/triprecorderng/GtrHybridRenderer.java tools/GtrHybridRendererTest.java
+          java -cp "$RUNNER_TEMP/gtr-test" org.triprecorderng.GtrHybridRendererTest
+
       - name: Test updater signer verification
         run: |
           mkdir -p "$RUNNER_TEMP/signer-test"

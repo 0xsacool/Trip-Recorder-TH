@@ -60,7 +60,8 @@ final class PerformanceDashboard extends View {
         this.typeR = Prefs.typeRTheme(c);
         this.gr = Prefs.grTheme(c);
         this.theme = Prefs.dashboardTheme(c);
-        this.evoCanvas = Prefs.THEME_EVO_HYBRID.equals(theme) ? new EvoHybridCanvas(c) : null;
+        this.evoCanvas = Prefs.THEME_EVO_HYBRID.equals(theme) ? new EvoHybridCanvas(c)
+                : Prefs.THEME_GTR.equals(theme) ? new EvoHybridCanvas(c,"gtr_hybrid_plate.webp") : null;
         this.host = host;
         Arrays.fill(history, Double.NaN);
         setBackgroundColor(Prefs.THEME_U9_XTREME.equals(theme) ? 0xFF08090A : gr ? 0xFF080808 : typeR ? 0xFF08090B : 0xFF090D11);
@@ -193,7 +194,8 @@ final class PerformanceDashboard extends View {
             evoData.energyCaption = energyCaption();
             evoData.avgCaption = L.t("Average consumption");
             evoData.costCaption = L.t("Cost");
-            evoCanvas.draw(canvas, getWidth(), getHeight(), evoData);
+            if(Prefs.THEME_GTR.equals(theme))evoCanvas.drawGtr(canvas,getWidth(),getHeight(),evoData,average,history,sampleCount);
+            else evoCanvas.draw(canvas, getWidth(), getHeight(), evoData);
             return;
         }
         float scale = Math.min(getWidth() / 1000f, getHeight() / 470f);

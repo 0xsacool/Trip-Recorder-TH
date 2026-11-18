@@ -18,9 +18,10 @@ final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
     private final Typeface bold=Typeface.create("sans-serif-condensed",Typeface.BOLD);
     private final Typeface italic=Typeface.create("sans-serif-condensed",Typeface.BOLD_ITALIC);
     private Canvas c;
-    EvoHybridCanvas(Context context) {
+    EvoHybridCanvas(Context context) { this(context,"evo_hybrid_plate.webp"); }
+    EvoHybridCanvas(Context context,String asset) {
         Bitmap b=null;
-        try(InputStream in=context.getAssets().open("evo_hybrid_plate.webp")){
+        try(InputStream in=context.getAssets().open(asset)){
             BitmapFactory.Options o=new BitmapFactory.Options();
             o.inScaled=false;
             b=BitmapFactory.decodeStream(in,null,o);
@@ -33,6 +34,14 @@ final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
         c.save();c.translate((width-EvoHybridRenderer.WIDTH*scale)/2f,(height-EvoHybridRenderer.HEIGHT*scale)/2f);
         c.scale(scale,scale);
         EvoHybridRenderer.draw(this,d);
+        c.restore();c=null;
+    }
+    void drawGtr(Canvas canvas,int width,int height,EvoHybridRenderer.Data d,double average,double[] history,int count){
+        float scale=Math.min(width/EvoHybridRenderer.WIDTH,height/EvoHybridRenderer.HEIGHT);
+        c=canvas;
+        c.save();c.translate((width-EvoHybridRenderer.WIDTH*scale)/2f,(height-EvoHybridRenderer.HEIGHT*scale)/2f);
+        c.scale(scale,scale);
+        GtrHybridRenderer.draw(this,d,average,history,count);
         c.restore();c=null;
     }
     private void fill(int color){p.setColor(color);p.setStyle(Paint.Style.FILL);p.setStrokeWidth(1);}
