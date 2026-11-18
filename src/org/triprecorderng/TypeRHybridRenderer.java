@@ -31,6 +31,9 @@ final class TypeRHybridRenderer {
         boolean regen=EvoHybridRenderer.valid(d.power)&&d.power<0;
         boolean drive=EvoHybridRenderer.valid(d.power)&&d.power>0;
         int accent=accent(d.power);
+        s.gaugeBounds(0,25,70,1150,52);
+        if(EvoHybridRenderer.custom(d,0))EvoHybridRenderer.customBar(s,d,0,30,68,1140,58,RED);
+        else{
         sport(s,regen?"REGEN":"POWER",30,91,25,WHITE,-1,145);
         s.text(regen?"0–100 kW":"0–200 kW",30,109,12,MUTED,false,false,-1,140);
         double amount=progress(d.power)*SEGMENTS;
@@ -41,8 +44,12 @@ final class TypeRHybridRenderer {
             if(part>0)s.slant(xx,79,59*part,27,12,accent);
         }
         sport(s,signed(d.power)+" kW",1170,94,32,WHITE,1,200);
+        }
 
         // Main trip fields: use the faceplate's angled dividers without redrawing them.
+        s.gaugeBounds(1,30,146,275,102);
+        if(EvoHybridRenderer.custom(d,1))EvoHybridRenderer.customDigital(s,d,1,30,146,275,102,RED,true);
+        else{
         label(s,d.batteryLabel,35,170,270,-1);
         s.outline(36,185,59,32,5,WHITE,2.5f);s.rect(95,195,5,12,WHITE);
         for(int i=0;i<4;i++){
@@ -53,6 +60,7 @@ final class TypeRHybridRenderer {
             }
         }
         sport(s,whole(d.soc)+"%",112,225,55,WHITE,-1,180);
+        }
         label(s,d.rangeLabel,35,290,260,-1);
         sport(s,d.range,35,345,47,WHITE,-1,245);
 

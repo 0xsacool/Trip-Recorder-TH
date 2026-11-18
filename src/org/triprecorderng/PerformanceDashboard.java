@@ -35,6 +35,7 @@ final class PerformanceDashboard extends View {
     private final EvoHybridCanvas fallbackGraph;
     private final RectF fallbackGraphBounds=new RectF();
     private boolean graphPressed;
+    private int pressedGauge=-1;
     private long lastSlowRefresh;
     private double speed = Double.NaN, soc = Double.NaN;
     private RangeEstimate.Result range = new RangeEstimate.Result(Double.NaN, RangeEstimate.EPA);
@@ -173,6 +174,10 @@ final class PerformanceDashboard extends View {
             evoData.soc = soc;
             evoData.speed = speed;
             evoData.power = motorPower;
+            evoData.avgConsumption=average;
+            evoData.batteryTemp=maxTemp;
+            evoData.chargingVoltage=chargeVoltage;
+            evoData.remainingRange=range.km;
             evoData.range = range.text();
             evoData.source = source;
             evoData.status = status;
@@ -266,7 +271,21 @@ final class PerformanceDashboard extends View {
     private RectF chartBounds(){return evoCanvas!=null?evoCanvas.graphBounds():new RectF(fallbackGraphBounds);}
     @Override public boolean onTouchEvent(MotionEvent e){
         RectF hit=chartBounds();
-        if(e.getActionMasked()==MotionEvent.ACTION_DOWN)graphPressed=hit.contains(e.getX(),e.getY());
+        if(e.getActionMasked()==MotionEvent.ACTION_DOWN){
+            graphPressed=hit.contains(e.getX(),e.getY());
+            pressedGauge=!graphPressed&&evoCanvas!=null?evoCanvas.gaugeAt(e.getX(),e.getY()):-1;
+        }
+        if(pressedGauge>=0){
+            if(e.getActionMasked()==MotionEvent.ACTION_UP){
+                int slot=pressedGauge;pressedGauge=-1;
+                if(evoCanvas.gaugeAt(e.getX(),e.getY())==slot){
+                    if(EvoHybridRenderer.valid(speed)&&speed>3)
+                        android.widget.Toast.makeText(c,"Park to customize gauges",android.widget.Toast.LENGTH_SHORT).show();
+                    else telemetry.showGauge(this,evoCanvas.gaugeBounds(slot),slot);
+                }
+            }else if(e.getActionMasked()==MotionEvent.ACTION_CANCEL)pressedGauge=-1;
+            return true;
+        }
         if(graphPressed){
             if(e.getActionMasked()==MotionEvent.ACTION_UP){graphPressed=false;if(hit.contains(e.getX(),e.getY()))telemetry.show(this,hit);}
             else if(e.getActionMasked()==MotionEvent.ACTION_CANCEL)graphPressed=false;

@@ -15,6 +15,7 @@ final class EvoHybridRenderer {
         void line(float x1,float y1,float x2,float y2,int color,float thickness);
         void circle(float cx,float cy,float radius,int color);
         default void historyBounds(float x,float y,float w,float h) {}
+        default void gaugeBounds(int slot,float x,float y,float w,float h) {}
         // Forward-sloping filled parallelogram. Native canvas overrides with a single path.
         default void slant(float x,float y,float w,float h,float shear,int color) {
             for(int i=0;i<h;i++){
@@ -36,6 +37,8 @@ final class EvoHybridRenderer {
     static final class Data {
         double soc, speed, power;
         double liveRpm=Double.NaN;
+        double avgConsumption=Double.NaN,batteryTemp=Double.NaN,chargingVoltage=Double.NaN,remainingRange=Double.NaN;
+        GaugeMetric[] gauges={GaugeMetric.DEFAULT,GaugeMetric.DEFAULT};
         String range, source, status, tripLabel, temp, cells, voltage;
         String distance, elapsed, energy, average, money;
         String batteryLabel, rangeLabel, tripCaption, timeCaption, energyCaption, avgCaption, costCaption;
@@ -45,6 +48,71 @@ final class EvoHybridRenderer {
         int historySeconds=60;
         int historyColor=0xff28d9ec;
         int statusColor;
+    }
+    enum GaugeMetric {
+        DEFAULT("Default","DEFAULT","",0,100,5),
+        POWER("Motor power","MOTOR POWER","kW",-100,200,6),
+        RPM("Front motor RPM","FRONT MOTOR RPM","rpm",0,12000,6),
+        SPEED("Speed","SPEED","km/h",0,260,13),
+        CONSUMPTION("Average consumption","AVG. CONSUMPTION","kWh/100 km",0,30,6),
+        SOC("Battery level","BATTERY LEVEL","%",0,100,5),
+        TEMPERATURE("Battery temperature (max)","BATTERY TEMP MAX","°C",0,60,6),
+        VOLTAGE("Charging voltage","CHARGING VOLTAGE","V",0,800,4),
+        RANGE("Estimated remaining range","EST. RANGE","km",0,500,5);
+        final String label,title,unit;final double min,max;final int divisions;
+        GaugeMetric(String label,String title,String unit,double min,double max,int divisions){
+            this.label=label;this.title=title;this.unit=unit;this.min=min;this.max=max;this.divisions=divisions;
+        }
+        double read(Data d){
+            switch(this){
+                case POWER:return d.power;case RPM:return d.liveRpm;case SPEED:return d.speed;
+                case CONSUMPTION:return d.avgConsumption;case SOC:return d.soc;case TEMPERATURE:return d.batteryTemp;
+                case VOLTAGE:return d.chargingVoltage;case RANGE:return d.remainingRange;default:return Double.NaN;
+            }
+        }
+        String reading(Data d){
+            double n=read(d);if(!valid(n))return "--";
+            if(this==CONSUMPTION)return d.average==null?String.format(java.util.Locale.US,"%.1f",n):d.average.replace(" kWh/100 km","");
+            if(this==RANGE)return "≈"+Math.round(n);
+            return Long.toString(Math.round(n));
+        }
+        double upper(Data d){
+            double n=read(d);return valid(n)&&n>max?Math.ceil(n/(max/divisions))*(max/divisions):max;
+        }
+    }
+    static boolean custom(Data d,int slot){return d.gauges[slot]!=GaugeMetric.DEFAULT;}
+    static void customDigital(Surface s,Data d,int slot,float x,float y,float w,float h,int accent,boolean italic){
+        GaugeMetric m=d.gauges[slot];
+        s.text(m.title,x+w/2,y+h*.22f,Math.min(15,h*.19f),accent,true,italic,0,w-12);
+        s.text(m.reading(d),x+w/2,y+h*.67f,Math.min(52,h*.43f),WHITE,true,italic,0,w-12);
+        s.text(m.unit,x+w/2,y+h*.91f,Math.min(16,h*.18f),GRAY,true,italic,0,w-12);
+    }
+    static void customBar(Surface s,Data d,int slot,float x,float y,float w,float h,int accent){
+        GaugeMetric m=d.gauges[slot];double n=m.read(d),hi=m.upper(d);
+        s.text(m.title,x,y+16,15,GRAY,true,true,-1,w*.58f);
+        s.text(m.reading(d)+" "+m.unit,x+w,y+20,24,WHITE,true,true,1,w*.55f);
+        float f=valid(n)?(float)Math.max(0,Math.min(1,(n-m.min)/(hi-m.min))):0;
+        float zero=m.min<0?(float)(-m.min/(hi-m.min)):0;
+        s.rect(x,y+27,w,Math.max(4,h-46),0xff303338);
+        if(valid(n))s.rect(x+w*Math.min(f,zero),y+27,w*Math.abs(f-zero),Math.max(4,h-46),n<0?BLUE:accent);
+        s.text(Long.toString(Math.round(m.min)),x,y+h,11,GRAY,false,false,-1,w/3);
+        s.text(Long.toString(Math.round(hi)),x+w,y+h,11,GRAY,false,false,1,w/3);
+    }
+    static void customDial(Surface s,Data d,int slot,float cx,float cy,float r,int accent,boolean italic){
+        GaugeMetric m=d.gauges[slot];double n=m.read(d),hi=m.upper(d);
+        int div=m.divisions,sub=4;
+        for(int i=0;i<=div*sub;i++){
+            double v=m.min+(hi-m.min)*i/(div*sub),a=angle(v,m.min,hi);
+            boolean major=i%sub==0;
+            mark(s,cx,cy,r*.96f,a,r*(major?.12f:.055f),v<0?BLUE:accent,major?3:1.3f);
+            if(major)s.text(Long.toString(Math.round(v)),px(cx,r*.75f,a),py(cy,r*.75f,a)+r*.045f,r*.106f,WHITE,true,italic,0,r*.39f);
+        }
+        double a=angle(n,m.min,hi);
+        if(valid(a))s.line(px(cx,r*.53f,a),py(cy,r*.53f,a),px(cx,r*.92f,a),py(cy,r*.92f,a),accent,4);
+        s.circle(cx,cy,r*.51f,0xff101113);
+        s.text(m.title,cx,cy-r*.17f,r*.105f,GRAY,true,italic,0,r*.94f);
+        s.text(m.reading(d),cx,cy+r*.18f,r*.34f,WHITE,true,italic,0,r*.95f);
+        s.text(m.unit,cx,cy+r*.34f,r*.115f,GRAY,true,italic,0,r*.94f);
     }
     /** One measurement per second; missing seconds remain gaps, not zeroes. */
     static final class History {
@@ -210,6 +278,9 @@ final class EvoHybridRenderer {
         s.text(d.tripLabel,1185,44,12,GRAY,false,false,1,210);
         s.line(810,52,1185,52,RED,1.2f);
         float lx=331*PLATE_SCALE,ly=486*PLATE_SCALE,lr=229*PLATE_SCALE;
+        s.gaugeBounds(0,lx-lr,ly-lr,lr*2,lr*2);
+        if(custom(d,0))customDial(s,d,0,lx,ly,lr,RED,true);
+        else {
         for(int i=0;i<=12;i++) mark(s,lx,ly,lr*.94f,150+i*20,lr*.08f,RED,2.3f);
         // SOC icon: only the actual filled segments are colored.
         s.outline(lx-28,ly-78,56,22,3,RED,2);
@@ -223,7 +294,11 @@ final class EvoHybridRenderer {
         s.line(lx-lr*.68f,ly+15,lx+lr*.68f,ly+15,RED,1.2f);
         s.text(d.rangeLabel,lx,ly+40,15,RED,true,true,0,lr*1.5f);
         s.text(d.range,lx,ly+74,30,WHITE,true,true,0,lr*1.45f);
-        dial(s,934*PLATE_SCALE,421*PLATE_SCALE,337*PLATE_SCALE,-100,200,6,5,d.power,true);
+        }
+        float pcx=934*PLATE_SCALE,pcy=421*PLATE_SCALE,pr=337*PLATE_SCALE;
+        s.gaugeBounds(1,pcx-pr,pcy-pr,pr*2,pr*2);
+        if(custom(d,1))customDial(s,d,1,pcx,pcy,pr,RED,true);
+        else dial(s,pcx,pcy,pr,-100,200,6,5,d.power,true);
         dial(s,1553*PLATE_SCALE,480*PLATE_SCALE,249*PLATE_SCALE,0,260,13,4,d.speed,false);
         s.line(970,100,970,390,EDGE,1);
         telemetry(s,"BATTERY TEMP",d.temp,136);

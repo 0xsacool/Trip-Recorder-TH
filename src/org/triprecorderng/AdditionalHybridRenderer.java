@@ -57,6 +57,17 @@ final class AdditionalHybridRenderer {
     private static void gr(EvoHybridRenderer.Surface s,EvoHybridRenderer.Data d){
         header(s,d,GR,RED);
         float cx=593,cy=357,r=255;
+        s.gaugeBounds(0,330,80,526,143);
+        if(EvoHybridRenderer.custom(d,0)){
+            EvoHybridRenderer.GaugeMetric m=d.gauges[0];double v=m.read(d),hi=m.upper(d);
+            s.arc(cx,cy,r,180,180,22,DIM);
+            if(EvoHybridRenderer.valid(v)){
+                double zero=m.min<0?-m.min/(hi-m.min):0,f=Math.max(0,Math.min(1,(v-m.min)/(hi-m.min)));
+                s.arc(cx,cy,r,(float)(180+180*Math.min(f,zero)),(float)(180*Math.abs(f-zero)),22,v<0?BLUE:RED);
+            }
+            sport(s,whole(m.min),cx-r,378,16,WHITE,0,85);sport(s,whole(hi),cx+r,378,16,WHITE,0,85);
+            EvoHybridRenderer.customDigital(s,d,0,cx-105,143,210,77,RED,true);
+        }else{
         for(int i=0;i<10;i++){
             float a=271+i*9,b=180+i*9+1;
             s.arc(cx,cy,r,a,7,22,0xff4b2026);s.arc(cx,cy,r,b,7,22,0xff203c50);
@@ -72,8 +83,11 @@ final class AdditionalHybridRenderer {
         sport(s,"0",cx,89,17,WHITE,0,50);sport(s,"−100",cx-r,378,16,BLUE,0,85);sport(s,"+200",cx+r,378,16,RED,0,85);
         sport(s,"REGEN",cx-r+58,377,12,BLUE,0,80);sport(s,"DRIVE",cx+r-54,377,12,RED,0,80);
         label(s,"POWER",cx,164,170,0);sport(s,power(d.power),cx,211,47,WHITE,0,210);
+        }
         s.line(cx-100,226,cx+100,226,EDGE,1.5f);sport(s,whole(d.speed),cx,324,105,WHITE,0,260);label(s,"km/h",cx,346,130,0);
-        label(s,d.batteryLabel,40,121,260,-1);sport(s,whole(d.soc)+"%",40,191,62,WHITE,-1,250);batt(s,d.soc,42,207,225,17,GREEN);
+        s.gaugeBounds(1,35,95,245,134);
+        if(EvoHybridRenderer.custom(d,1))EvoHybridRenderer.customDigital(s,d,1,35,95,245,134,RED,true);
+        else{label(s,d.batteryLabel,40,121,260,-1);sport(s,whole(d.soc)+"%",40,191,62,WHITE,-1,250);batt(s,d.soc,42,207,225,17,GREEN);}
         s.line(42,242,271,242,EDGE,1.3f);label(s,d.rangeLabel,42,270,240,-1);sport(s,d.range,42,323,45,WHITE,-1,240);
         diagnostics(s,d,910,105,260,82,true);trips(s,d,393,RED,true);
     }
@@ -81,9 +95,14 @@ final class AdditionalHybridRenderer {
         header(s,d,N,BLUE);
         label(s,"SPEED",164,128,260,0);sport(s,whole(d.speed),164,279,144,WHITE,0,280);label(s,"km/h",164,306,180,0);
         s.line(64,333,264,333,BLUE,1.5f);sport(s,regen(d.power)?"REGEN":d.power>0?"DRIVE":"POWER",164,379,26,regen(d.power)?CYAN:BLUE,0,230);
-        metric(s,d.batteryLabel,whole(d.soc)+"%",405,104,165,39,true,-1);metric(s,d.rangeLabel,d.range,573,104,189,32,true,-1);batt(s,d.soc,412,157,137,10,BLUE);
-        s.line(394,178,765,178,EDGE,1);label(s,regen(d.power)?"REGEN":"LIVE POWER",390,202,170,-1);sport(s,power(d.power),750,229,29,WHITE,1,176);
-        bar(s,d.power,380,242,351,17,BLUE,12);text(s,regen(d.power)?"0–100 kW":"0–200 kW",380,277,12,MUTE,false,-1,190);
+        s.gaugeBounds(0,400,94,165,78);
+        if(EvoHybridRenderer.custom(d,0))EvoHybridRenderer.customDigital(s,d,0,400,94,165,78,BLUE,true);
+        else{metric(s,d.batteryLabel,whole(d.soc)+"%",405,104,165,39,true,-1);batt(s,d.soc,412,157,137,10,BLUE);}
+        metric(s,d.rangeLabel,d.range,573,104,189,32,true,-1);
+        s.line(394,178,765,178,EDGE,1);s.gaugeBounds(1,380,185,380,95);
+        if(EvoHybridRenderer.custom(d,1))EvoHybridRenderer.customBar(s,d,1,380,190,370,85,BLUE);
+        else{label(s,regen(d.power)?"REGEN":"LIVE POWER",390,202,170,-1);sport(s,power(d.power),750,229,29,WHITE,1,176);
+        bar(s,d.power,380,242,351,17,BLUE,12);text(s,regen(d.power)?"0–100 kW":"0–200 kW",380,277,12,MUTE,false,-1,190);}
         diagnostics(s,d,351,295,354,49,false);
         String[] heads={d.tripCaption,d.timeCaption,d.energyCaption,d.avgCaption};String[] vals={d.distance,d.elapsed,d.energy,d.average};
         for(int i=0;i<4;i++){float y=99+i*64;float x=839-i*18;metric(s,heads[i],vals[i],x,y,341,30,false,1);s.line(x+10,y+48,x+330,y+48,EDGE,1);}
@@ -91,10 +110,14 @@ final class AdditionalHybridRenderer {
     }
     private static void rs(EvoHybridRenderer.Surface s,EvoHybridRenderer.Data d){
         header(s,d,RS,RED);
-        metric(s,d.batteryLabel,whole(d.soc)+"%",30,122,280,54,false,-1);batt(s,d.soc,40,192,235,13,GREEN);
+        s.gaugeBounds(0,30,105,280,112);
+        if(EvoHybridRenderer.custom(d,0))EvoHybridRenderer.customDigital(s,d,0,30,105,280,112,RED,false);
+        else{metric(s,d.batteryLabel,whole(d.soc)+"%",30,122,280,54,false,-1);batt(s,d.soc,40,192,235,13,GREEN);}
         metric(s,d.rangeLabel,d.range,30,258,270,39,false,-1);
         label(s,"SPEED",600,143,185,0);text(s,whole(d.speed),600,257,107,WHITE,true,0,290);label(s,"km/h",600,282,120,0);
-        s.line(520,300,680,300,EDGE,1.5f);label(s,regen(d.power)?"REGEN":"LIVE POWER",600,323,180,0);text(s,power(d.power),600,355,30,regen(d.power)?CYAN:WHITE,true,0,180);
+        s.line(520,300,680,300,EDGE,1.5f);s.gaugeBounds(1,510,305,180,70);
+        if(EvoHybridRenderer.custom(d,1))EvoHybridRenderer.customDigital(s,d,1,510,305,180,70,RED,false);
+        else{label(s,regen(d.power)?"REGEN":"LIVE POWER",600,323,180,0);text(s,power(d.power),600,355,30,regen(d.power)?CYAN:WHITE,true,0,180);}
         diagnostics(s,d,915,118,262,79,false);trips(s,d,400,RED,false);
     }
     private static void curve(EvoHybridRenderer.Surface s,float cx,float cy,float r,double val,double max,String caption,String number,String unit,int color,float size){
@@ -105,9 +128,13 @@ final class AdditionalHybridRenderer {
     private static void taycan(EvoHybridRenderer.Surface s,EvoHybridRenderer.Data d,double avg){
         header(s,d,TAYCAN,CYAN);
         String av=d.average==null?"--":d.average.replace(" kWh/100 km","");
-        curve(s,196,212,93,d.soc,100,d.batteryLabel,whole(d.soc),"%",batteryColor(d.soc,CYAN),59);
+        s.gaugeBounds(0,103,119,186,186);
+        if(EvoHybridRenderer.custom(d,0))EvoHybridRenderer.customDial(s,d,0,196,212,93,CYAN,false);
+        else curve(s,196,212,93,d.soc,100,d.batteryLabel,whole(d.soc),"%",batteryColor(d.soc,CYAN),59);
         curve(s,479,204,125,d.speed,200,"SPEED",whole(d.speed),"km/h",CYAN,83);
-        curve(s,761,212,93,avg,40,d.avgCaption,av,"kWh/100 km",CYAN,45);
+        s.gaugeBounds(1,668,119,186,186);
+        if(EvoHybridRenderer.custom(d,1))EvoHybridRenderer.customDial(s,d,1,761,212,93,CYAN,false);
+        else curve(s,761,212,93,avg,40,d.avgCaption,av,"kWh/100 km",CYAN,45);
         s.rect(12,384,1176,83,0xff13191e);s.outline(12,384,1176,83,8,EDGE,1);
         String[] diag={d.rangeLabel,regen(d.power)?"REGEN":"LIVE POWER","BATTERY TEMP MIN / MAX","CELL VOLTAGE MIN / MAX","CHARGING VOLTAGE"};
         String[] readings={d.range,power(d.power),d.temp,d.cells,d.voltage};
@@ -122,7 +149,9 @@ final class AdditionalHybridRenderer {
     }
     private static void xtreme(EvoHybridRenderer.Surface s,EvoHybridRenderer.Data d){
         header(s,d,XTREME,ORANGE);
-        label(s,d.batteryLabel,40,124,245,-1);sport(s,whole(d.soc)+"%",40,192,64,WHITE,-1,250);batt(s,d.soc,42,210,218,19,ORANGE);
+        s.gaugeBounds(0,35,100,245,135);
+        if(EvoHybridRenderer.custom(d,0))EvoHybridRenderer.customDigital(s,d,0,35,100,245,135,ORANGE,true);
+        else{label(s,d.batteryLabel,40,124,245,-1);sport(s,whole(d.soc)+"%",40,192,64,WHITE,-1,250);batt(s,d.soc,42,210,218,19,ORANGE);}
         s.line(42,248,257,248,EDGE,1);label(s,d.rangeLabel,42,278,230,-1);sport(s,d.range,42,329,43,WHITE,-1,209);
         // Split scales from a real zero. Negative values illuminate towards the left; positive to the right.
         double driveLimit=EvoHybridRenderer.valid(d.power)?Math.max(200,Math.ceil(Math.max(0,d.power)/100)*100):200;
@@ -137,7 +166,9 @@ final class AdditionalHybridRenderer {
         s.line(628,138,628,163,WHITE,2);
         sport(s,whole(d.speed),605,276,139,WHITE,0,350);label(s,"km/h",605,299,130,0);
         sport(s,"‹‹ REGEN",510,323,16,regen(d.power)?CYAN:MUTE,0,125);sport(s,"POWER ››",704,323,16,d.power>0?ORANGE:MUTE,0,125);
-        sport(s,power(d.power),1164,123,43,regen(d.power)?CYAN:WHITE,1,245);label(s,regen(d.power)?"REGEN POWER":"LIVE POWER",1164,145,250,1);
+        s.gaugeBounds(1,915,82,265,80);
+        if(EvoHybridRenderer.custom(d,1))EvoHybridRenderer.customDigital(s,d,1,915,82,265,80,ORANGE,true);
+        else{sport(s,power(d.power),1164,123,43,regen(d.power)?CYAN:WHITE,1,245);label(s,regen(d.power)?"REGEN POWER":"LIVE POWER",1164,145,250,1);}
         diagnostics(s,d,927,167,248,67,true);trips(s,d,395,ORANGE,true);
     }
     static void draw(EvoHybridRenderer.Surface s,EvoHybridRenderer.Data d,String theme,double avg){

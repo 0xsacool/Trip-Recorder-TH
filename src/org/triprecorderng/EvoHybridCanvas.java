@@ -21,9 +21,13 @@ final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
     private final Typeface italic=Typeface.create("sans-serif-condensed",Typeface.BOLD_ITALIC);
     private Canvas c;
     private final RectF graphBounds=new RectF();
+    private final RectF[] gaugeBounds={new RectF(),new RectF()};
     private float graphScale=1,graphX,graphY;
     RectF graphBounds(){return new RectF(graphBounds);}
-    private void transform(float scale,float x,float y){graphScale=scale;graphX=x;graphY=y;graphBounds.setEmpty();c.translate(x,y);c.scale(scale,scale);}
+    private void transform(float scale,float x,float y){graphScale=scale;graphX=x;graphY=y;graphBounds.setEmpty();for(RectF r:gaugeBounds)r.setEmpty();c.translate(x,y);c.scale(scale,scale);}
+    RectF gaugeBounds(int slot){return new RectF(gaugeBounds[slot]);}
+    int gaugeAt(float x,float y){for(int i=0;i<gaugeBounds.length;i++)if(gaugeBounds[i].contains(x,y))return i;return -1;}
+    @Override public void gaugeBounds(int slot,float x,float y,float w,float h){gaugeBounds[slot].set(graphX+x*graphScale,graphY+y*graphScale,graphX+(x+w)*graphScale,graphY+(y+h)*graphScale);}
     @Override public void historyBounds(float x,float y,float w,float h){graphBounds.set(graphX+x*graphScale,graphY+y*graphScale,graphX+(x+w)*graphScale,graphY+(y+h)*graphScale);}
     EvoHybridCanvas(Context context) { this(context,"evo_hybrid_plate.webp"); }
     EvoHybridCanvas(Context context,String asset) {

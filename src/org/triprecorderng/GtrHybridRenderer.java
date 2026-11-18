@@ -51,8 +51,13 @@ final class GtrHybridRenderer {
         s.rect(0,0,EvoHybridRenderer.WIDTH,EvoHybridRenderer.HEIGHT,BG);
         s.plate(PLATE_X,0,PLATE_W,PLATE_H);
         float cy=386*PLATE_SCALE, radius=276*PLATE_SCALE;
-        gauge(s,PLATE_X+385*PLATE_SCALE,cy,radius,-100,200,d.power,"MOTOR POWER",whole(d.power),"kW",true);
-        gauge(s,PLATE_X+1674*PLATE_SCALE,cy,radius,0,30,avg,"AVG. CONSUMPTION",consumption(d.average),"kWh/100 km",false);
+        float left=PLATE_X+385*PLATE_SCALE,right=PLATE_X+1674*PLATE_SCALE;
+        s.gaugeBounds(0,left-radius,cy-radius,radius*2,radius*2);
+        s.gaugeBounds(1,right-radius,cy-radius,radius*2,radius*2);
+        if(EvoHybridRenderer.custom(d,0))EvoHybridRenderer.customDial(s,d,0,left,cy,radius,CYAN,true);
+        else gauge(s,left,cy,radius,-100,200,d.power,"MOTOR POWER",whole(d.power),"kW",true);
+        if(EvoHybridRenderer.custom(d,1))EvoHybridRenderer.customDial(s,d,1,right,cy,radius,CYAN,true);
+        else gauge(s,right,cy,radius,0,30,avg,"AVG. CONSUMPTION",consumption(d.average),"kWh/100 km",false);
         s.text("GT-R PERFORMANCE",600,40,22,WHITE,true,true,0,275);
         s.text(d.source,600,73,12,MUTED,false,false,0,320);
         s.text(whole(d.speed),590,151,92,WHITE,true,true,0,265);

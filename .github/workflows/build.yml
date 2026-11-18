@@ -95,6 +95,12 @@ jobs:
           javac -d "$RUNNER_TEMP/additional-test" src/org/triprecorderng/EvoHybridRenderer.java src/org/triprecorderng/AdditionalHybridRenderer.java tools/AdditionalHybridRendererTest.java
           java -cp "$RUNNER_TEMP/additional-test" org.triprecorderng.AdditionalHybridRendererTest
 
+      - name: Test custom gauges across all eight performance themes
+        run: |
+          mkdir -p "$RUNNER_TEMP/gauge-test"
+          javac -d "$RUNNER_TEMP/gauge-test" src/org/triprecorderng/EvoHybridRenderer.java src/org/triprecorderng/GtrHybridRenderer.java src/org/triprecorderng/TypeRHybridRenderer.java src/org/triprecorderng/AdditionalHybridRenderer.java tools/CustomGaugeTest.java
+          java -cp "$RUNNER_TEMP/gauge-test" org.triprecorderng.CustomGaugeTest
+
       - name: Test updater signer verification
         run: |
           mkdir -p "$RUNNER_TEMP/signer-test"
