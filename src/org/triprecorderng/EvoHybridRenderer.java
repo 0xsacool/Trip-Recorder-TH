@@ -14,6 +14,13 @@ final class EvoHybridRenderer {
         void outline(float x,float y,float w,float h,float radius,int color,float thickness);
         void line(float x1,float y1,float x2,float y2,int color,float thickness);
         void circle(float cx,float cy,float radius,int color);
+        // Forward-sloping filled parallelogram. Native canvas overrides with a single path.
+        default void slant(float x,float y,float w,float h,float shear,int color) {
+            for(int i=0;i<h;i++){
+                float shift=shear*(1-i/h);
+                line(x+shift,y+i,x+shift+w,y+i,color,1f);
+            }
+        }
         // align: -1 left, 0 center, +1 right
         void text(String value,float x,float baseline,float size,int color,boolean heavy,boolean slant,int align,float maxWidth);
     }

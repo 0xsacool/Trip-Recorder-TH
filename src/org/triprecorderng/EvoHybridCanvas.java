@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import java.io.InputStream;
@@ -14,6 +15,7 @@ final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
     private final Bitmap bitmap;
     private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
     private final RectF box = new RectF();
+    private final Path shape = new Path();
     private final Typeface plain=Typeface.create("sans-serif-condensed",Typeface.NORMAL);
     private final Typeface bold=Typeface.create("sans-serif-condensed",Typeface.BOLD);
     private final Typeface italic=Typeface.create("sans-serif-condensed",Typeface.BOLD_ITALIC);
@@ -44,6 +46,14 @@ final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
         GtrHybridRenderer.draw(this,d,average,history,count);
         c.restore();c=null;
     }
+    void drawTypeR(Canvas canvas,int width,int height,EvoHybridRenderer.Data d){
+        float scale=Math.min(width/EvoHybridRenderer.WIDTH,height/EvoHybridRenderer.HEIGHT);
+        c=canvas;
+        c.save();c.translate((width-EvoHybridRenderer.WIDTH*scale)/2f,(height-EvoHybridRenderer.HEIGHT*scale)/2f);
+        c.scale(scale,scale);
+        TypeRHybridRenderer.draw(this,d);
+        c.restore();c=null;
+    }
     private void fill(int color){p.setColor(color);p.setStyle(Paint.Style.FILL);p.setStrokeWidth(1);}
     public void plate(float x,float y,float w,float h){
         if(bitmap==null)return;
@@ -57,6 +67,10 @@ final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
         fill(color);p.setStrokeWidth(thickness);c.drawLine(x1,y1,x2,y2,p);
     }
     public void circle(float cx,float cy,float r,int color){fill(color);c.drawCircle(cx,cy,r,p);}
+    public void slant(float x,float y,float w,float h,float shear,int color){
+        fill(color);shape.reset();shape.moveTo(x+shear,y);shape.lineTo(x+shear+w,y);
+        shape.lineTo(x+w,y+h);shape.lineTo(x,y+h);shape.close();c.drawPath(shape,p);
+    }
     public void text(String v,float x,float y,float size,int color,boolean heavy,boolean slant,int align,float maxWidth){
         if(v==null)v="--";
         fill(color);p.setTypeface(slant?italic:heavy?bold:plain);
