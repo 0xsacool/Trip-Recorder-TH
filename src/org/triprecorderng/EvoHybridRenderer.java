@@ -21,6 +21,14 @@ final class EvoHybridRenderer {
                 line(x+shift,y+i,x+shift+w,y+i,color,1f);
             }
         }
+        default void arc(float cx,float cy,float radius,float start,float sweep,float width,int color) {
+            if(sweep<=0)return;
+            int steps=Math.max(1,(int)Math.ceil(sweep/3));
+            for(int i=0;i<steps;i++){
+                double a=Math.toRadians(start+sweep*i/steps),b=Math.toRadians(start+sweep*(i+1)/steps);
+                line(cx+radius*(float)Math.cos(a),cy+radius*(float)Math.sin(a),cx+radius*(float)Math.cos(b),cy+radius*(float)Math.sin(b),color,width);
+            }
+        }
         // align: -1 left, 0 center, +1 right
         void text(String value,float x,float baseline,float size,int color,boolean heavy,boolean slant,int align,float maxWidth);
     }
@@ -29,7 +37,60 @@ final class EvoHybridRenderer {
         String range, source, status, tripLabel, temp, cells, voltage;
         String distance, elapsed, energy, average, money;
         String batteryLabel, rangeLabel, tripCaption, timeCaption, energyCaption, avgCaption, costCaption;
+        double[] history;
+        int historyCount;
         int statusColor;
+    }
+    /** One measurement per second; missing seconds remain gaps, not zeroes. */
+    static final class History {
+        final double[] samples=new double[60];
+        int count;
+        private long lastSecond=-1;
+        void sample(long elapsedMillis,double value){
+            long second=elapsedMillis/1000;
+            if(second==lastSecond&&count>0){samples[count-1]=valid(value)?value:Double.NaN;return;}
+            if(lastSecond>=0&&second>lastSecond){
+                long gap=second-lastSecond-1;
+                if(gap>=samples.length)count=0;
+                else for(int i=0;i<gap;i++)append(Double.NaN);
+            } else if(lastSecond>=0)count=0;
+            append(valid(value)?value:Double.NaN);lastSecond=second;
+        }
+        private void append(double n){
+            if(count<samples.length)samples[count++]=n;
+            else{System.arraycopy(samples,1,samples,0,samples.length-1);samples[samples.length-1]=n;}
+        }
+    }
+    /** Shared GT-R-style plot. Missing readings break the trace; zero is a measured value only. */
+    static void history(Surface s,double[] samples,int count,float x,float y,float width,float height) {
+        float l=x+32,r=x+width-5,t=y+15,b=y+height-4;
+        final int muted=0xffb6bbc0, grid=0xff303337, cyan=0xff28d9ec;
+        s.text("POWER HISTORY (kW)",l,y+11,12,muted,true,true,-1,r-l);
+        double step=100;
+        int capacity=samples==null?0:samples.length;
+        count=Math.max(0,Math.min(capacity,count));
+        for(int i=0;i<count;i++)if(valid(samples[i])){
+            step=Math.max(step,Math.ceil(Math.max(samples[i]/2,-samples[i])/100)*100);
+        }
+        double hi=step*2,lo=-step;
+        double[] ticks={hi,step,0,lo};
+        for(double v:ticks){
+            float yy=b-(b-t)*(float)((v-lo)/(hi-lo));
+            s.line(l,yy,r,yy,v==0?0xff637078:grid,1);
+            s.text(Long.toString(Math.round(v)),l-5,yy+3,10,muted,false,false,1,27);
+        }
+        for(int i=0;i<7;i++)s.line(l+(r-l)*i/6,t,l+(r-l)*i/6,b,grid,1);
+        boolean started=false;float px=0,py=0;
+        for(int i=0;i<count;i++){
+            if(!valid(samples[i])){started=false;continue;}
+            float xx=capacity==1?r:l+(r-l)*(capacity-count+i)/Math.max(1,capacity-1);
+            float yy=b-(b-t)*(float)((samples[i]-lo)/(hi-lo));
+            if(started)s.line(px,py,xx,yy,cyan,2.2f);else s.circle(xx,yy,2.3f,cyan);
+            started=true;px=xx;py=yy;
+        }
+    }
+    static void history(Surface s,Data d,float x,float y,float width,float height){
+        history(s,d.history,d.historyCount,x,y,width,height);
     }
     static boolean valid(double v) { return !Double.isNaN(v) && !Double.isInfinite(v); }
     static double angle(double value, double min, double max) {
@@ -110,14 +171,17 @@ final class EvoHybridRenderer {
         telemetry(s,"CELL VOLTAGE",d.cells,222);
         s.line(987,274,1185,274,EDGE,1);
         telemetry(s,"CHARGING VOLTAGE",d.voltage,308);
-        s.outline(9,420,1182,46,5,EDGE,1.25f);
-        String[] heads={d.tripCaption,d.timeCaption,d.energyCaption,d.avgCaption,d.costCaption};
-        String[] vals={d.distance,d.elapsed,d.energy,d.average,d.money};
-        for(int i=0;i<5;i++){
-            float x=9+i*236.4f;
+        s.outline(9,420,812,46,5,EDGE,1.25f);
+        String[] heads={d.tripCaption,d.timeCaption,d.energyCaption,d.avgCaption};
+        String[] vals={d.distance,d.elapsed,d.energy,d.average};
+        for(int i=0;i<4;i++){
+            float x=9+i*203;
             if(i!=0)s.line(x,424,x,462,EDGE,1);
-            s.text(heads[i],x+118.2f,436,12,GRAY,true,false,0,222);
-            s.text(vals[i],x+118.2f,459,24,WHITE,true,false,0,222);
+            s.text(heads[i],x+101.5f,436,12,GRAY,true,false,0,190);
+            s.text(vals[i],x+101.5f,459,24,WHITE,true,false,0,190);
         }
+        s.rect(829,398,363,70,BG);
+        s.outline(829,398,363,68,5,EDGE,1.25f);
+        history(s,d,835,400,350,64);
     }
 }

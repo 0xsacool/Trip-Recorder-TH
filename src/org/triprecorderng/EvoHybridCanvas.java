@@ -23,12 +23,19 @@ final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
     EvoHybridCanvas(Context context) { this(context,"evo_hybrid_plate.webp"); }
     EvoHybridCanvas(Context context,String asset) {
         Bitmap b=null;
-        try(InputStream in=context.getAssets().open(asset)){
+        if(asset!=null)try(InputStream in=context.getAssets().open(asset)){
             BitmapFactory.Options o=new BitmapFactory.Options();
             o.inScaled=false;
             b=BitmapFactory.decodeStream(in,null,o);
         }catch(java.io.IOException e){android.util.Log.w("EvoHybrid","Backplate unavailable",e);}
         bitmap=b;
+    }
+    void drawHistory(Canvas canvas,int width,int height,EvoHybridRenderer.History history){
+        if(width<=0||height<=0)return;
+        float scale=Math.min(width/160f,height/68f);
+        c=canvas;c.save();c.translate(0,(height-68*scale)/2);c.scale(scale,scale);
+        EvoHybridRenderer.history(this,history.samples,history.count,0,0,width/scale,68);
+        c.restore();c=null;
     }
     void draw(Canvas canvas,int width,int height,EvoHybridRenderer.Data d){
         float scale=Math.min(width/EvoHybridRenderer.WIDTH,height/EvoHybridRenderer.HEIGHT);
@@ -54,6 +61,14 @@ final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
         TypeRHybridRenderer.draw(this,d);
         c.restore();c=null;
     }
+    void drawAdditional(Canvas canvas,int width,int height,EvoHybridRenderer.Data d,String theme,double average){
+        float scale=Math.min(width/EvoHybridRenderer.WIDTH,height/EvoHybridRenderer.HEIGHT);
+        c=canvas;
+        c.save();c.translate((width-EvoHybridRenderer.WIDTH*scale)/2f,(height-EvoHybridRenderer.HEIGHT*scale)/2f);
+        c.scale(scale,scale);
+        AdditionalHybridRenderer.draw(this,d,theme,average);
+        c.restore();c=null;
+    }
     private void fill(int color){p.setColor(color);p.setStyle(Paint.Style.FILL);p.setStrokeWidth(1);}
     public void plate(float x,float y,float w,float h){
         if(bitmap==null)return;
@@ -70,6 +85,12 @@ final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
     public void slant(float x,float y,float w,float h,float shear,int color){
         fill(color);shape.reset();shape.moveTo(x+shear,y);shape.lineTo(x+shear+w,y);
         shape.lineTo(x+w,y+h);shape.lineTo(x,y+h);shape.close();c.drawPath(shape,p);
+    }
+    public void arc(float cx,float cy,float radius,float start,float sweep,float width,int color){
+        if(sweep<=0)return;
+        fill(color);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(width);
+        box.set(cx-radius,cy-radius,cx+radius,cy+radius);c.drawArc(box,start,sweep,false,p);
+        p.setStyle(Paint.Style.FILL);
     }
     public void text(String v,float x,float y,float size,int color,boolean heavy,boolean slant,int align,float maxWidth){
         if(v==null)v="--";

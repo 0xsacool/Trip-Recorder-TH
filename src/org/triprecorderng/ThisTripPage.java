@@ -23,7 +23,7 @@ import java.util.Locale;
  * The This Trip screen: on the left what the car is doing now (recording state, a gauge that shows the speed while
  * driving and the battery otherwise, GPS and vehicle data state), on the right the current trip, or the last one:
  * distance, duration and score, then speed, energy and behavior, and what the trip has used (electricity, fuel) and
- * cost so far. On a trip that burned fuel the Energy tile shows electric and hybrid driving apart (see TripEnergy).
+ * live motor power history. On a trip that burned fuel the Energy tile shows electric and hybrid driving apart (see TripEnergy).
  * MainActivity keeps the data and the screens behind it and is reached through Host.
  */
 final class ThisTripPage {
@@ -103,7 +103,8 @@ final class ThisTripPage {
     private View footer;
     private TextView evValue;
     private TextView fuelValue;
-    private TextView costValue;
+    private final EvoHybridRenderer.History powerHistory = new EvoHybridRenderer.History();
+    private View powerHistoryView;
     /** What the whole trip used per 100 km, under the footer figures of a trip that burned fuel. */
     private TextView evPer100;
     private TextView fuelPer100;
@@ -438,7 +439,6 @@ final class ThisTripPage {
         ll.topMargin = dp(10);
         body.addView(line, ll);
         footer = footer();
-        body.addView(footer, new LinearLayout.LayoutParams(-1, dp(56)));
         content = body;
         LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(-1, 0, 1f);
         blp.topMargin = dp(8);
@@ -456,6 +456,7 @@ final class ThisTripPage {
         empty.setVisibility(View.GONE);
         emptyNote = empty;
         card.addView(empty, new LinearLayout.LayoutParams(-1, 0, 1f));
+        card.addView(footer, new LinearLayout.LayoutParams(-1, dp(56)));
         return card;
     }
 
@@ -653,7 +654,14 @@ final class ThisTripPage {
         fuelValue = fuel[0];
         fuelPer100 = fuel[1];
         if (Prefs.ATTO3_EDITION) row.getChildAt(row.getChildCount() - 1).setVisibility(View.GONE);
-        costValue = item(row, Kit.IconView.COIN, Kit.MUTED, 0.8f)[0];
+        final EvoHybridCanvas graph = new EvoHybridCanvas(c,null);
+        powerHistoryView = new View(c) {
+            @Override protected void onDraw(Canvas canvas) {
+                graph.drawHistory(canvas,getWidth(),getHeight(),powerHistory);
+            }
+        };
+        powerHistoryView.setContentDescription("POWER HISTORY (kW)");
+        row.addView(powerHistoryView,new LinearLayout.LayoutParams(0,-1,2.1f));
         return row;
     }
 
@@ -755,6 +763,10 @@ final class ThisTripPage {
         long elapsedNow = android.os.SystemClock.elapsedRealtime();
         if (lastSlowRefresh != 0 && elapsedNow - lastSlowRefresh < 1000) return;
         lastSlowRefresh = elapsedNow;
+        boolean motorFresh = l.motorPowerWall > 0 && now >= l.motorPowerWall
+                && now - l.motorPowerWall < 2000;
+        powerHistory.sample(elapsedNow, rangeFresh && driveFresh && motorFresh ? l.motorPower : Double.NaN);
+        powerHistoryView.invalidate();
         RangeEstimate.Result range = Prefs.rangeEstimate(c, rangeFresh ? l.soc : Double.NaN, host.trips());
         setText(rangeValue, range.label + "  " + range.text());
 
@@ -791,6 +803,8 @@ final class ThisTripPage {
             liveTag.setVisibility(View.GONE);
             content.setVisibility(View.GONE);
             emptyNote.setVisibility(View.VISIBLE);
+            setText(evValue,"--");setText(fuelValue,"--");
+            setLine(evPer100,null);setLine(fuelPer100,null);
             return;
         }
         content.setVisibility(View.VISIBLE);
@@ -857,16 +871,12 @@ final class ThisTripPage {
         setText(brakeValue, String.valueOf(show.hardBrake));
         brakeDot.setBackground(oval(show.hardBrake == 0 ? Kit.ACCENT : RED));
 
-        // what the trip has used and cost so far
+        // What the trip has used; the live chart is independent of trip availability.
         double e = show.energyUsed();
         double f = show.fuelUsed();
-        double cost = Cost.total(show, c);
-        boolean any = !Double.isNaN(e) || !Double.isNaN(f) || !Double.isNaN(cost);
-        footer.setVisibility(any ? View.VISIBLE : View.INVISIBLE);
         float fu = Kit.CAPTION / Kit.LABEL;
         setText(evValue, Double.isNaN(e) ? "--" : Kit.numUnit(L.f("%s kWh", show.energyText(e, "%.1f")), fu));
         setText(fuelValue, Double.isNaN(f) ? "--" : Kit.numUnit(L.f("%s L", Ui.f(f, "%.1f")), fu));
-        setText(costValue, Double.isNaN(cost) ? "--" : Kit.numUnit(show.energyLabel(Cost.money(c, cost)), fu));
         // a trip that burned fuel: what the whole trip used per 100 km (the Energy tile has the electric and the
         // hybrid figures)
         double kwh100 = show.wholeEnergyPer100Km();
@@ -914,4 +924,5 @@ final class ThisTripPage {
         deltaChip.setVisibility(View.VISIBLE);
     }
 }
+
 

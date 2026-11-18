@@ -22,6 +22,14 @@ final class DashboardMenu {
         return dashboard && !overlay && mode != ALWAYS;
     }
 
+    static String toggleLabel(boolean navigationVisible) {
+        return navigationVisible ? "Hide menu" : "Show menu";
+    }
+
+    static String toggleGlyph(boolean bottomNavigation, boolean navigationVisible) {
+        return bottomNavigation ? (navigationVisible ? "▾" : "▴") : (navigationVisible ? "◂" : "▸");
+    }
+
     boolean schedule(boolean resumed, boolean dashboard, boolean overlay) {
         return resumed && dashboard && !overlay && mode == AUTO && !hidden;
     }
@@ -33,3 +41,4 @@ final class DashboardMenu {
     /** On returning to the dashboard, auto mode grants a fresh period to reach the tabs. */
     void enterDashboard() { if (mode == AUTO) hidden = false; }
 }
+

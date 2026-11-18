@@ -47,27 +47,6 @@ final class GtrHybridRenderer {
         s.text(name,x+width/2,y+12,11,MUTED,true,false,0,width-10);
         s.text(value,x+width/2,y+31,20,WHITE,true,false,0,width-10);
     }
-    private static void history(EvoHybridRenderer.Surface s,double[] samples,int count){
-        float l=890,r=1182,t=414,b=462;
-        s.text("POWER HISTORY (kW)",l,409,12,MUTED,true,true,-1,r-l);
-        for(int i=0;i<4;i++){
-            float yy=t+(b-t)*i/3;
-            s.line(l,yy,r,yy,i==2?0xff637078:0xff303337,1);
-            s.text(whole(200-100*i),l-5,yy+3,10,MUTED,false,false,1,34);
-        }
-        for(int i=0;i<7;i++)s.line(l+(r-l)*i/6,t,l+(r-l)*i/6,b,0xff303337,1);
-        boolean started=false;float px=0,py=0;
-        int capacity=samples==null?0:samples.length;
-        count=Math.max(0,Math.min(capacity,count));
-        for(int i=0;i<count;i++){
-            if(!EvoHybridRenderer.valid(samples[i])){started=false;continue;}
-            float xx=l+(r-l)*(capacity-count+i)/Math.max(1,capacity-1);
-            float yy=b-(b-t)*(float)((Math.max(-100,Math.min(200,samples[i]))+100)/300);
-            if(started)s.line(px,py,xx,yy,CYAN,2.2f);
-            else s.circle(xx,yy,2.3f,CYAN);
-            started=true;px=xx;py=yy;
-        }
-    }
     static void draw(EvoHybridRenderer.Surface s,EvoHybridRenderer.Data d,double avg,double[] samples,int count){
         s.rect(0,0,EvoHybridRenderer.WIDTH,EvoHybridRenderer.HEIGHT,BG);
         s.plate(PLATE_X,0,PLATE_W,PLATE_H);
@@ -88,12 +67,12 @@ final class GtrHybridRenderer {
         s.text(d.status,600,349,16,d.statusColor,true,false,0,280);
         s.text(d.tripLabel,600,365,12,MUTED,false,false,0,280);
         s.line(10,395,1190,395,EDGE,1.2f);
-        String[] head={d.tripCaption,d.timeCaption,d.energyCaption,d.costCaption};
-        String[] values={d.distance,d.elapsed,d.energy,d.money};
-        for(int i=0;i<4;i++){
-            float xx=10+i*202;
+        String[] head={d.tripCaption,d.timeCaption,d.energyCaption};
+        String[] values={d.distance,d.elapsed,d.energy};
+        for(int i=0;i<3;i++){
+            float xx=10+i*269.3f;
             if(i>0)s.line(xx,399,xx,435,EDGE,1);
-            metric(s,head[i],values[i],xx,398,202);
+            metric(s,head[i],values[i],xx,398,269.3f);
         }
         s.line(10,436,818,436,EDGE,1);
         String[] labels={"BATTERY TEMP MIN / MAX","CELL VOLTAGE MIN / MAX","CHARGING VOLTAGE"};
@@ -104,6 +83,6 @@ final class GtrHybridRenderer {
             metric(s,labels[i],data[i],xx,437,269.3f);
         }
         s.line(833,399,833,467,EDGE,1);
-        history(s,samples,count);
+        EvoHybridRenderer.history(s,samples,count,842,398,349,68);
     }
 }

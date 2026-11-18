@@ -26,6 +26,12 @@ public final class EvoHybridRendererTest {
         }
     }
     public static void main(String[] args) {
+        EvoHybridRenderer.History h=new EvoHybridRenderer.History();
+        h.sample(1000,20);h.sample(1500,24);h.sample(3000,-48);
+        check(h.count==3&&h.samples[0]==24&&Double.isNaN(h.samples[1])&&h.samples[2]==-48,"history sampling and gap");
+        for(int i=4;i<=70;i++)h.sample(i*1000L, i);
+        check(h.count==60&&h.samples[0]==11&&h.samples[59]==70,"rolling history capacity");
+        h.sample(140000,Double.NaN);check(h.count==1&&Double.isNaN(h.samples[0]),"clear old history after long gap");
         check(EvoHybridRenderer.angle(-100,-100,200)==140,"regen limit");
         check(EvoHybridRenderer.angle(200,-100,200)==400,"power limit");
         check(EvoHybridRenderer.angle(900,-100,200)==400,"high clamp");

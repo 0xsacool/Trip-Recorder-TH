@@ -10,7 +10,6 @@ import android.graphics.Typeface;
 import android.graphics.LinearGradient;
 import android.graphics.Shader;
 import android.view.View;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -21,7 +20,6 @@ final class PerformanceDashboard extends View {
     private static final int INK = 0xFFF2F4F7, MUTED = 0xFFADB6C2;
     private static final int CYAN = 0xFF43D9EC, RED = 0xFFFF535D, SILVER = 0xFF9AA7B4;
     private static final int PANEL = 0xFF13191F, LINE = 0xFF343D46;
-    private static final int SAMPLES = 60;
     private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Typeface normal = Typeface.create("sans-serif", Typeface.NORMAL);
     private final Typeface bold = Typeface.create("sans-serif-condensed", Typeface.BOLD);
@@ -32,16 +30,14 @@ final class PerformanceDashboard extends View {
     private final EvoHybridRenderer.Data evoData = new EvoHybridRenderer.Data();
     private final Typeface italic = Typeface.create("sans-serif-condensed", Typeface.BOLD_ITALIC);
     private final ThisTripPage.Host host;
-    private final double[] history = new double[SAMPLES];
-    private int sampleCount;
-    private long lastSample;
+    private final EvoHybridRenderer.History powerHistory = new EvoHybridRenderer.History();
     private long lastSlowRefresh;
     private double speed = Double.NaN, soc = Double.NaN;
     private RangeEstimate.Result range = new RangeEstimate.Result(Double.NaN, RangeEstimate.EPA);
     private double average = Double.NaN, distance = Double.NaN, energy = Double.NaN;
     private double motorPower = Double.NaN, minTemp = Double.NaN, maxTemp = Double.NaN;
     private double minCell = Double.NaN, maxCell = Double.NaN, chargeVoltage = Double.NaN;
-    private String elapsed = "--", money = "--", tripLabel = "", status = "", source = "";
+    private String elapsed = "--", tripLabel = "", status = "", source = "";
     private int statusColor = MUTED;
     private Trip shown;
 
@@ -62,9 +58,9 @@ final class PerformanceDashboard extends View {
         this.theme = Prefs.dashboardTheme(c);
         this.evoCanvas = Prefs.THEME_EVO_HYBRID.equals(theme) ? new EvoHybridCanvas(c)
                 : Prefs.THEME_GTR.equals(theme) ? new EvoHybridCanvas(c,"gtr_hybrid_plate.webp")
-                : Prefs.THEME_TYPE_R.equals(theme) ? new EvoHybridCanvas(c,"typer_hybrid_plate.webp") : null;
+                : Prefs.THEME_TYPE_R.equals(theme) ? new EvoHybridCanvas(c,"typer_hybrid_plate.webp")
+                : AdditionalHybridRenderer.asset(theme)!=null ? new EvoHybridCanvas(c,AdditionalHybridRenderer.asset(theme)) : null;
         this.host = host;
-        Arrays.fill(history, Double.NaN);
         setBackgroundColor(Prefs.THEME_U9_XTREME.equals(theme) ? 0xFF08090A : gr ? 0xFF080808 : typeR ? 0xFF08090B : 0xFF090D11);
         setFocusable(true);
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
@@ -108,6 +104,7 @@ final class PerformanceDashboard extends View {
             return;
         }
         lastSlowRefresh = elapsedNow;
+        powerHistory.sample(elapsedNow,motorPower);
         soc = linked && valid(live.soc) && live.soc >= 0 && live.soc <= 100 ? live.soc : Double.NaN;
         boolean telemetryFresh = linked && live.telemetryWall > 0 && now >= live.telemetryWall
                 && now - live.telemetryWall < 10000;
@@ -127,8 +124,6 @@ final class PerformanceDashboard extends View {
         distance = shown == null ? Double.NaN : positive(shown.distanceKm);
         energy = shown == null ? Double.NaN : positive(shown.energyUsed());
         elapsed = shown == null ? "--" : Ui.duration(shown.drivingSec());
-        double cost = shown == null ? Double.NaN : Cost.total(shown, c);
-        money = valid(cost) ? shown.energyLabel(Cost.money(c, cost)) : "--";
 
         String charging = ChargeRecorder.status;
         if (!live.running) {
@@ -147,15 +142,6 @@ final class PerformanceDashboard extends View {
         if (Prefs.autoStartHealth(c) == Prefs.AUTOSTART_BLOCKED)
             source = L.t("Auto-start is blocked by BYD - see Setting");
 
-        if (live.driveWall != lastSample || (!driveFresh && sampleCount > 0 && valid(history[sampleCount-1]))) {
-            if (!driveFresh || (lastSample != 0 && (now < lastSample || now - lastSample > 12000))) sampleCount = 0;
-            if (sampleCount < SAMPLES) history[sampleCount++] = motorPower;
-            else {
-                System.arraycopy(history, 1, history, 0, SAMPLES - 1);
-                history[SAMPLES - 1] = motorPower;
-            }
-            lastSample = live.driveWall;
-        }
         setContentDescription(Prefs.themeName(theme) + ". " + status + ". " + source + ". "
                 + L.t("Speed") + " " + number(speed, "%.0f") + " km/h. "
                 + L.t("Battery") + " " + number(soc, "%.0f") + "%. "
@@ -163,8 +149,7 @@ final class PerformanceDashboard extends View {
                 + "Cell temperature min/max " + number(minTemp, "%.0f") + "/"
                 + number(maxTemp, "%.0f") + " C. Power " + number(motorPower, "%.1f") + " kW. "
                 + tripLabel + ": " + number(distance, "%.1f") + " km, "
-                + energyCaption() + " " + energyNumber(energy) + " kWh, "
-                + L.t("Cost") + " " + money + ".");
+                + energyCaption() + " " + energyNumber(energy) + " kWh.");
         invalidate();
     }
 
@@ -187,16 +172,17 @@ final class PerformanceDashboard extends View {
             evoData.elapsed = elapsed;
             evoData.energy = energyNumber(energy) + " kWh";
             evoData.average = energyNumber(average) + " kWh/100 km";
-            evoData.money = money;
+            evoData.history = powerHistory.samples;
+            evoData.historyCount = powerHistory.count;
             evoData.batteryLabel = L.t("Battery");
             evoData.rangeLabel = range.label;
             evoData.tripCaption = L.t("Trip");
             evoData.timeCaption = L.t("Time");
             evoData.energyCaption = energyCaption();
             evoData.avgCaption = L.t("Average consumption");
-            evoData.costCaption = L.t("Cost");
-            if(Prefs.THEME_GTR.equals(theme))evoCanvas.drawGtr(canvas,getWidth(),getHeight(),evoData,average,history,sampleCount);
+            if(Prefs.THEME_GTR.equals(theme))evoCanvas.drawGtr(canvas,getWidth(),getHeight(),evoData,average,powerHistory.samples,powerHistory.count);
             else if(Prefs.THEME_TYPE_R.equals(theme))evoCanvas.drawTypeR(canvas,getWidth(),getHeight(),evoData);
+            else if(AdditionalHybridRenderer.asset(theme)!=null)evoCanvas.drawAdditional(canvas,getWidth(),getHeight(),evoData,theme,average);
             else evoCanvas.draw(canvas, getWidth(), getHeight(), evoData);
             return;
         }
@@ -260,7 +246,7 @@ final class PerformanceDashboard extends View {
         cell(canvas, 0, 175, L.t("Trip"), number(distance, "%.1f") + " km");
         cell(canvas, 175, 345, L.t("Time"), elapsed);
         cell(canvas, 345, 510, energyCaption(), energyNumber(energy) + " kWh");
-        cell(canvas, 510, 685, L.t("Cost"), money);
+        cell(canvas, 510, 685, L.t("Average consumption"), energyNumber(average) + " kWh/100 km");
         graph(canvas, 709, 386, 983, 459);
         canvas.restore();
     }
@@ -364,7 +350,7 @@ final class PerformanceDashboard extends View {
         u9TripCell(cv, 200, 372, L.t("Time"), elapsed);
         u9TripCell(cv, 372, 554, energyCaption(), energyNumber(energy) + " kWh");
         u9TripCell(cv, 554, 782, L.t("Average consumption"), energyNumber(average) + " kWh/100 km");
-        u9TripCell(cv, 782, 982, L.t("Cost"), money);
+        graph(cv, 782, 378, 979, 454);
     }
 
     private void xtremeShape(Canvas cv, float[] points, Shader shader, int color, float border) {
@@ -521,7 +507,7 @@ final class PerformanceDashboard extends View {
         nTripRow(cv, 691, 163, L.t("Time"), elapsed);
         nTripRow(cv, 682, 235, energyCaption(), energyNumber(energy) + " kWh");
         nTripRow(cv, 673, 307, L.t("Average consumption"), energyNumber(average) + " kWh/100 km");
-        nTripRow(cv, 665, 379, L.t("Cost"), money);
+        graph(cv, 673, 379, 972, 445);
         fill(cv, 810, 449, 986, 453, N_RED);
     }
 
@@ -562,7 +548,7 @@ final class PerformanceDashboard extends View {
         metric(cv, 822, 248, 147, L.t("Time"), elapsed, 28);
         thinLine(cv, 662, 287, 970, LINE);
         metric(cv, 662, 311, 145, energyCaption(), energyNumber(energy) + " kWh", 29);
-        metric(cv, 822, 311, 147, L.t("Cost"), money, 27);
+        graph(cv, 822, 292, 970, 347);
         thinLine(cv, 662, 351, 970, LINE);
         metric(cv, 662, 377, 304, L.t("Average consumption"), energyNumber(average) + " kWh/100 km", 31);
         fill(cv, 13, 450, 988, 454, RS_RED);
@@ -594,7 +580,7 @@ final class PerformanceDashboard extends View {
         taycanRow(cv, 92, L.t("Trip"), number(distance, "%.1f") + " km");
         taycanRow(cv, 183, L.t("Time"), elapsed);
         taycanRow(cv, 274, energyCaption(), energyNumber(energy) + " kWh");
-        taycanRow(cv, 365, L.t("Cost"), money);
+        graph(cv, 799, 365, 980, 453);
     }
 
     private void taycanRow(Canvas cv, float y, String label, String reading) {
@@ -698,7 +684,7 @@ final class PerformanceDashboard extends View {
         typeRMetric(cv, 22, 409, 451, 302, energyCaption(), energyNumber(energy) + " kWh", 35);
         typeRMetric(cv, 353, 409, 451, 325, L.t("Average consumption"),
                 energyNumber(average) + " kWh/100 km", 35);
-        typeRMetric(cv, 710, 409, 451, 272, L.t("Cost"), money, 35);
+        graph(cv, 710, 390, 982, 451);
         fill(cv, 338, 396, 340, 451, TYPE_R_LINE);
         fill(cv, 695, 396, 697, 451, TYPE_R_LINE);
     }
@@ -770,7 +756,7 @@ final class PerformanceDashboard extends View {
         grMetric(cv, 214, 395, L.t("Time"), elapsed);
         grMetric(cv, 395, 575, energyCaption(), energyNumber(energy) + " kWh");
         grMetric(cv, 575, 789, L.t("Average consumption"), energyNumber(average) + " kWh/100 km");
-        grMetric(cv, 789, 965, L.t("Cost"), money);
+        graph(cv, 789, 362, 965, 443);
     }
 
     private void grPowerArc(Canvas cv) {
@@ -937,10 +923,10 @@ final class PerformanceDashboard extends View {
         cv.drawLine(x, b, r, b, p);
         Path path = new Path();
         boolean started = false;
-        for (int i=0; i<sampleCount; i++) {
-            if (!valid(history[i])) { started = false; continue; }
-            float sx=x+(r-x)*(SAMPLES-sampleCount+i)/(SAMPLES-1);
-            float sy=b-(b-top)*(float)(Math.max(-100, Math.min(200, history[i]))+100)/300;
+        for (int i=0; i<powerHistory.count; i++) {
+            if (!valid(powerHistory.samples[i])) { started = false; continue; }
+            float sx=x+(r-x)*(powerHistory.samples.length-powerHistory.count+i)/(powerHistory.samples.length-1);
+            float sy=b-(b-top)*(float)(Math.max(-100, Math.min(200, powerHistory.samples[i]))+100)/300;
             if (started) path.lineTo(sx, sy); else path.moveTo(sx, sy);
             started = true;
         }

@@ -83,6 +83,12 @@ jobs:
           javac -d "$RUNNER_TEMP/typer-test" src/org/triprecorderng/EvoHybridRenderer.java src/org/triprecorderng/TypeRHybridRenderer.java tools/TypeRHybridRendererTest.java
           java -cp "$RUNNER_TEMP/typer-test" org.triprecorderng.TypeRHybridRendererTest
 
+      - name: Test remaining hybrid renderers
+        run: |
+          mkdir -p "$RUNNER_TEMP/additional-test"
+          javac -d "$RUNNER_TEMP/additional-test" src/org/triprecorderng/EvoHybridRenderer.java src/org/triprecorderng/AdditionalHybridRenderer.java tools/AdditionalHybridRendererTest.java
+          java -cp "$RUNNER_TEMP/additional-test" org.triprecorderng.AdditionalHybridRendererTest
+
       - name: Test updater signer verification
         run: |
           mkdir -p "$RUNNER_TEMP/signer-test"

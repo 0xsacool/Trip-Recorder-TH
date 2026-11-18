@@ -13,9 +13,13 @@ public final class DashboardMenuTest {
         check(m.showNavigation(true, false), "Always Show cannot hide");
         m.configure(DashboardMenu.TAP);
         check(m.showToggle(true, false), "tap mode needs accessible control");
+        check("Hide menu".equals(DashboardMenu.toggleLabel(m.showNavigation(true,false))), "visible action label");
+        check("▾".equals(DashboardMenu.toggleGlyph(true,true)) && "◂".equals(DashboardMenu.toggleGlyph(false,true)), "hide arrow follows nav orientation");
         m.toggle();
         check(!m.showNavigation(true, false), "tap mode hides");
         check(m.showToggle(true, false), "hidden menu remains restorable");
+        check("Show menu".equals(DashboardMenu.toggleLabel(m.showNavigation(true,false))), "collapsed action label");
+        check("▴".equals(DashboardMenu.toggleGlyph(true,false)) && "▸".equals(DashboardMenu.toggleGlyph(false,false)), "reveal arrow follows nav orientation");
         check(!m.schedule(true, true, false), "manual mode never times out");
         check(m.showNavigation(false, false), "other tabs always show menu");
         m.enterDashboard();
@@ -30,6 +34,7 @@ public final class DashboardMenuTest {
         check(!m.showNavigation(true, true) && !m.showToggle(true, true), "overlays hide both controls");
         m.hideAutomatically();
         check(!m.showNavigation(true, false) && !m.schedule(true, true, false), "auto collapse stops timer");
+        check(m.showToggle(true,false) && "Show menu".equals(DashboardMenu.toggleLabel(m.showNavigation(true,false))), "auto collapse leaves labeled restore button");
         m.toggle();
         check(m.showNavigation(true, false) && m.schedule(true, true, false), "auto reveal rearms timer");
         m.hideAutomatically();
@@ -41,3 +46,4 @@ public final class DashboardMenuTest {
         System.out.println("DashboardMenuTest PASS");
     }
 }
+

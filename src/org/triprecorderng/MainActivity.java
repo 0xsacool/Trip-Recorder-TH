@@ -58,7 +58,8 @@ public class MainActivity extends Activity {
 
     private FrameLayout content;
     private View navView;
-    private TextView menuToggle;
+    private LinearLayout menuToggle;
+    private MenuPanelIcon menuPanelIcon;
     private final DashboardMenu dashboardMenu = new DashboardMenu();
     private LinearLayout shellBody;
     private boolean bottomNav;
@@ -245,9 +246,10 @@ public class MainActivity extends Activity {
         boolean visible = dashboardMenu.showNavigation(dashboard, fullScreen);
         navView.setVisibility(visible ? View.VISIBLE : View.GONE);
         menuToggle.setVisibility(dashboardMenu.showToggle(dashboard, fullScreen) ? View.VISIBLE : View.GONE);
-        // The control remains in the title bar even when the menu is collapsed.
-        menuToggle.setText(bottomNav ? (visible ? "▾" : "▴") : (visible ? "◂" : "▸"));
-        menuToggle.setContentDescription(visible ? L.t("Hide menu") : L.t("Show menu"));
+        // Match the other title-bar actions; no accent-colored button or extra visual chrome.
+        String action = L.t(DashboardMenu.toggleLabel(visible));
+        menuPanelIcon.setState(bottomNav,visible);
+        menuToggle.setContentDescription(action);
         LinearLayout.LayoutParams margins = (LinearLayout.LayoutParams) content.getLayoutParams();
         int left = fullScreen ? Ui.dp(this, 24) : bottomNav ? Ui.dp(this, xtremeNav ? 4 : 12)
                 : visible ? 0 : Ui.dp(this, 24);
@@ -326,8 +328,17 @@ public class MainActivity extends Activity {
         titleView.setPadding(Ui.dp(this, 12), 0, 0, 0);
         titleView.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START); // the title bar stays left to right
         bar.addView(titleView, new LinearLayout.LayoutParams(0, -2, 1f));
-        menuToggle = Ui.text(this, "▾", 28, Ui.TEXT_VALUE);
+        menuToggle = new LinearLayout(this);
+        menuToggle.setOrientation(LinearLayout.HORIZONTAL);
         menuToggle.setGravity(Gravity.CENTER);
+        menuToggle.setPadding(0, 0, 0, 0);
+        menuPanelIcon = new MenuPanelIcon(this);
+        menuToggle.addView(menuPanelIcon,new LinearLayout.LayoutParams(Ui.dp(this,26),Ui.dp(this,26)));
+        menuPanelIcon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        menuToggle.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
+        android.util.TypedValue ripple = new android.util.TypedValue();
+        if (getTheme().resolveAttribute(android.R.attr.selectableItemBackground,ripple,true))
+            menuToggle.setBackgroundResource(ripple.resourceId);
         menuToggle.setFocusable(true);
         menuToggle.setVisibility(View.GONE);
         menuToggle.setOnClickListener(v -> {
@@ -335,7 +346,9 @@ public class MainActivity extends Activity {
             applyDashboardMenu();
             restartMenuTimer();
         });
-        bar.addView(menuToggle, new LinearLayout.LayoutParams(Ui.dp(this, 48), Ui.dp(this, 48)));
+        LinearLayout.LayoutParams toggleParams = new LinearLayout.LayoutParams(Ui.dp(this, 48), Ui.dp(this, 48));
+        toggleParams.setMargins(Ui.dp(this, 8), 0, Ui.dp(this, 4), 0);
+        bar.addView(menuToggle, toggleParams);
         qaButton = barButton(GlyphView.HELP, L.t("Driving Behavior Q&A"), new View.OnClickListener() {
             @Override public void onClick(View v) {
                 showOverlay("qa");
@@ -1555,6 +1568,42 @@ public class MainActivity extends Activity {
     }
 
     // ---- title-bar glyphs ------------------------------------------------------------------
+    /** A small monochrome panel icon with a directional chevron; follows the app's nav orientation. */
+    static final class MenuPanelIcon extends View {
+        private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private boolean bottom = true, visible = true;
+        MenuPanelIcon(Context context) {
+            super(context);
+            p.setColor(Ui.TEXT_VALUE);
+            p.setStyle(Paint.Style.STROKE);
+            p.setStrokeCap(Paint.Cap.ROUND);
+            p.setStrokeJoin(Paint.Join.ROUND);
+        }
+        void setState(boolean bottomNav,boolean navigationVisible) {
+            bottom=bottomNav; visible=navigationVisible; invalidate();
+        }
+        @Override protected void onDraw(Canvas canvas) {
+            float scale=Math.min(getWidth(),getHeight())/24f;
+            canvas.save();
+            canvas.translate((getWidth()-24*scale)/2,(getHeight()-24*scale)/2);
+            canvas.scale(scale,scale);
+            p.setStrokeWidth(1.7f);
+            canvas.drawRoundRect(2.5f,3.5f,21.5f,20.5f,2.5f,2.5f,p);
+            if(bottom){
+                canvas.drawLine(3,15.5f,21,15.5f,p);
+                float a=visible?8:11, b=visible?11:8;
+                canvas.drawLine(9,a,12,b,p);canvas.drawLine(12,b,15,a,p);
+                canvas.drawLine(7,18,9,18,p);canvas.drawLine(11,18,13,18,p);canvas.drawLine(15,18,17,18,p);
+            }else{
+                canvas.drawLine(8,4,8,20,p);
+                float a=visible?16:13,b=visible?13:16;
+                canvas.drawLine(a,9,b,12,p);canvas.drawLine(b,12,a,15,p);
+                canvas.drawLine(5.2f,8,5.2f,10,p);canvas.drawLine(5.2f,12,5.2f,14,p);
+            }
+            canvas.restore();
+        }
+    }
+
     /** Small vector-style icons for the title bar, drawn with Canvas. */
     static final class GlyphView extends View {
         static final int BACK = 0;
@@ -1638,5 +1687,6 @@ public class MainActivity extends Activity {
         }
     }
 }
+
 
 

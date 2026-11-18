@@ -71,18 +71,20 @@ final class TypeRHybridRenderer {
 
         // Retain every trip metric and battery diagnostic from the old Type-R theme.
         s.rect(0,395,1200,75,BG);
-        String[] names={d.energyCaption,d.avgCaption,d.costCaption};
-        String[] values={d.energy,d.average,d.money};
-        for(int i=0;i<3;i++){
-            if(i>0)s.line(i*400,399,i*400,430,EDGE,1);
-            metric(s,names[i],values[i],i*400,395,400,25);
+        String[] names={d.energyCaption,d.avgCaption};
+        String[] values={d.energy,d.average};
+        for(int i=0;i<2;i++){
+            if(i>0)s.line(i*410,399,i*410,430,EDGE,1);
+            metric(s,names[i],values[i],i*410,395,410,25);
         }
-        s.line(20,434,1180,434,EDGE,1);
+        s.line(20,434,820,434,EDGE,1);
         String[] labels={"BATTERY TEMP MIN / MAX","CELL VOLTAGE MIN / MAX","CHARGING VOLTAGE"};
         String[] data={d.temp,d.cells,d.voltage};
         for(int i=0;i<3;i++){
-            if(i>0)s.line(i*400,439,i*400,467,EDGE,1);
-            metric(s,labels[i],data[i],i*400,435,400,19);
+            if(i>0)s.line(i*273.3f,439,i*273.3f,467,EDGE,1);
+            metric(s,labels[i],data[i],i*273.3f,435,273.3f,19);
         }
+        s.line(830,399,830,467,EDGE,1);
+        EvoHybridRenderer.history(s,d,840,398,350,68);
     }
 }
