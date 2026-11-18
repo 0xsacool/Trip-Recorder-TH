@@ -28,6 +28,8 @@ final class PerformanceDashboard extends View {
     private final Context c;
     private final boolean typeR, gr;
     private final String theme;
+    private final EvoHybridCanvas evoCanvas;
+    private final EvoHybridRenderer.Data evoData = new EvoHybridRenderer.Data();
     private final Typeface italic = Typeface.create("sans-serif-condensed", Typeface.BOLD_ITALIC);
     private final ThisTripPage.Host host;
     private final double[] history = new double[SAMPLES];
@@ -58,6 +60,7 @@ final class PerformanceDashboard extends View {
         this.typeR = Prefs.typeRTheme(c);
         this.gr = Prefs.grTheme(c);
         this.theme = Prefs.dashboardTheme(c);
+        this.evoCanvas = Prefs.THEME_EVO_HYBRID.equals(theme) ? new EvoHybridCanvas(c) : null;
         this.host = host;
         Arrays.fill(history, Double.NaN);
         setBackgroundColor(Prefs.THEME_U9_XTREME.equals(theme) ? 0xFF08090A : gr ? 0xFF080808 : typeR ? 0xFF08090B : 0xFF090D11);
@@ -166,6 +169,33 @@ final class PerformanceDashboard extends View {
     @Override protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         if (getWidth() <= 0 || getHeight() <= 0) return;
+        if (evoCanvas != null) {
+            evoData.soc = soc;
+            evoData.speed = speed;
+            evoData.power = motorPower;
+            evoData.range = range.text();
+            evoData.source = source;
+            evoData.status = status;
+            evoData.statusColor = statusColor;
+            evoData.tripLabel = tripLabel;
+            evoData.temp = tempReading();
+            evoData.cells = cellReading();
+            evoData.voltage = number(chargeVoltage, "%.0f") + " V";
+            evoData.distance = number(distance, "%.1f") + " km";
+            evoData.elapsed = elapsed;
+            evoData.energy = energyNumber(energy) + " kWh";
+            evoData.average = energyNumber(average) + " kWh/100 km";
+            evoData.money = money;
+            evoData.batteryLabel = L.t("Battery");
+            evoData.rangeLabel = range.label;
+            evoData.tripCaption = L.t("Trip");
+            evoData.timeCaption = L.t("Time");
+            evoData.energyCaption = energyCaption();
+            evoData.avgCaption = L.t("Average consumption");
+            evoData.costCaption = L.t("Cost");
+            evoCanvas.draw(canvas, getWidth(), getHeight(), evoData);
+            return;
+        }
         float scale = Math.min(getWidth() / 1000f, getHeight() / 470f);
         // Use more of the BYD widescreen without excessively stretching the instruments.
         float sx = Prefs.THEME_U9_XTREME.equals(theme) ? Math.min(getWidth()/1000f, scale*1.20f) : scale;

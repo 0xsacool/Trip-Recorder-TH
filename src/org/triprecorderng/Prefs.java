@@ -76,9 +76,10 @@ final class Prefs {
     static final String THEME_RS = "rs_digital";
     static final String THEME_TAYCAN = "taycan_sport";
     static final String THEME_U9_XTREME = "yangwang_u9_xtreme";
+    static final String THEME_EVO_HYBRID = "jdm_evo_ix";
 
     static String[] dashboardThemes() {
-        return new String[]{THEME_CLASSIC, THEME_GTR, THEME_TYPE_R, THEME_GR, THEME_N, THEME_RS, THEME_TAYCAN, THEME_U9_XTREME};
+        return new String[]{THEME_CLASSIC, THEME_GTR, THEME_TYPE_R, THEME_GR, THEME_N, THEME_RS, THEME_TAYCAN, THEME_U9_XTREME, THEME_EVO_HYBRID};
     }
 
     private static boolean knownTheme(String value) {
@@ -105,6 +106,7 @@ final class Prefs {
     }
 
     static String themeName(String theme) {
+        if (THEME_EVO_HYBRID.equals(theme)) return "JDM EVO IX";
         if (THEME_N.equals(theme)) return "N Performance";
         if (THEME_RS.equals(theme)) return "RS Digital Cockpit";
         if (THEME_TAYCAN.equals(theme)) return "Taycan Sport";
@@ -133,6 +135,7 @@ final class Prefs {
 
     static int newThemeAccent(Context c) {
         String theme = dashboardTheme(c);
+        if (THEME_EVO_HYBRID.equals(theme)) return 0xFFFF4148;
         if (THEME_N.equals(theme)) return 0xFF42A9FF;
         if (THEME_RS.equals(theme)) return 0xFFF4525E;
         if (THEME_TAYCAN.equals(theme)) return 0xFF43D9EC;

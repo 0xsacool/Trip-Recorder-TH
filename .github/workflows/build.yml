@@ -65,6 +65,12 @@ jobs:
           javac -d "$RUNNER_TEMP/menu-test" src/org/triprecorderng/DashboardMenu.java tools/DashboardMenuTest.java
           java -cp "$RUNNER_TEMP/menu-test" org.triprecorderng.DashboardMenuTest
 
+      - name: Test EVO hybrid renderer
+        run: |
+          mkdir -p "$RUNNER_TEMP/evo-test"
+          javac -d "$RUNNER_TEMP/evo-test" src/org/triprecorderng/EvoHybridRenderer.java tools/EvoHybridRendererTest.java
+          java -cp "$RUNNER_TEMP/evo-test" org.triprecorderng.EvoHybridRendererTest
+
       - name: Test updater signer verification
         run: |
           mkdir -p "$RUNNER_TEMP/signer-test"
