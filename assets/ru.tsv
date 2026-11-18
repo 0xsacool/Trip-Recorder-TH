@@ -49,7 +49,7 @@ Highest power reported	Пиковая мощность
 not reported	нет данных
 Charger	Зарядное устройство
 Cost	Стоимость
-Partial: this charge happened while the head unit was asleep. Only the battery level before and after is known, so the times shown are the window in which it happened, not how long it charged.	Неполная запись: эта зарядка прошла, пока головное устройство находилось в спящем режиме. Известен только уровень батареи до и после, поэтому показанное время — это окно, в котором она прошла, а не длительность зарядки.
+Partial: charging was inferred from the battery level. The exact start and end are unknown, so the times shown are an observation window, not the actual charging duration.	Неполная запись: зарядка определена по уровню батареи. Точное начало и конец неизвестны, поэтому показано окно наблюдения, а не фактическая длительность зарядки.
 Partial: the app missed part of this session (the head unit was asleep or the app was not running), so the battery gain and energy can be lower than the real total.	Неполная запись: приложение пропустило часть этой сессии (головное устройство было в спящем режиме или приложение не работало), поэтому прирост заряда и энергия могут быть ниже реальных.
 Charging	Зарядка
  - paused	 — пауза

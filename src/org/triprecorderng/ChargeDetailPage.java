@@ -134,9 +134,8 @@ final class ChargeDetailPage {
         fact(list, L.t("Cost"), Cost.money(c, Cost.charge(ch, kwhPerPct, c)));
         if (ch.partial) {
             TextView note = k.t(ch.windowOnly
-                    ? L.t("Partial: this charge happened while the head unit was asleep. Only the battery "
-                    + "level before and after is known, so the times shown are the window in which it "
-                    + "happened, not how long it charged.")
+                    ? L.t("Partial: charging was inferred from the battery level. The exact start and end "
+                    + "are unknown, so the times shown are an observation window, not the actual charging duration.")
                     : L.t("Partial: the app missed part of this session (the head unit "
                     + "was asleep or the app was not running), so the battery gain and energy can be "
                     + "lower than the real total."), Kit.CAPTION, Kit.AMBER, Kit.REGULAR);

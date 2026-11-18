@@ -88,6 +88,8 @@ final class ChargingPage {
 
     private View header(List<Charge> charges) {
         LinearLayout head = k.row();
+        String recording = ChargeRecorder.status;
+        if (!recording.isEmpty()) head.addView(stat(Kit.IconView.BOLT, BLUE_TEXT, recording), gapped());
         if (!charges.isEmpty()) {
             double kwh = 0;
             double cost = 0;

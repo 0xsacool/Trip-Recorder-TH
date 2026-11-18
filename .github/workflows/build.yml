@@ -71,6 +71,10 @@ jobs:
           javac -d "$RUNNER_TEMP/rpm-test" src/org/triprecorderng/MotorRpm.java tools/MotorRpmTest.java
           java -cp "$RUNNER_TEMP/rpm-test" org.triprecorderng.MotorRpmTest
 
+      - name: Test charging detection and session recording
+        run: |
+          bash tools/test_charging.sh
+
       - name: Test EVO hybrid renderer
         run: |
           mkdir -p "$RUNNER_TEMP/evo-test"

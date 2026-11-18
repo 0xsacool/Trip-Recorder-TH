@@ -10,7 +10,7 @@ import java.util.UUID;
 
 /**
  * Records charging sessions from the car's charging device (needs the Vehicle data link). A session
- * runs while the battery-management state says "charging" (or "paused") with the cable connected, and
+ * runs on BMS or plug/charger-power evidence, with a stationary battery-gain fallback, and
  * ends one minute after that stops. The battery percentage is sampled along the way for the chart.
  *
  * The head unit sleeps when the car is off, and the app does not run while it sleeps. So the recorder
@@ -37,7 +37,6 @@ final class ChargeRecorder {
     private static final long MAX_JOIN_GAP_MS = 12 * 3600_000L;
     private static final long JOIN_START_SLACK_MS = 120_000;
 
-    private static final int BMS_CHARGING = 1;
     private static final int BMS_PAUSED = 13;
 
     /** The session being recorded (read by the UI), or null. */
@@ -48,7 +47,10 @@ final class ChargeRecorder {
     private final Context ctx;
     private final TripDb db;
     private final Gps gps;
+    private final ChargeDetection detection = new ChargeDetection();
     private final List<double[]> pending = new ArrayList<>();
+    private String lastEvidence = "";
+    private long lastEvidenceWall;
 
     private Charge cur;
     private long lastPollMs;
@@ -104,6 +106,7 @@ final class ChargeRecorder {
         if (lastSeenWall != 0 && wall - lastSeenWall > GAP_MS) {
             sawIdleBefore = false;
             wakeCheckPending = true;
+            detection.reset();
             if (cur != null && !cur.partial) {
                 cur.partial = true;
                 Diag.log("charge: gap of " + (wall - lastSeenWall) / 1000 + " s, marked partial");
@@ -112,14 +115,24 @@ final class ChargeRecorder {
         lastSeenWall = wall;
 
         double[] c = v.charging();
-        boolean known = c != null && !Double.isNaN(c[0]);
-        int bms = known ? (int) c[0] : -1;
-        int gun = known && !Double.isNaN(c[1]) ? (int) c[1] : 0;
-        boolean gunIn = gun == 2 || gun == 3 || gun == 4;
+        int bms = ChargeDetection.code(c, 0);
+        boolean known = bms >= 0;
+        int gun = ChargeDetection.code(c, 1);
+        boolean gunIn = ChargeDetection.plugged(gun);
         double speed = v.speedKmh();
-        boolean active = known && (bms == BMS_CHARGING || bms == BMS_PAUSED)
-                && (gunIn || Double.isNaN(speed) || speed < 1);
         double soc = v.socPercent();
+        if (!ChargeDetection.validSoc(soc)) soc = Double.NaN;
+        int evidence = detection.update(c, speed, v.odometerKm(), soc, wall);
+        boolean active = evidence != ChargeDetection.NONE;
+        boolean inferred = evidence == ChargeDetection.SOC_GAIN;
+
+        String snapshot = v.name() + " bms=" + bms + " gun=" + gun
+                + " work=" + ChargeDetection.code(c, 2) + " evidence=" + evidence;
+        if (!snapshot.equals(lastEvidence) || wall - lastEvidenceWall >= 300_000) {
+            lastEvidence = snapshot; lastEvidenceWall = wall;
+            Diag.log("charge: " + snapshot + " power=" + ChargeDetection.field(c, 3)
+                    + " soc=" + soc + " speed=" + speed);
+        }
 
         if (wakeCheckPending && !Double.isNaN(soc)) {
             wakeCheckPending = false;
@@ -131,13 +144,21 @@ final class ChargeRecorder {
             inactiveSinceMs = 0;
             firstInactiveWall = 0;
             lastActiveWall = wall;
-            if (cur == null) start(gun, soc, wall);
+            if (cur == null) {
+                if (inferred && Double.isNaN(missedStartSoc)) {
+                    missedStartSoc = detection.startSoc();
+                    missedStartWall = detection.startWall();
+                }
+                start(gun, soc, wall);
+            }
+            if (inferred) { cur.partial = true; cur.windowOnly = true; }
             cur.lastUpdateMs = wall;
             if (!Double.isNaN(soc)) {
                 if (Double.isNaN(cur.socStart)) cur.socStart = soc;
                 cur.socEnd = soc;
             }
-            double kwh = c[4], power = c[3];
+            double kwh = inferred ? Double.NaN : ChargeDetection.field(c, 4);
+            double power = inferred ? Double.NaN : ChargeDetection.field(c, 3);
             if (!Double.isNaN(kwh) && (Double.isNaN(cur.kwhSignal) || kwh > cur.kwhSignal)) cur.kwhSignal = kwh;
             if (!Double.isNaN(power) && power > 0
                     && (Double.isNaN(cur.maxPowerKw) || power > cur.maxPowerKw)) cur.maxPowerKw = power;
@@ -147,13 +168,20 @@ final class ChargeRecorder {
                 lastPointSoc = soc;
                 pending.add(new double[]{wall, soc, power});
             }
-            if (nowMs - lastSaveMs >= SAVE_MS) save();
+            if (lastSaveMs == 0 || nowMs - lastSaveMs >= SAVE_MS) save();
             status = L.t("Charging") + (cur.typeName().isEmpty() ? "" : " (" + cur.typeName() + ")")
+                    + (inferred ? " · " + L.t("Partial") : "")
                     + (bms == BMS_PAUSED ? L.t(" - paused") : "");
         } else {
             status = "";
             if (known) sawIdleBefore = true;
             if (cur != null) {
+                if (ChargeDetection.moving(speed)) {
+                    // Do not let driving or regen alter the last stationary charging sample.
+                    firstInactiveWall = lastActiveWall;
+                    end(cur.socEnd, wall);
+                    return;
+                }
                 if (inactiveSinceMs == 0) {
                     inactiveSinceMs = nowMs;
                     firstInactiveWall = wall;
@@ -241,12 +269,13 @@ final class ChargeRecorder {
         Charge prev = db.latestEndedCharge();
         if (continues(db, prev, startSoc, startWall)) {
             // charging picks up at the level the last session stopped at: carry on with that session
+            long previousEnd = prev.endMs;
             cur = prev;
             cur.ended = false;
             cur.endMs = 0;
             cur.lastUpdateMs = wall;
             cur.socEnd = soc;
-            if (!Double.isNaN(missedStartSoc) || wall - prev.endMs > GAP_MS) cur.partial = true;
+            if (!Double.isNaN(missedStartSoc) || wall - previousEnd > GAP_MS) cur.partial = true;
             if (cur.gun == 0 && (gun == 2 || gun == 3 || gun == 4)) cur.gun = gun;
             missedStartSoc = Double.NaN;
             pending.clear();
@@ -281,6 +310,8 @@ final class ChargeRecorder {
             cur.lon = l.getLongitude();
         }
         pending.clear();
+        if (cur.windowOnly && !Double.isNaN(cur.socStart) && cur.startMs < wall)
+            pending.add(new double[]{cur.startMs, cur.socStart, Double.NaN});
         lastPointMs = 0;
         lastPointSoc = Double.NaN;
         lastSaveMs = 0;

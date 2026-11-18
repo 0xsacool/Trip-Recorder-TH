@@ -129,7 +129,7 @@ Average power	กำลังไฟเฉลี่ย
 Highest power reported	กำลังไฟสูงสุดที่รายงาน
 not reported	ไม่มีข้อมูล
 Charger	เครื่องชาร์จ
-Partial: this charge happened while the head unit was asleep. Only the battery level before and after is known, so the times shown are the window in which it happened, not how long it charged.	ข้อมูลบางส่วน: รถชาร์จขณะหน้าจอพัก จึงทราบเฉพาะระดับแบตเตอรี่ก่อนและหลัง เวลาที่แสดงคือช่วงที่เกิดการชาร์จ ไม่ใช่ระยะเวลาชาร์จจริง
+Partial: charging was inferred from the battery level. The exact start and end are unknown, so the times shown are an observation window, not the actual charging duration.	ข้อมูลบางส่วน: ตรวจพบการชาร์จจากระดับแบตเตอรี่ ไม่ทราบเวลาเริ่มและสิ้นสุดที่แน่นอน เวลาที่แสดงคือช่วงที่ตรวจพบ ไม่ใช่ระยะเวลาชาร์จจริง
 Partial: the app missed part of this session (the head unit was asleep or the app was not running), so the battery gain and energy can be lower than the real total.	ข้อมูลบางส่วน: แอปไม่ได้บันทึกช่วงหนึ่งของการชาร์จ (หน้าจอพักหรือแอปหยุดทำงาน) ระดับแบตเตอรี่และพลังงานที่เพิ่มอาจต่ำกว่าจริง
 Show place	แสดงสถานที่
 Delete this charging session permanently?	ลบประวัติการชาร์จนี้ถาวรหรือไม่?
