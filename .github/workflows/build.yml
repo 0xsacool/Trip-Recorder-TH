@@ -107,6 +107,12 @@ jobs:
           javac -d "$RUNNER_TEMP/appearance-test" src/org/triprecorderng/Appearance.java tools/AppearanceTest.java
           java -cp "$RUNNER_TEMP/appearance-test" org.triprecorderng.AppearanceTest
 
+      - name: Test eight performance cockpit day and night palettes
+        run: |
+          mkdir -p "$RUNNER_TEMP/cockpit-palette-test"
+          javac -d "$RUNNER_TEMP/cockpit-palette-test" src/org/triprecorderng/CockpitPalette.java tools/CockpitPaletteTest.java
+          java -cp "$RUNNER_TEMP/cockpit-palette-test" org.triprecorderng.CockpitPaletteTest
+
       - name: Test updater signer verification
         run: |
           mkdir -p "$RUNNER_TEMP/signer-test"

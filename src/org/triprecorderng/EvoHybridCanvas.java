@@ -13,6 +13,7 @@ import java.io.InputStream;
 /** Android adapter; only decodes the housing once per dashboard lifetime. */
 final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
     private final Bitmap bitmap;
+    private final CockpitPalette palette;
     private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
     private final RectF box = new RectF();
     private final Path shape = new Path();
@@ -31,11 +32,29 @@ final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
     @Override public void historyBounds(float x,float y,float w,float h){graphBounds.set(graphX+x*graphScale,graphY+y*graphScale,graphX+(x+w)*graphScale,graphY+(y+h)*graphScale);}
     EvoHybridCanvas(Context context) { this(context,"evo_hybrid_plate.webp"); }
     EvoHybridCanvas(Context context,String asset) {
+        palette=new CockpitPalette(Prefs.dashboardTheme(context),Prefs.sportTheme(context)&&Prefs.lightAppearance(context));
         Bitmap b=null;
         if(asset!=null)try(InputStream in=context.getAssets().open(asset)){
             BitmapFactory.Options o=new BitmapFactory.Options();
             o.inScaled=false;
+            // Transform the plate once, in-place, off the live rendering path.
+            o.inMutable=palette.light;
+            o.inPreferredConfig=Bitmap.Config.ARGB_8888;
             b=BitmapFactory.decodeStream(in,null,o);
+            if(b!=null&&palette.light){
+                if(!b.isMutable()){
+                    Bitmap original=b;b=original.copy(Bitmap.Config.ARGB_8888,true);
+                    original.recycle();
+                }
+                if(b!=null){
+                    int w=b.getWidth();int[] row=new int[w];
+                    for(int y=0;y<b.getHeight();y++){
+                        b.getPixels(row,0,w,0,y,w,1);
+                        for(int x=0;x<w;x++)row[x]=palette.platePixel(row[x]);
+                        b.setPixels(row,0,w,0,y,w,1);
+                    }
+                }
+            }
         }catch(java.io.IOException e){android.util.Log.w("EvoHybrid","Backplate unavailable",e);}
         bitmap=b;
     }
@@ -79,27 +98,27 @@ final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
         if(bitmap==null)return;
         fill(0xffffffff);box.set(x,y,x+w,y+h);c.drawBitmap(bitmap,null,box,p);
     }
-    public void rect(float x,float y,float w,float h,int color){fill(color);c.drawRect(x,y,x+w,y+h,p);}
+    public void rect(float x,float y,float w,float h,int color){fill(palette.fill(color));c.drawRect(x,y,x+w,y+h,p);}
     public void outline(float x,float y,float w,float h,float radius,int color,float thickness){
-        fill(color);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(thickness);box.set(x,y,x+w,y+h);c.drawRoundRect(box,radius,radius,p);
+        fill(palette.stroke(color));p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(thickness);box.set(x,y,x+w,y+h);c.drawRoundRect(box,radius,radius,p);
     }
     public void line(float x1,float y1,float x2,float y2,int color,float thickness){
-        fill(color);p.setStrokeWidth(thickness);c.drawLine(x1,y1,x2,y2,p);
+        fill(palette.stroke(color));p.setStrokeWidth(thickness);c.drawLine(x1,y1,x2,y2,p);
     }
-    public void circle(float cx,float cy,float r,int color){fill(color);c.drawCircle(cx,cy,r,p);}
+    public void circle(float cx,float cy,float r,int color){fill(palette.fill(color));c.drawCircle(cx,cy,r,p);}
     public void slant(float x,float y,float w,float h,float shear,int color){
-        fill(color);shape.reset();shape.moveTo(x+shear,y);shape.lineTo(x+shear+w,y);
+        fill(palette.fill(color));shape.reset();shape.moveTo(x+shear,y);shape.lineTo(x+shear+w,y);
         shape.lineTo(x+w,y+h);shape.lineTo(x,y+h);shape.close();c.drawPath(shape,p);
     }
     public void arc(float cx,float cy,float radius,float start,float sweep,float width,int color){
         if(sweep<=0)return;
-        fill(color);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(width);
+        fill(palette.fill(color));p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(width);
         box.set(cx-radius,cy-radius,cx+radius,cy+radius);c.drawArc(box,start,sweep,false,p);
         p.setStyle(Paint.Style.FILL);
     }
     public void text(String v,float x,float y,float size,int color,boolean heavy,boolean slant,int align,float maxWidth){
         if(v==null)v="--";
-        fill(color);p.setTypeface(slant?italic:heavy?bold:plain);
+        fill(palette.text(color));p.setTypeface(slant?italic:heavy?bold:plain);
         p.setTextSize(size);p.setTextAlign(align<0?Paint.Align.LEFT:align>0?Paint.Align.RIGHT:Paint.Align.CENTER);
         float actual=p.measureText(v);if(actual>maxWidth)p.setTextSize(size*maxWidth/actual);
         c.drawText(v,x,y,p);

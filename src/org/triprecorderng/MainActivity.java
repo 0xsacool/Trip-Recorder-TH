@@ -531,7 +531,7 @@ public class MainActivity extends Activity {
     private void setChrome(boolean fullScreenPage) {
         updateDashboardVisibility();
         updateNavigationLayout();
-        shellBody.setBackgroundColor(xtremeNav && !fullScreenPage && tab == TAB_THIS ? 0xFF08090A : android.graphics.Color.TRANSPARENT);
+        shellBody.setBackgroundColor(xtremeNav && !fullScreenPage && tab == TAB_THIS && !appearanceLight ? 0xFF08090A : android.graphics.Color.TRANSPARENT);
         navView.setBackgroundColor(bottomNav ? (appearanceLight?Kit.SHEET:xtremeNav ? 0xFF08090A : Prefs.grTheme(this) ? 0xFF0D0D0D : Prefs.newThemeAccent(this) != 0 ? 0xFF10151B : 0xFF141B22)
                 : android.graphics.Color.TRANSPARENT);
         int vis = fullScreenPage ? View.GONE : View.VISIBLE;
@@ -571,8 +571,10 @@ public class MainActivity extends Activity {
             boolean sel = i == index;
             LinearLayout t = tabViews[i];
             if(appearanceLight){
-                t.setBackground(sel?Ui.round(Kit.ACCENT_SOFT,12,this):null);
-                int color=sel?Kit.ACCENT:Ui.TEXT_VALUE;
+                boolean sport=Prefs.sportTheme(this);
+                int accent=sport?new CockpitPalette(Prefs.dashboardTheme(this),true).accent():Kit.ACCENT;
+                t.setBackground(sel?Ui.round(sport?accent:Kit.ACCENT_SOFT,12,this):null);
+                int color=sel?(sport?0xffffffff:accent):Ui.TEXT_VALUE;
                 ((TextView)t.getChildAt(1)).setTextColor(color);
                 ((ImageView)t.getChildAt(0)).setColorFilter(color,PorterDuff.Mode.SRC_IN);
                 continue;

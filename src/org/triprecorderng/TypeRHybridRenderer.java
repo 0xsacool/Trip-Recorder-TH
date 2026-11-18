@@ -69,8 +69,8 @@ final class TypeRHybridRenderer {
         sport(s,"km/h",799,285,28,MUTED,1,75);
         s.slant(400,320,190,35,18,drive?RED:DIM);
         s.slant(603,320,190,35,18,regen?CYAN:DIM);
-        sport(s,"POWER",500,345,19,WHITE,0,155);
-        sport(s,"REGEN",703,345,19,regen?BG:WHITE,0,155);
+        sport(s,"POWER",500,345,19,d.historyLight&&drive?0xffffffff:WHITE,0,155);
+        sport(s,"REGEN",703,345,19,d.historyLight?(regen?0xffffffff:WHITE):(regen?BG:WHITE),0,155);
 
         label(s,d.tripCaption,1168,170,250,1);
         sport(s,d.distance,1168,225,45,WHITE,1,265);

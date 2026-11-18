@@ -21,7 +21,7 @@ final class TelemetryPicker {
     static boolean isOpen(){return popupOpen;}
     private final Context c;
     private final SharedPreferences prefs;
-    private final int accent;
+    private final int accent,historyAccent;
     private final boolean light;
     private EvoHybridRenderer.Metric metric;
     private int seconds;
@@ -41,14 +41,17 @@ final class TelemetryPicker {
         catch(IllegalArgumentException e){metric=EvoHybridRenderer.Metric.POWER;}
         seconds=prefs.getInt("telemetry_seconds",60)==300?300:60;
         int themeAccent=Prefs.newThemeAccent(c);
-        light=Ui.lightAppearance&&!Prefs.sportTheme(c);
-        accent=light?Kit.ACCENT:themeAccent!=0?themeAccent:0xff28d9ec;
+        light=Ui.lightAppearance;
+        accent=light?(Prefs.sportTheme(c)?new CockpitPalette(gaugeTheme,true).accent():Kit.ACCENT)
+                :themeAccent!=0?themeAccent:0xff28d9ec;
+        historyAccent=light&&Prefs.sportTheme(c)
+                ?new CockpitPalette(gaugeTheme,true).stroke(themeAccent!=0?themeAccent:0xff28d9ec):accent;
     }
     void sample(long elapsed,double power,double speed,double consumption,double temp,double level,double rpm){
         HISTORY.sample(elapsed,power,speed,consumption,temp,level,rpm);
     }
     void select(EvoHybridRenderer.Data d){
-        HISTORY.select(d,metric,seconds);d.historyColor=accent;d.historyLight=light;
+        HISTORY.select(d,metric,seconds);d.historyColor=historyAccent;d.historyLight=light;
         d.gauges[0]=gauges[0];d.gauges[1]=gauges[1];
     }
     private String gaugeKey(int slot){return "custom_gauge_"+gaugeTheme+"_"+slot;}

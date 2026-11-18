@@ -69,7 +69,8 @@ final class PerformanceDashboard extends View {
                 : Prefs.THEME_TYPE_R.equals(theme) ? new EvoHybridCanvas(c,"typer_hybrid_plate.webp")
                 : AdditionalHybridRenderer.asset(theme)!=null ? new EvoHybridCanvas(c,AdditionalHybridRenderer.asset(theme)) : null;
         this.host = host;
-        setBackgroundColor(Prefs.THEME_U9_XTREME.equals(theme) ? 0xFF08090A : gr ? 0xFF080808 : typeR ? 0xFF08090B : 0xFF090D11);
+        setBackgroundColor(Prefs.lightAppearance(c)?new CockpitPalette(theme,true).background():
+                Prefs.THEME_U9_XTREME.equals(theme) ? 0xFF08090A : gr ? 0xFF080808 : typeR ? 0xFF08090B : 0xFF090D11);
         setFocusable(true);
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
         setOnClickListener(new OnClickListener() {
