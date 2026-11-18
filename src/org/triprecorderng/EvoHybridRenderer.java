@@ -14,6 +14,7 @@ final class EvoHybridRenderer {
         void outline(float x,float y,float w,float h,float radius,int color,float thickness);
         void line(float x1,float y1,float x2,float y2,int color,float thickness);
         void circle(float cx,float cy,float radius,int color);
+        default void historyBounds(float x,float y,float w,float h) {}
         // Forward-sloping filled parallelogram. Native canvas overrides with a single path.
         default void slant(float x,float y,float w,float h,float shear,int color) {
             for(int i=0;i<h;i++){
@@ -39,11 +40,16 @@ final class EvoHybridRenderer {
         String batteryLabel, rangeLabel, tripCaption, timeCaption, energyCaption, avgCaption, costCaption;
         double[] history;
         int historyCount;
+        Metric historyMetric=Metric.POWER;
+        int historySeconds=60;
+        int historyColor=0xff28d9ec;
         int statusColor;
     }
     /** One measurement per second; missing seconds remain gaps, not zeroes. */
     static final class History {
-        final double[] samples=new double[60];
+        final double[] samples;
+        History(){this(60);}
+        History(int capacity){samples=new double[capacity];}
         int count;
         private long lastSecond=-1;
         void sample(long elapsedMillis,double value){
@@ -61,19 +67,55 @@ final class EvoHybridRenderer {
             else{System.arraycopy(samples,1,samples,0,samples.length-1);samples[samples.length-1]=n;}
         }
     }
+    enum Metric {
+        POWER("Power (kW)","POWER HISTORY (kW)",-100,200,100),
+        SPEED("Speed (km/h)","SPEED HISTORY (km/h)",0,120,40),
+        CONSUMPTION("Avg. consumption (kWh/100 km)","AVG. CONSUMPTION (kWh/100 km)",0,30,10),
+        BATTERY_TEMP("Battery temp (max °C)","BATTERY TEMP (MAX °C)",0,60,20),
+        BATTERY_LEVEL("Battery level (%)","BATTERY LEVEL (%)",0,100,25);
+        final String label,title;final double min,max,step;
+        Metric(String label,String title,double min,double max,double step){this.label=label;this.title=title;this.min=min;this.max=max;this.step=step;}
+    }
+    /** Keep all supported measurements concurrently, so switching views never starts a blank graph. */
+    static final class TelemetryHistory {
+        private final History[] series=new History[Metric.values().length];
+        private final boolean[] seen=new boolean[series.length];
+        TelemetryHistory(){for(int i=0;i<series.length;i++)series[i]=new History(300);}
+        void sample(long elapsed,double power,double speed,double consumption,double temp,double level){
+            double[] values={power,speed,consumption,temp,level};
+            for(int i=0;i<series.length;i++){series[i].sample(elapsed,values[i]);if(valid(values[i]))seen[i]=true;}
+        }
+        boolean available(Metric m){return m==Metric.POWER||m==Metric.SPEED||seen[m.ordinal()];}
+        void select(Data d,Metric m,int seconds){
+            int capacity=seconds==300?300:60;
+            History h=series[m.ordinal()];
+            if(d.history==null||d.history.length!=capacity)d.history=new double[capacity];
+            d.historyCount=Math.min(capacity,h.count);
+            System.arraycopy(h.samples,h.count-d.historyCount,d.history,0,d.historyCount);
+            d.historyMetric=m;d.historySeconds=capacity;
+        }
+    }
     /** Shared GT-R-style plot. Missing readings break the trace; zero is a measured value only. */
     static void history(Surface s,double[] samples,int count,float x,float y,float width,float height) {
+        history(s,samples,count,Metric.POWER,60,0xff28d9ec,x,y,width,height);
+    }
+    static void history(Surface s,double[] samples,int count,Metric metric,int seconds,int accent,float x,float y,float width,float height) {
+        s.historyBounds(x,y,width,height);
         float l=x+32,r=x+width-5,t=y+15,b=y+height-4;
-        final int muted=0xffb6bbc0, grid=0xff303337, cyan=0xff28d9ec;
-        s.text("POWER HISTORY (kW)",l,y+11,12,muted,true,true,-1,r-l);
-        double step=100;
+        final int muted=0xffb6bbc0, grid=0xff303337;
+        s.text(metric.title,l,y+11,12,muted,true,true,-1,r-l-46);
+        s.text(seconds==300?"5 min":"60s",r,y+11,11,muted,false,false,1,37);
+        s.line(r-44,y+5,r-40,y+9,muted,1.6f);s.line(r-40,y+9,r-36,y+5,muted,1.6f);
+        double step=metric.step,lo=metric.min,hi=metric.max;
         int capacity=samples==null?0:samples.length;
         count=Math.max(0,Math.min(capacity,count));
         for(int i=0;i<count;i++)if(valid(samples[i])){
-            step=Math.max(step,Math.ceil(Math.max(samples[i]/2,-samples[i])/100)*100);
+            if(metric==Metric.POWER)step=Math.max(step,Math.ceil(Math.max(samples[i]/2,-samples[i])/100)*100);
+            else {lo=Math.min(lo,Math.floor(samples[i]/step)*step);hi=Math.max(hi,Math.ceil(samples[i]/step)*step);}
         }
-        double hi=step*2,lo=-step;
-        double[] ticks={hi,step,0,lo};
+        if(metric==Metric.POWER){hi=step*2;lo=-step;}
+        int divisions=metric==Metric.BATTERY_LEVEL?4:3;
+        double[] ticks=new double[divisions+1];for(int i=0;i<=divisions;i++)ticks[i]=hi-(hi-lo)*i/divisions;
         for(double v:ticks){
             float yy=b-(b-t)*(float)((v-lo)/(hi-lo));
             s.line(l,yy,r,yy,v==0?0xff637078:grid,1);
@@ -85,12 +127,12 @@ final class EvoHybridRenderer {
             if(!valid(samples[i])){started=false;continue;}
             float xx=capacity==1?r:l+(r-l)*(capacity-count+i)/Math.max(1,capacity-1);
             float yy=b-(b-t)*(float)((samples[i]-lo)/(hi-lo));
-            if(started)s.line(px,py,xx,yy,cyan,2.2f);else s.circle(xx,yy,2.3f,cyan);
+            if(started)s.line(px,py,xx,yy,accent,2.2f);else s.circle(xx,yy,2.3f,accent);
             started=true;px=xx;py=yy;
         }
     }
     static void history(Surface s,Data d,float x,float y,float width,float height){
-        history(s,d.history,d.historyCount,x,y,width,height);
+        history(s,d.history,d.historyCount,d.historyMetric,d.historySeconds,d.historyColor,x,y,width,height);
     }
     static boolean valid(double v) { return !Double.isNaN(v) && !Double.isInfinite(v); }
     static double angle(double value, double min, double max) {

@@ -45,6 +45,10 @@ public final class AdditionalHybridRendererTest {
             d.soc=d.speed=d.power=Double.NaN;d.range="-- km";d.average="-- kWh/100 km";
             t=render(theme,d,Double.NaN);check(t.text.contains("--")&&t.text.contains("-- kW"),"offline readings "+theme);
             check(t.red==0&&t.blue==0&&t.cyan==0&&t.orange==0,"offline no active gauges "+theme);
+            for(EvoHybridRenderer.Metric m:EvoHybridRenderer.Metric.values()){
+                d.historyMetric=m;d.historySeconds=300;d.history=new double[]{12,Double.NaN,18};d.historyCount=3;
+                t=render(theme,d,Double.NaN);check(t.text.contains(m.title)&&t.text.contains("5 min"),"selected graph "+theme+" "+m);
+            }
         }
         System.out.println("AdditionalHybridRendererTest PASS (five themes, drive/regen/offline)");
     }

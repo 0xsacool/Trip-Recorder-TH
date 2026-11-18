@@ -221,6 +221,7 @@ public class MainActivity extends Activity {
     }
 
     private final Runnable autoHideMenu = () -> {
+        if (TelemetryPicker.isOpen()) { restartMenuTimer(); return; }
         if (dashboardMenu.schedule(resumed, tab == TAB_THIS, overlay != null)) {
             dashboardMenu.hideAutomatically();
             applyDashboardMenu();

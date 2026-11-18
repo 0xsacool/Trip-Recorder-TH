@@ -10,6 +10,7 @@ import android.graphics.Typeface;
 import android.graphics.LinearGradient;
 import android.graphics.Shader;
 import android.view.View;
+import android.view.MotionEvent;
 import java.util.List;
 
 /**
@@ -30,7 +31,10 @@ final class PerformanceDashboard extends View {
     private final EvoHybridRenderer.Data evoData = new EvoHybridRenderer.Data();
     private final Typeface italic = Typeface.create("sans-serif-condensed", Typeface.BOLD_ITALIC);
     private final ThisTripPage.Host host;
-    private final EvoHybridRenderer.History powerHistory = new EvoHybridRenderer.History();
+    private final TelemetryPicker telemetry;
+    private final EvoHybridCanvas fallbackGraph;
+    private final RectF fallbackGraphBounds=new RectF();
+    private boolean graphPressed;
     private long lastSlowRefresh;
     private double speed = Double.NaN, soc = Double.NaN;
     private RangeEstimate.Result range = new RangeEstimate.Result(Double.NaN, RangeEstimate.EPA);
@@ -56,6 +60,8 @@ final class PerformanceDashboard extends View {
         this.typeR = Prefs.typeRTheme(c);
         this.gr = Prefs.grTheme(c);
         this.theme = Prefs.dashboardTheme(c);
+        this.telemetry = new TelemetryPicker(c);
+        this.fallbackGraph = new EvoHybridCanvas(c,null);
         this.evoCanvas = Prefs.THEME_EVO_HYBRID.equals(theme) ? new EvoHybridCanvas(c)
                 : Prefs.THEME_GTR.equals(theme) ? new EvoHybridCanvas(c,"gtr_hybrid_plate.webp")
                 : Prefs.THEME_TYPE_R.equals(theme) ? new EvoHybridCanvas(c,"typer_hybrid_plate.webp")
@@ -104,7 +110,6 @@ final class PerformanceDashboard extends View {
             return;
         }
         lastSlowRefresh = elapsedNow;
-        powerHistory.sample(elapsedNow,motorPower);
         soc = linked && valid(live.soc) && live.soc >= 0 && live.soc <= 100 ? live.soc : Double.NaN;
         boolean telemetryFresh = linked && live.telemetryWall > 0 && now >= live.telemetryWall
                 && now - live.telemetryWall < 10000;
@@ -124,6 +129,8 @@ final class PerformanceDashboard extends View {
         distance = shown == null ? Double.NaN : positive(shown.distanceKm);
         energy = shown == null ? Double.NaN : positive(shown.energyUsed());
         elapsed = shown == null ? "--" : Ui.duration(shown.drivingSec());
+        telemetry.sample(elapsedNow,motorPower,speed,
+                linked && current!=null ? positive(current.energyPer100Km()) : Double.NaN,maxTemp,soc);
 
         String charging = ChargeRecorder.status;
         if (!live.running) {
@@ -172,15 +179,14 @@ final class PerformanceDashboard extends View {
             evoData.elapsed = elapsed;
             evoData.energy = energyNumber(energy) + " kWh";
             evoData.average = energyNumber(average) + " kWh/100 km";
-            evoData.history = powerHistory.samples;
-            evoData.historyCount = powerHistory.count;
+            telemetry.select(evoData);
             evoData.batteryLabel = L.t("Battery");
             evoData.rangeLabel = range.label;
             evoData.tripCaption = L.t("Trip");
             evoData.timeCaption = L.t("Time");
             evoData.energyCaption = energyCaption();
             evoData.avgCaption = L.t("Average consumption");
-            if(Prefs.THEME_GTR.equals(theme))evoCanvas.drawGtr(canvas,getWidth(),getHeight(),evoData,average,powerHistory.samples,powerHistory.count);
+            if(Prefs.THEME_GTR.equals(theme))evoCanvas.drawGtr(canvas,getWidth(),getHeight(),evoData,average,evoData.history,evoData.historyCount);
             else if(Prefs.THEME_TYPE_R.equals(theme))evoCanvas.drawTypeR(canvas,getWidth(),getHeight(),evoData);
             else if(AdditionalHybridRenderer.asset(theme)!=null)evoCanvas.drawAdditional(canvas,getWidth(),getHeight(),evoData,theme,average);
             else evoCanvas.draw(canvas, getWidth(), getHeight(), evoData);
@@ -250,6 +256,19 @@ final class PerformanceDashboard extends View {
         graph(canvas, 709, 386, 983, 459);
         canvas.restore();
     }
+
+    private RectF chartBounds(){return evoCanvas!=null?evoCanvas.graphBounds():new RectF(fallbackGraphBounds);}
+    @Override public boolean onTouchEvent(MotionEvent e){
+        RectF hit=chartBounds();
+        if(e.getActionMasked()==MotionEvent.ACTION_DOWN)graphPressed=hit.contains(e.getX(),e.getY());
+        if(graphPressed){
+            if(e.getActionMasked()==MotionEvent.ACTION_UP){graphPressed=false;if(hit.contains(e.getX(),e.getY()))telemetry.show(this,hit);}
+            else if(e.getActionMasked()==MotionEvent.ACTION_CANCEL)graphPressed=false;
+            return true;
+        }
+        return super.onTouchEvent(e);
+    }
+    @Override protected void onDetachedFromWindow(){telemetry.dismiss();super.onDetachedFromWindow();}
 
     private static final int U9_ORANGE = 0xFFFF791A, U9_REGEN = 0xFF33BFFF;
     private static final int U9_BORDER = 0xFF54575B;
@@ -915,24 +934,12 @@ final class PerformanceDashboard extends View {
     }
 
     private void graph(Canvas cv, float x, float y, float r, float b) {
-        text(cv, "POWER HISTORY (kW)", x, y+14, 15, MUTED, false, Paint.Align.LEFT, r-x);
-        float top = y+24;
-        fill(cv, x, top, r, b, 0xFF0A1014);
-        p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(1); p.setColor(LINE);
-        cv.drawLine(x, b-(b-top)/3, r, b-(b-top)/3, p);
-        cv.drawLine(x, b, r, b, p);
-        Path path = new Path();
-        boolean started = false;
-        for (int i=0; i<powerHistory.count; i++) {
-            if (!valid(powerHistory.samples[i])) { started = false; continue; }
-            float sx=x+(r-x)*(powerHistory.samples.length-powerHistory.count+i)/(powerHistory.samples.length-1);
-            float sy=b-(b-top)*(float)(Math.max(-100, Math.min(200, powerHistory.samples[i]))+100)/300;
-            if (started) path.lineTo(sx, sy); else path.moveTo(sx, sy);
-            started = true;
-        }
-        p.setStrokeWidth(2.5f); p.setColor(CYAN);
-        cv.drawPath(path,p);
-        p.setStyle(Paint.Style.FILL);
+        float scale=Math.min(getWidth()/1000f,getHeight()/470f);
+        float sx=Prefs.THEME_U9_XTREME.equals(theme)?Math.min(getWidth()/1000f,scale*1.20f):scale;
+        float ox=(getWidth()-1000*sx)/2,oy=(getHeight()-470*scale)/2;
+        fallbackGraphBounds.set(ox+x*sx,oy+y*scale,ox+r*sx,oy+b*scale);
+        telemetry.select(evoData);cv.save();cv.translate(x,y);
+        fallbackGraph.drawHistory(cv,Math.round(r-x),Math.round(b-y),evoData);cv.restore();
     }
 
     private void fill(Canvas cv, float x, float y, float r, float b, int color) {

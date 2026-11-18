@@ -83,6 +83,6 @@ final class GtrHybridRenderer {
             metric(s,labels[i],data[i],xx,437,269.3f);
         }
         s.line(833,399,833,467,EDGE,1);
-        EvoHybridRenderer.history(s,samples,count,842,398,349,68);
+        EvoHybridRenderer.history(s,samples,count,d.historyMetric,d.historySeconds,d.historyColor,842,398,349,68);
     }
 }

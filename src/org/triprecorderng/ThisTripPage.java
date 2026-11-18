@@ -103,7 +103,8 @@ final class ThisTripPage {
     private View footer;
     private TextView evValue;
     private TextView fuelValue;
-    private final EvoHybridRenderer.History powerHistory = new EvoHybridRenderer.History();
+    private TelemetryPicker telemetryPicker;
+    private final EvoHybridRenderer.Data historyData = new EvoHybridRenderer.Data();
     private View powerHistoryView;
     /** What the whole trip used per 100 km, under the footer figures of a trip that burned fuel. */
     private TextView evPer100;
@@ -655,12 +656,16 @@ final class ThisTripPage {
         fuelPer100 = fuel[1];
         if (Prefs.ATTO3_EDITION) row.getChildAt(row.getChildCount() - 1).setVisibility(View.GONE);
         final EvoHybridCanvas graph = new EvoHybridCanvas(c,null);
+        telemetryPicker = new TelemetryPicker(c);
         powerHistoryView = new View(c) {
             @Override protected void onDraw(Canvas canvas) {
-                graph.drawHistory(canvas,getWidth(),getHeight(),powerHistory);
+                telemetryPicker.select(historyData);
+                graph.drawHistory(canvas,getWidth(),getHeight(),historyData);
             }
+            @Override protected void onDetachedFromWindow(){telemetryPicker.dismiss();super.onDetachedFromWindow();}
         };
-        powerHistoryView.setContentDescription("POWER HISTORY (kW)");
+        powerHistoryView.setOnClickListener(v->telemetryPicker.show(v,graph.graphBounds()));
+        powerHistoryView.setContentDescription(telemetryPicker.description());
         row.addView(powerHistoryView,new LinearLayout.LayoutParams(0,-1,2.1f));
         return row;
     }
@@ -765,7 +770,12 @@ final class ThisTripPage {
         lastSlowRefresh = elapsedNow;
         boolean motorFresh = l.motorPowerWall > 0 && now >= l.motorPowerWall
                 && now - l.motorPowerWall < 2000;
-        powerHistory.sample(elapsedNow, rangeFresh && driveFresh && motorFresh ? l.motorPower : Double.NaN);
+        boolean telemetryFresh = rangeFresh && l.telemetryWall > 0 && now >= l.telemetryWall && now-l.telemetryWall<10000;
+        double consumption=rangeFresh&&cur!=null?cur.energyPer100Km():Double.NaN;
+        telemetryPicker.sample(elapsedNow, rangeFresh && driveFresh && motorFresh ? l.motorPower : Double.NaN,
+                speed>=0?speed:Double.NaN,consumption>=0?consumption:Double.NaN,
+                telemetryFresh?l.telemetry[1]:Double.NaN,rangeFresh&&l.soc>=0&&l.soc<=100?l.soc:Double.NaN);
+        powerHistoryView.setContentDescription(telemetryPicker.description());
         powerHistoryView.invalidate();
         RangeEstimate.Result range = Prefs.rangeEstimate(c, rangeFresh ? l.soc : Double.NaN, host.trips());
         setText(rangeValue, range.label + "  " + range.text());

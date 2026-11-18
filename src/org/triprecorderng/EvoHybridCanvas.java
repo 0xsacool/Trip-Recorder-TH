@@ -20,6 +20,11 @@ final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
     private final Typeface bold=Typeface.create("sans-serif-condensed",Typeface.BOLD);
     private final Typeface italic=Typeface.create("sans-serif-condensed",Typeface.BOLD_ITALIC);
     private Canvas c;
+    private final RectF graphBounds=new RectF();
+    private float graphScale=1,graphX,graphY;
+    RectF graphBounds(){return new RectF(graphBounds);}
+    private void transform(float scale,float x,float y){graphScale=scale;graphX=x;graphY=y;graphBounds.setEmpty();c.translate(x,y);c.scale(scale,scale);}
+    @Override public void historyBounds(float x,float y,float w,float h){graphBounds.set(graphX+x*graphScale,graphY+y*graphScale,graphX+(x+w)*graphScale,graphY+(y+h)*graphScale);}
     EvoHybridCanvas(Context context) { this(context,"evo_hybrid_plate.webp"); }
     EvoHybridCanvas(Context context,String asset) {
         Bitmap b=null;
@@ -30,42 +35,38 @@ final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
         }catch(java.io.IOException e){android.util.Log.w("EvoHybrid","Backplate unavailable",e);}
         bitmap=b;
     }
-    void drawHistory(Canvas canvas,int width,int height,EvoHybridRenderer.History history){
+    void drawHistory(Canvas canvas,int width,int height,EvoHybridRenderer.Data history){
         if(width<=0||height<=0)return;
         float scale=Math.min(width/160f,height/68f);
-        c=canvas;c.save();c.translate(0,(height-68*scale)/2);c.scale(scale,scale);
-        EvoHybridRenderer.history(this,history.samples,history.count,0,0,width/scale,68);
+        c=canvas;c.save();transform(scale,0,(height-68*scale)/2);
+        EvoHybridRenderer.history(this,history,0,0,width/scale,68);
         c.restore();c=null;
     }
     void draw(Canvas canvas,int width,int height,EvoHybridRenderer.Data d){
         float scale=Math.min(width/EvoHybridRenderer.WIDTH,height/EvoHybridRenderer.HEIGHT);
         c=canvas;
-        c.save();c.translate((width-EvoHybridRenderer.WIDTH*scale)/2f,(height-EvoHybridRenderer.HEIGHT*scale)/2f);
-        c.scale(scale,scale);
+        c.save();transform(scale,(width-EvoHybridRenderer.WIDTH*scale)/2f,(height-EvoHybridRenderer.HEIGHT*scale)/2f);
         EvoHybridRenderer.draw(this,d);
         c.restore();c=null;
     }
     void drawGtr(Canvas canvas,int width,int height,EvoHybridRenderer.Data d,double average,double[] history,int count){
         float scale=Math.min(width/EvoHybridRenderer.WIDTH,height/EvoHybridRenderer.HEIGHT);
         c=canvas;
-        c.save();c.translate((width-EvoHybridRenderer.WIDTH*scale)/2f,(height-EvoHybridRenderer.HEIGHT*scale)/2f);
-        c.scale(scale,scale);
+        c.save();transform(scale,(width-EvoHybridRenderer.WIDTH*scale)/2f,(height-EvoHybridRenderer.HEIGHT*scale)/2f);
         GtrHybridRenderer.draw(this,d,average,history,count);
         c.restore();c=null;
     }
     void drawTypeR(Canvas canvas,int width,int height,EvoHybridRenderer.Data d){
         float scale=Math.min(width/EvoHybridRenderer.WIDTH,height/EvoHybridRenderer.HEIGHT);
         c=canvas;
-        c.save();c.translate((width-EvoHybridRenderer.WIDTH*scale)/2f,(height-EvoHybridRenderer.HEIGHT*scale)/2f);
-        c.scale(scale,scale);
+        c.save();transform(scale,(width-EvoHybridRenderer.WIDTH*scale)/2f,(height-EvoHybridRenderer.HEIGHT*scale)/2f);
         TypeRHybridRenderer.draw(this,d);
         c.restore();c=null;
     }
     void drawAdditional(Canvas canvas,int width,int height,EvoHybridRenderer.Data d,String theme,double average){
         float scale=Math.min(width/EvoHybridRenderer.WIDTH,height/EvoHybridRenderer.HEIGHT);
         c=canvas;
-        c.save();c.translate((width-EvoHybridRenderer.WIDTH*scale)/2f,(height-EvoHybridRenderer.HEIGHT*scale)/2f);
-        c.scale(scale,scale);
+        c.save();transform(scale,(width-EvoHybridRenderer.WIDTH*scale)/2f,(height-EvoHybridRenderer.HEIGHT*scale)/2f);
         AdditionalHybridRenderer.draw(this,d,theme,average);
         c.restore();c=null;
     }
