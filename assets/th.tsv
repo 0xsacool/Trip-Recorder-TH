@@ -534,3 +534,33 @@ Appearance	รูปแบบการแสดงผล
 Dark	ธีมมืด
 Light	ธีมสว่าง
 Auto (system)	อัตโนมัติ (ตามระบบ)
+Dark only for performance themes	ธีม Performance ใช้โหมดมืดชั่วคราว
+Light and Auto remain available with Classic.	ธีม Classic ยังเลือกโหมดสว่างและอัตโนมัติได้ตามปกติ
+Home AC	ชาร์จ AC ที่บ้าน
+Charging cost profiles	โปรไฟล์ค่าไฟชาร์จ
+Separate AC and DC prices	แยกราคา AC และ DC
+Charging profile	โปรไฟล์การชาร์จ
+Not assigned	ยังไม่ระบุ
+Charging type	ประเภทการชาร์จ
+Profile name	ชื่อโปรไฟล์ / สถานี
+Price per kWh	ราคาต่อ kWh
+Billed energy (kWh)	หน่วยไฟตามใบเสร็จ (kWh)
+Actual cost	ค่าใช้จ่ายจริง
+Estimated cost	ค่าใช้จ่ายโดยประมาณ
+Edit charging cost	แก้ไขค่าใช้จ่ายการชาร์จ
+Edit price, station or receipt	แก้ไขราคา สถานี หรือยอดใบเสร็จ
+Select charging profile	เลือกโปรไฟล์การชาร์จ
+Custom price or new profile	ราคาเฉพาะครั้ง / โปรไฟล์ใหม่
+Add charging profile	เพิ่มโปรไฟล์การชาร์จ
+Edit charging profile	แก้ไขโปรไฟล์การชาร์จ
+Default for this charging type	ใช้เป็นค่าเริ่มต้นของประเภทนี้
+Default	ค่าเริ่มต้น
+Delete profile? Previous sessions will keep their prices.	ลบโปรไฟล์นี้หรือไม่? ประวัติเดิมจะเก็บราคาเดิมไว้
+Save this session	บันทึกเฉพาะครั้งนี้
+Save and update profile	บันทึกและอัปเดตโปรไฟล์
+Enter a valid nonnegative number	กรอกตัวเลขตั้งแต่ 0 ขึ้นไป
+Enter a profile name	กรอกชื่อโปรไฟล์
+Select AC or DC for this profile	เลือก AC หรือ DC สำหรับโปรไฟล์นี้
+Leave receipt fields blank to use the estimated cost.	เว้นช่องใบเสร็จว่างเพื่อใช้ค่าประมาณ
+Known cost: %s	ค่าใช้จ่ายที่ทราบ: %s
+Unable to save charging cost	ไม่สามารถบันทึกค่าใช้จ่ายการชาร์จ

@@ -260,6 +260,13 @@ final class Backup {
             o.put("lon", num(c.lon));
             o.put("partial", c.partial);
             o.put("window_only", c.windowOnly);
+            ChargeBilling bill=TripDb.get(ctx).chargeBilling(c.id);
+            if(bill!=null){
+                JSONObject b=new JSONObject();
+                b.put("profile_id",bill.profileId);b.put("name",bill.name);b.put("type",bill.type);
+                b.put("rate",num(bill.rate));b.put("billed_kwh",num(bill.billedKwh));b.put("actual_cost",num(bill.actualCost));b.put("edited",bill.edited);
+                o.put("billing",b);
+            }
             root.put("charge", o);
             JSONArray pts = new JSONArray();
             for (double[] p : TripDb.get(ctx).chargePoints(c.id)) pts.put(arr(p));
@@ -298,7 +305,9 @@ final class Backup {
                 if (write(ctx, t)) n++;
             }
             for (Charge c : TripDb.get(ctx).charges()) {
-                if (!c.ended || c.id.startsWith("demo-") || find(dir, c.id) != null) continue;
+                if (!c.ended || c.id.startsWith("demo-")) continue;
+                ChargeBilling bill=TripDb.get(ctx).chargeBilling(c.id);
+                if(find(dir,c.id)!=null&&(bill==null||!bill.edited))continue;
                 if (writeCharge(ctx, c)) n++;
             }
         } catch (Throwable e) {
@@ -376,6 +385,9 @@ final class Backup {
         JSONArray pa = root.optJSONArray("points");
         if (pa != null) for (int i = 0; i < pa.length(); i++) pts.add(unarr(pa.getJSONArray(i)));
         db.upsertCharge(c);
+        JSONObject b=o.optJSONObject("billing");
+        if(b!=null)db.saveChargeBilling(c.id,new ChargeBilling(b.optString("profile_id"),b.optString("name"),b.optInt("type"),
+                dbl(b,"rate"),dbl(b,"billed_kwh"),dbl(b,"actual_cost"),b.optBoolean("edited",false)));
         db.addChargePoints(c.id, pts);
         return true;
     }
@@ -484,4 +496,3 @@ final class Backup {
         return t;
     }
 }
-

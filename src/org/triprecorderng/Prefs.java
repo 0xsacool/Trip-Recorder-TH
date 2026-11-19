@@ -18,7 +18,10 @@ final class Prefs {
         sp(c).edit().putInt("appearance_mode",Appearance.normalize(mode)).apply();
     }
     static boolean lightAppearance(Context c) {
-        return Appearance.light(appearanceMode(c),c.getResources().getConfiguration().uiMode);
+        return Appearance.light(appearanceMode(c),c.getResources().getConfiguration().uiMode,lightAppearanceSupported(c));
+    }
+    static boolean lightAppearanceSupported(Context c) {
+        return THEME_CLASSIC.equals(dashboardTheme(c));
     }
 
     static boolean performanceRefresh(Context c) {
@@ -460,6 +463,3 @@ final class Prefs {
                 .putString("price_currency", currency.isEmpty() ? "THB" : currency).apply();
     }
 }
-
-
-

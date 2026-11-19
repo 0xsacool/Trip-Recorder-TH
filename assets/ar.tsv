@@ -509,3 +509,33 @@ Appearance	المظهر
 Dark	داكن
 Light	فاتح
 Auto (system)	تلقائي (حسب النظام)
+Dark only for performance themes	السمات الرياضية داكنة فقط مؤقتًا
+Light and Auto remain available with Classic.	يظل الوضع الفاتح والتلقائي متاحين مع السمة الكلاسيكية.
+Home AC	شحن منزلي AC
+Charging cost profiles	ملفات أسعار الشحن
+Separate AC and DC prices	أسعار منفصلة لـ AC و DC
+Charging profile	ملف الشحن
+Not assigned	غير محدد
+Charging type	نوع الشحن
+Profile name	اسم الملف أو المحطة
+Price per kWh	السعر لكل كيلوواط ساعة
+Billed energy (kWh)	الطاقة في الفاتورة (ك.و.س)
+Actual cost	التكلفة الفعلية
+Estimated cost	التكلفة التقديرية
+Edit charging cost	تعديل تكلفة الشحن
+Edit price, station or receipt	تعديل السعر أو المحطة أو الفاتورة
+Select charging profile	اختيار ملف الشحن
+Custom price or new profile	سعر مخصص أو ملف جديد
+Add charging profile	إضافة ملف شحن
+Edit charging profile	تعديل ملف الشحن
+Default for this charging type	افتراضي لهذا النوع
+Default	افتراضي
+Delete profile? Previous sessions will keep their prices.	حذف الملف؟ ستحتفظ الجلسات السابقة بأسعارها.
+Save this session	حفظ هذه الجلسة فقط
+Save and update profile	حفظ وتحديث الملف
+Enter a valid nonnegative number	أدخل رقماً غير سالب
+Enter a profile name	أدخل اسم الملف
+Select AC or DC for this profile	اختر AC أو DC لهذا الملف
+Leave receipt fields blank to use the estimated cost.	اترك حقول الفاتورة فارغة لاستخدام التقدير.
+Known cost: %s	التكلفة المعروفة: %s
+Unable to save charging cost	تعذر حفظ تكلفة الشحن

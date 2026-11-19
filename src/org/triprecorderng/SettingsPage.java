@@ -172,8 +172,16 @@ final class SettingsPage {
                     }
                 });
         String[] appearanceChoices={L.t("Dark"),L.t("Light"),L.t("Auto (system)")};
-        Kit.Row appearance=action(L.t("Appearance"),appearanceChoices[Prefs.appearanceMode(c)],
-                L.t("Change"),false,v->new AlertDialog.Builder(c)
+        boolean lightSupported=Prefs.lightAppearanceSupported(c);
+        Kit.Row appearance=action(L.t("Appearance"),lightSupported?appearanceChoices[Prefs.appearanceMode(c)]:L.t("Dark only for performance themes"),
+                lightSupported?L.t("Change"):L.t("Details"),false,v->{
+                    if(!Prefs.lightAppearanceSupported(c)){
+                        Ui.show(new AlertDialog.Builder(c).setTitle(L.t("Appearance"))
+                                .setMessage(L.t("Dark only for performance themes")+"\n\n"+L.t("Light and Auto remain available with Classic."))
+                                .setPositiveButton(L.t("OK"),null));
+                        return;
+                    }
+                    new AlertDialog.Builder(c)
                         .setTitle(L.t("Appearance"))
                         .setSingleChoiceItems(appearanceChoices,Prefs.appearanceMode(c),(dialog,which)->{
                             if(Prefs.appearanceMode(c)!=which){
@@ -181,7 +189,8 @@ final class SettingsPage {
                                 dialog.dismiss();
                                 host.changeAppearance();
                             }else dialog.dismiss();
-                        }).setNegativeButton(L.t("Cancel"),null).show());
+                        }).setNegativeButton(L.t("Cancel"),null).show();
+                });
         Kit.Row theme = action(L.t("Dashboard theme"),
                 Prefs.themeName(c), L.t("Change"), false, new View.OnClickListener() {
                     @Override public void onClick(View v) {
@@ -193,9 +202,11 @@ final class SettingsPage {
                         for (int i = 0; i < keys.length; i++) if (keys[i].equals(current)) selected = i;
                         new AlertDialog.Builder(c).setTitle(L.t("Dashboard theme"))
                                 .setSingleChoiceItems(choices, selected, (dialog, which) -> {
+                                    boolean wasLight=Prefs.lightAppearance(c);
                                     Prefs.setDashboardTheme(c, keys[which]);
                                     dialog.dismiss();
-                                    host.rebuildSoon();
+                                    if(wasLight!=Prefs.lightAppearance(c))host.changeAppearance();
+                                    else host.rebuildSoon();
                                 })
                                 .setNegativeButton(L.t("Cancel"), null).show();
                     }
@@ -239,6 +250,8 @@ final class SettingsPage {
                         host.showPriceDialog();
                     }
                 });
+        Kit.Row chargingProfiles=action(L.t("Charging cost profiles"),L.t("Separate AC and DC prices"),L.t("Change"),false,
+                v->ChargingCostsPage.manage(c,host::rebuildSoon));
         Kit.Row battery = action(L.t("Nominal battery capacity"), Ui.f(Prefs.nominalBatteryKwh(c), "%.2f") + " kWh", L.t("Set"), false,
                 new View.OnClickListener() {
                     @Override public void onClick(View v) { showBatteryDialog(); }
@@ -273,7 +286,7 @@ final class SettingsPage {
             }
         });
         host.bindUpdateViews(updates.desc, channel.desc);
-        section(into, L.t("General"), language, appearance, theme, refreshMode, menu, updates, prices, battery, range, epa, advanced, channel);
+        section(into, L.t("General"), language, appearance, theme, refreshMode, menu, updates, prices, chargingProfiles, battery, range, epa, advanced, channel);
     }
 
     private void showEpaDialog() {
@@ -432,5 +445,3 @@ final class SettingsPage {
         reconnectRow.setVisible(linkOn);
     }
 }
-
-

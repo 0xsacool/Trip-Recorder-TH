@@ -75,7 +75,6 @@ final class ChargingPage {
         LinearLayout col = k.column();
         List<Charge> charges = host.charges();
         col.addView(header(charges), new LinearLayout.LayoutParams(-1, dp(56)));
-        col.addView(diagnosticsRow(), new LinearLayout.LayoutParams(-1, -2));
         if (charges.isEmpty()) {
             col.addView(empty(), new LinearLayout.LayoutParams(-1, 0, 1f));
             return col;
@@ -87,33 +86,6 @@ final class ChargingPage {
         return col;
     }
 
-    private View diagnosticsRow() {
-        LinearLayout row = k.row();
-        row.setPaddingRelative(dp(12), dp(4), dp(12), dp(6));
-        LinearLayout info = k.column();
-        info.addView(k.t(L.t("Charging diagnostics"), Kit.CAPTION, BLUE_TEXT, Kit.MEDIUM));
-        String sample = ChargeRecorder.diagnostics;
-        if (sample.isEmpty() || System.currentTimeMillis() - ChargeRecorder.diagnosticsWall > 15_000)
-            sample = "--";
-        TextView data = k.t(sample, Kit.CAPTION, Kit.MUTED, Kit.REGULAR);
-        data.setMaxLines(3);
-        info.addView(data);
-        row.addView(info, new LinearLayout.LayoutParams(0, -2, 1));
-        TextView export = k.t(L.t("Export log"), Kit.BODY, BLUE_TEXT, Kit.MEDIUM);
-        export.setPaddingRelative(dp(14), dp(8), dp(14), dp(8));
-        export.setBackground(Ui.round(BLUE_SOFT, 12, c));
-        export.setOnClickListener(v -> {
-            try {
-                java.io.File file = Diag.exportCharging(c);
-                android.widget.Toast.makeText(c, L.f("Saved %s", L.ltr(file.getPath())), android.widget.Toast.LENGTH_LONG).show();
-            } catch (Exception e) {
-                android.widget.Toast.makeText(c, L.f("Export failed: %s", e.getMessage()), android.widget.Toast.LENGTH_LONG).show();
-            }
-        });
-        row.addView(export, gapped());
-        return row;
-    }
-
     private View header(List<Charge> charges) {
         LinearLayout head = k.row();
         String recording = ChargeRecorder.status;
@@ -123,24 +95,30 @@ final class ChargingPage {
             double cost = 0;
             boolean anyKwh = false;
             boolean anyCost = false;
+            boolean estimated=false, missingCost=false;
             for (Charge ch : charges) {
                 double e = ch.energyKwh(kwhPerPct);
                 if (!Double.isNaN(e)) {
                     kwh += e;
                     anyKwh = true;
                 }
-                double v = Cost.charge(ch, kwhPerPct, c);
+                ChargeBilling billing=TripDb.get(c).effectiveBilling(ch);
+                double v = billing.cost(e);
                 if (!Double.isNaN(v)) {
                     cost += v;
                     anyCost = true;
-                }
+                    estimated|=!billing.actual();
+                }else missingCost=true;
             }
             head.addView(stat(Kit.IconView.LIST, BLUE_TEXT, L.f("%d session(s)", charges.size())));
             if (anyKwh) {
                 head.addView(stat(Kit.IconView.BOLT, BLUE_TEXT, L.f("about %s added", Ui.f(kwh, "%.0f") + " " + L.t("kWh"))), gapped());
             }
             if (anyCost) {
-                head.addView(stat(Kit.IconView.COIN, Kit.MUTED, L.f("about %s", Cost.money(c, cost))), gapped());
+                String total=Cost.money(c,cost);
+                if(missingCost)total=L.f("Known cost: %s",total);
+                else if(estimated)total=L.f("about %s",total);
+                head.addView(stat(Kit.IconView.COIN, Kit.MUTED,total), gapped());
             }
         }
         return head;
@@ -353,13 +331,14 @@ final class ChargingPage {
         energy.setSingleLine(true);
         row.addView(energy, new LinearLayout.LayoutParams(dp(W_ENERGY), -2));
 
-        double cost = Cost.charge(ch, kwhPerPct, c);
+        ChargeBilling bill=TripDb.get(c).effectiveBilling(ch);
+        double cost = bill.cost(e);
         TextView costView = k.t("", Kit.TITLE, Kit.TEXT, Kit.BOLD);
-        costView.setText(Double.isNaN(cost) ? "--" : Kit.numUnit(Cost.money(c, cost), unit));
+        costView.setText(Double.isNaN(cost) ? "--" : Kit.numUnit((bill.actual()?"":"~")+Cost.money(c, cost), unit));
         costView.setSingleLine(true);
         row.addView(costView, new LinearLayout.LayoutParams(dp(W_COST), -2));
 
-        TextView type = k.t(ch.typeName().isEmpty() ? "--" : ch.typeName(), Kit.LABEL, Kit.TEXT, Kit.MEDIUM);
+        TextView type = k.t(bill.typeName().isEmpty() ? "--" : bill.typeName(), Kit.LABEL, Kit.TEXT, Kit.MEDIUM);
         type.setSingleLine(true);
         row.addView(type, new LinearLayout.LayoutParams(0, -2, 1f));
         row.addView(new Kit.IconView(c, Kit.IconView.CHEVRON, Kit.MUTED), new LinearLayout.LayoutParams(dp(W_CHEVRON), dp(W_CHEVRON)));

@@ -94,7 +94,8 @@ final class TweaksPage {
         ScrollView sv = new ScrollView(c);
         sv.setVerticalScrollBarEnabled(false);
         LinearLayout left = k.column();
-        left.addView(roamingCard());
+        left.addView(chargingDiagnosticsCard());
+        left.addView(roamingCard(), k.gap(-1, -2, 0, 8));
         left.addView(cloudCard(), k.gap(-1, -2, 0, 8));
         left.addView(avasCard(), k.gap(-1, -2, 0, 8));
         left.addView(modemCard(), k.gap(-1, -2, 0, 8));
@@ -136,6 +137,31 @@ final class TweaksPage {
         });
         b.setLayoutParams(new LinearLayout.LayoutParams(-2, k.d(44)));
         return b;
+    }
+
+    private View chargingDiagnosticsCard() {
+        LinearLayout card=k.card();
+        Kit.Row row=k.buttonRow(L.t("Charging diagnostics"),L.t("Details are in the log file."),L.t("Details"),false);
+        row.onClick(v->showChargingDiagnostics());
+        card.addView(row.view,new LinearLayout.LayoutParams(-1,-2));
+        return card;
+    }
+
+    private void showChargingDiagnostics() {
+        String sample=ChargeRecorder.diagnostics;
+        if(sample.isEmpty()||System.currentTimeMillis()-ChargeRecorder.diagnosticsWall>15_000)sample="--";
+        Ui.show(new android.app.AlertDialog.Builder(c)
+                .setTitle(L.t("Charging diagnostics"))
+                .setMessage(L.ltr(sample))
+                .setNeutralButton(L.t("Export log"),(d,w)->{
+                    try {
+                        java.io.File file=Diag.exportCharging(c);
+                        android.widget.Toast.makeText(c,L.f("Saved %s",L.ltr(file.getPath())),android.widget.Toast.LENGTH_LONG).show();
+                    } catch(Exception e) {
+                        android.widget.Toast.makeText(c,L.f("Export failed: %s",e.getMessage()),android.widget.Toast.LENGTH_LONG).show();
+                    }
+                })
+                .setPositiveButton(L.t("OK"),null));
     }
 
     private View noteLine() {

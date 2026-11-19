@@ -12,7 +12,7 @@ import java.util.List;
 /** Local SQLite storage: one row per trip plus an optional GPS track per trip. */
 final class TripDb extends SQLiteOpenHelper {
     private static final String NAME = "trips.db";
-    private static final int VERSION = 8;
+    private static final int VERSION = 9;
 
     private static TripDb instance;
     private final Context appCtx;
@@ -43,6 +43,8 @@ final class TripDb extends SQLiteOpenHelper {
         db.execSQL("CREATE INDEX points_trip ON points(trip_id, ts)");
         createEvents(db);
         createCharges(db);
+        createBilling(db);
+        seedBilling(db);
     }
 
     private static void createCharges(SQLiteDatabase db) {
@@ -101,6 +103,103 @@ final class TripDb extends SQLiteOpenHelper {
             addTripColumnIfMissing(db, "motor_net_kwh");
             addTripColumnIfMissing(db, "motor_sample_s");
         }
+        if (oldV < 9) {
+            boolean firstBillingUpgrade=!tableExists(db,"charging_profiles");
+            createBilling(db);
+            if(firstBillingUpgrade)seedBilling(db);
+            // Preserve previously displayed estimated costs without inventing a station or charger type.
+            db.execSQL("INSERT OR IGNORE INTO charge_billing(charge_id,profile_id,name,type,rate,edited)"
+                    + " SELECT id,'','',CASE WHEN gun IN (2,3) THEN gun ELSE 0 END,?,0 FROM charges WHERE ended=1",
+                    new Object[]{Cost.elecPrice(appCtx)});
+        }
+    }
+
+    private static boolean tableExists(SQLiteDatabase db,String name) {
+        Cursor c=db.rawQuery("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",new String[]{name});
+        try{return c.moveToFirst();}finally{c.close();}
+    }
+
+    private static void createBilling(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS charging_profiles (id TEXT PRIMARY KEY,name TEXT NOT NULL,type INTEGER NOT NULL,rate REAL NOT NULL,preferred INTEGER NOT NULL DEFAULT 0)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS charge_billing (charge_id TEXT PRIMARY KEY,profile_id TEXT,name TEXT,type INTEGER,rate REAL,billed_kwh REAL,actual_cost REAL,edited INTEGER NOT NULL DEFAULT 0)");
+    }
+
+    private void seedBilling(SQLiteDatabase db) {
+        L.init(appCtx);
+        db.execSQL("INSERT OR IGNORE INTO charging_profiles(id,name,type,rate,preferred) VALUES ('home-ac',?,2,?,1)",
+                new Object[]{L.t("Home AC"),Cost.elecPrice(appCtx)});
+    }
+
+    synchronized List<ChargeBilling.Profile> chargingProfiles() {
+        List<ChargeBilling.Profile> out=new ArrayList<>();
+        Cursor c=getReadableDatabase().rawQuery("SELECT id,name,type,rate,preferred FROM charging_profiles ORDER BY type,preferred DESC,name COLLATE NOCASE",null);
+        try { while(c.moveToNext())out.add(new ChargeBilling.Profile(c.getString(0),c.getString(1),c.getInt(2),c.getDouble(3),c.getInt(4)==1)); }
+        finally { c.close(); }
+        return out;
+    }
+
+    synchronized void saveChargingProfile(ChargeBilling.Profile p) {
+        if(p.name.trim().isEmpty()||!ChargeBilling.valid(p.rate)||(p.type!=2&&p.type!=3))throw new IllegalArgumentException("invalid profile");
+        SQLiteDatabase db=getWritableDatabase();
+        db.beginTransaction();
+        try {
+            if(p.preferred)db.execSQL("UPDATE charging_profiles SET preferred=0 WHERE type=?",new Object[]{p.type});
+            ContentValues v=new ContentValues();
+            v.put("id",p.id);v.put("name",p.name);v.put("type",p.type);v.put("rate",p.rate);v.put("preferred",p.preferred?1:0);
+            if(db.insertWithOnConflict("charging_profiles",null,v,SQLiteDatabase.CONFLICT_REPLACE)<0)
+                throw new IllegalStateException("profile write failed");
+            db.setTransactionSuccessful();
+        } finally {db.endTransaction();}
+    }
+
+    synchronized void deleteChargingProfile(String id) {
+        getWritableDatabase().delete("charging_profiles","id=?",new String[]{id});
+    }
+
+    private static ChargeBilling readBilling(SQLiteDatabase db,String id) {
+        Cursor c=db.rawQuery("SELECT profile_id,name,type,rate,billed_kwh,actual_cost,edited FROM charge_billing WHERE charge_id=?",new String[]{id});
+        try {return c.moveToFirst()?new ChargeBilling(c.getString(0),c.getString(1),c.getInt(2),dbl(c,3),dbl(c,4),dbl(c,5),c.getInt(6)==1):null;}
+        finally {c.close();}
+    }
+
+    synchronized ChargeBilling chargeBilling(String id) {return readBilling(getReadableDatabase(),id);}
+
+    private static ChargeBilling defaultBilling(SQLiteDatabase db,int gun) {
+        if(gun==2||gun==3) {
+            Cursor c=db.rawQuery("SELECT id,name,rate FROM charging_profiles WHERE type=? AND preferred=1 LIMIT 1",new String[]{String.valueOf(gun)});
+            try {if(c.moveToFirst())return new ChargeBilling(c.getString(0),c.getString(1),gun,c.getDouble(2),Double.NaN,Double.NaN,false);}
+            finally {c.close();}
+        }
+        return new ChargeBilling("","",gun,Double.NaN,Double.NaN,Double.NaN,false);
+    }
+
+    synchronized ChargeBilling effectiveBilling(Charge ch) {
+        SQLiteDatabase db=getReadableDatabase();
+        ChargeBilling saved=readBilling(db,ch.id);
+        return saved!=null?saved:defaultBilling(db,ch.gun);
+    }
+
+    private static void putBilling(SQLiteDatabase db,String id,ChargeBilling b,int conflict) {
+        ContentValues v=new ContentValues();
+        v.put("charge_id",id);v.put("profile_id",b.profileId);v.put("name",b.name);v.put("type",b.type);
+        put(v,"rate",b.rate);put(v,"billed_kwh",b.billedKwh);put(v,"actual_cost",b.actualCost);v.put("edited",b.edited?1:0);
+        if(db.insertWithOnConflict("charge_billing",null,v,conflict)<0&&conflict!=SQLiteDatabase.CONFLICT_IGNORE)
+            throw new IllegalStateException("billing write failed");
+    }
+
+    synchronized void saveChargeBilling(String id,ChargeBilling b) {
+        if(!chargeExists(id))throw new IllegalArgumentException("charge no longer exists");
+        putBilling(getWritableDatabase(),id,b,SQLiteDatabase.CONFLICT_REPLACE);
+    }
+
+    synchronized void saveChargeBillingAndProfile(String id,ChargeBilling b,ChargeBilling.Profile profile) {
+        SQLiteDatabase db=getWritableDatabase();
+        db.beginTransaction();
+        try {
+            saveChargeBilling(id,b);
+            if(profile!=null)saveChargingProfile(profile);
+            db.setTransactionSuccessful();
+        } finally {db.endTransaction();}
     }
 
     private static void addTripColumnIfMissing(SQLiteDatabase db, String column) {
@@ -343,8 +442,14 @@ final class TripDb extends SQLiteOpenHelper {
         put(cv, "lat", c.lat);
         put(cv, "lon", c.lon);
         cv.put("partial", c.windowOnly ? 2 : c.partial ? 1 : 0);
-        getWritableDatabase().insertWithOnConflict("charges", null, cv,
-                SQLiteDatabase.CONFLICT_REPLACE);
+        SQLiteDatabase db=getWritableDatabase();
+        db.beginTransaction();
+        try {
+            if(db.insertWithOnConflict("charges", null, cv, SQLiteDatabase.CONFLICT_REPLACE)<0)
+                throw new IllegalStateException("charge write failed");
+            if(c.ended&&readBilling(db,c.id)==null)putBilling(db,c.id,defaultBilling(db,c.gun),SQLiteDatabase.CONFLICT_IGNORE);
+            db.setTransactionSuccessful();
+        } finally {db.endTransaction();}
     }
 
     /** Samples of a session: {ts, soc, power kW}. */
@@ -431,6 +536,10 @@ final class TripDb extends SQLiteOpenHelper {
         ContentValues cv = new ContentValues();
         cv.put("charge_id", toId);
         getWritableDatabase().update("charge_points", cv, "charge_id=?", new String[]{fromId});
+        // If the later piece has explicitly entered billing, preserve it when the earlier piece has none.
+        SQLiteDatabase db=getWritableDatabase();
+        ChargeBilling from=readBilling(db,fromId),to=readBilling(db,toId);
+        if(from!=null&&from.edited&&(to==null||!to.edited))putBilling(db,toId,from,SQLiteDatabase.CONFLICT_REPLACE);
     }
 
     synchronized Charge lastOpenCharge() {
@@ -470,7 +579,7 @@ final class TripDb extends SQLiteOpenHelper {
         SQLiteDatabase db = getWritableDatabase();
         db.delete("charge_points", "charge_id=?", new String[]{chargeId});
         db.delete("charges", "id=?", new String[]{chargeId});
+        db.delete("charge_billing", "charge_id=?", new String[]{chargeId});
         Backup.remove(appCtx, chargeId);
     }
 }
-

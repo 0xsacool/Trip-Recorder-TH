@@ -23,16 +23,18 @@ final class ChargeDetailPage {
     private final Charge ch;
     private final double kwhPerPct;
     private final Kit k;
+    private final Runnable changed;
 
-    static View build(Context c, Charge ch, double kwhPerPercent) {
-        return new ChargeDetailPage(c, ch, kwhPerPercent).create();
+    static View build(Context c, Charge ch, double kwhPerPercent,Runnable changed) {
+        return new ChargeDetailPage(c, ch, kwhPerPercent,changed).create();
     }
 
-    private ChargeDetailPage(Context c, Charge ch, double kwhPerPercent) {
+    private ChargeDetailPage(Context c, Charge ch, double kwhPerPercent,Runnable changed) {
         this.c = c;
         this.ch = ch;
         this.kwhPerPct = kwhPerPercent;
         this.k = new Kit(c, 1f);
+        this.changed=changed;
     }
 
     private int dp(float v) {
@@ -130,8 +132,18 @@ final class ChargeDetailPage {
                 : L.f("%s kW", Ui.f(e / hours, "%.1f")));
         fact(list, L.t("Highest power reported"), Double.isNaN(ch.maxPowerKw) ? L.t("not reported")
                 : L.f("%s kW", Ui.f(ch.maxPowerKw, "%.1f")));
-        fact(list, L.t("Charger"), ch.typeName().isEmpty() ? "--" : ch.typeName());
-        fact(list, L.t("Cost"), Cost.money(c, Cost.charge(ch, kwhPerPct, c)));
+        ChargeBilling bill=TripDb.get(c).effectiveBilling(ch);
+        String type=bill.typeName();
+        fact(list,L.t("Charger"),type.isEmpty()?L.t("Unknown"):type);
+        fact(list,L.t("Charging profile"),bill.name.isEmpty()?L.t("Not assigned"):bill.name);
+        fact(list,L.t("Price per kWh"),ChargeBilling.valid(bill.rate)?Cost.money(c,bill.rate)+"/kWh":"--");
+        if(ChargeBilling.valid(bill.billedKwh))fact(list,L.t("Billed energy (kWh)"),Ui.f(bill.billedKwh,"%.2f")+" kWh");
+        fact(list,bill.actual()?L.t("Actual cost"):L.t("Estimated cost"),Cost.money(c,bill.cost(e)));
+        if(ch.ended){
+            Kit.Row edit=k.buttonRow(L.t("Edit charging cost"),L.t("Edit price, station or receipt"),L.t("Change"),true);
+            edit.onClick(v->ChargingCostsPage.edit(c,ch,changed));
+            list.addView(edit.view,new LinearLayout.LayoutParams(-1,-2));
+        }
         if (ch.partial) {
             TextView note = k.t(ch.windowOnly
                     ? L.t("Partial: charging was inferred from the battery level. The exact start and end "

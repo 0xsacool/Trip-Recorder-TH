@@ -67,8 +67,7 @@ final class Cost {
 
     /** What the energy added by a charging session cost, at the electricity price. */
     static double charge(Charge ch, double kwhPerPercent, Context c) {
-        double e = ch.energyKwh(kwhPerPercent);
-        return Double.isNaN(e) ? Double.NaN : e * elecPrice(c);
+        return TripDb.get(c).effectiveBilling(ch).cost(ch.energyKwh(kwhPerPercent));
     }
 
     static int decimalsFor(String currency) {

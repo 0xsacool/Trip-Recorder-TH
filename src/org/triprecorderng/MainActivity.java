@@ -824,7 +824,10 @@ public class MainActivity extends Activity {
         setChrome(true);
         titleView.setText(L.t("Charging details"));
         content.removeAllViews();
-        content.addView(ChargeDetailPage.build(this, c, kwhPerPct));
+        content.addView(ChargeDetailPage.build(this, c, kwhPerPct,()->{
+            showChargeDetail(c,kwhPerPct);
+            loadTrips(null);
+        }));
         placeButton.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 MapLink.openPlace(MainActivity.this, c.lat, c.lon);
@@ -1729,6 +1732,3 @@ public class MainActivity extends Activity {
         }
     }
 }
-
-
-

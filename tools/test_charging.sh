@@ -17,3 +17,6 @@ mkdir -p "$classes/provider"
 "${compiler[@]}" "${level[@]}" -d "$classes/provider" src/org/triprecorderng/{VehicleProvider,Vehicle}.java \
   tools/charging-test/android/content/Context.java tools/provider-test/{ProviderFakes,VehicleProviderTest}.java
 java -cp "$classes/provider" org.triprecorderng.VehicleProviderTest
+mkdir -p "$classes/billing"
+"${compiler[@]}" "${level[@]}" -d "$classes/billing" src/org/triprecorderng/ChargeBilling.java tools/ChargeBillingTest.java
+java -cp "$classes/billing" org.triprecorderng.ChargeBillingTest
