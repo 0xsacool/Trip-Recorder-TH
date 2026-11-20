@@ -181,6 +181,7 @@ public class MainActivity extends Activity {
         ui.post(ticker);
         ui.postDelayed(linkCheck, 1500);
         ui.postDelayed(autoUpdateCheck, 3000);
+        ui.postDelayed(autoStartReminder, 4500);
     }
 
     @Override protected void onPause() {
@@ -191,7 +192,15 @@ public class MainActivity extends Activity {
         ui.removeCallbacks(ticker);
         ui.removeCallbacks(linkCheck);
         ui.removeCallbacks(autoUpdateCheck);
+        ui.removeCallbacks(autoStartReminder);
     }
+
+    // Once per installed APK, remind the user without opening or changing system settings while driving.
+    private final Runnable autoStartReminder = () -> {
+        if (resumed && hasWindowFocus() && !AutoStartRepair.busy && !AutoStartRepair.moving()
+                && Prefs.takeAutoStartRepairReminder(this))
+            toast(L.t("After updating, use BYD auto-start apps in Settings to restore automatic start."));
+    };
 
     // A passive foreground-only check, never a download, install or automatic dialog.
     private final Runnable autoUpdateCheck = () -> {
@@ -1598,8 +1607,13 @@ public class MainActivity extends Activity {
     }
 
     private void openAutostart() {
+        if (AutoStartRepair.busy) return;
+        if (AutoStartRepair.moving()) {
+            toast(L.t("Park the car before changing auto-start settings."));
+            return;
+        }
         Intent i = new Intent(Intent.ACTION_MAIN);
-        i.setComponent(new ComponentName("com.byd.appstartmanagement",
+        i.setComponent(new ComponentName(AutoStartUi.PACKAGE,
                 "com.byd.appstartmanagement.frame.AppStartManagement"));
         try {
             startActivity(i);
@@ -1609,7 +1623,46 @@ public class MainActivity extends Activity {
             } catch (Throwable t2) {
                 toast(L.t("Could not open settings"));
             }
+            return;
         }
+        if (!Prefs.isMainUser()) {
+            toast(L.t("Use the EV TripLog switch in the BYD menu."));
+            return;
+        }
+        AutoStartRepair.busy = true;
+        final Context app = getApplicationContext();
+        new Thread(() -> {
+            AutoStartRepair.Result result;
+            try { result = AutoStartRepair.run(app); }
+            catch (Throwable x) {
+                Diag.log("auto-start repair failed", x);
+                result = AutoStartRepair.Result.NOT_RECOGNIZED;
+            }
+            Diag.log("auto-start repair: " + result);
+            boolean ok = result == AutoStartRepair.Result.FIXED || result == AutoStartRepair.Result.ALREADY_OFF;
+            if (ok) {
+                Prefs.markAutoStartSwitchOff(app);
+                AutoStartRepair.returnToApp(app);
+            } else if (result != AutoStartRepair.Result.MOVING) Prefs.clearAutoStartSwitchOff(app);
+            AutoStartRepair.busy = false;
+            final String message;
+            switch (result) {
+                case FIXED: case ALREADY_OFF:
+                    message = L.t("EV TripLog switch is off. Restart the head unit to verify auto-start."); break;
+                case ADB_UNAVAILABLE:
+                    message = L.t("ADB is unavailable. Turn EV TripLog off manually in this menu."); break;
+                case MOVING:
+                    message = L.t("Park the car before changing auto-start settings."); break;
+                default:
+                    message = L.t("Could not verify the EV TripLog switch. Turn it off manually in this menu."); break;
+            }
+            ui.post(() -> {
+                if (!isFinishing() && !isDestroyed()) {
+                    toast(message);
+                    if (resumed && "settings".equals(overlay)) refreshSettingsSoon();
+                }
+            });
+        }, "AutoStartRepair").start();
     }
 
     // ---- title-bar glyphs ------------------------------------------------------------------

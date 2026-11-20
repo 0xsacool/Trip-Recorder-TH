@@ -585,3 +585,10 @@ GPS with estimated gaps	GPS และระยะประมาณช่วง�
 Uncorrected distance	ระยะก่อนชดเชย
 GPS coverage	ช่วงเวลาที่มีสัญญาณ GPS
 Vehicle or GPS fallback	ระยะจากรถหรือ GPS สำรอง
+After updating, use BYD auto-start apps in Settings to restore automatic start.	หลังอัปเดต ให้กดตั้งค่าอัตโนมัติในเมนูแอปเริ่มอัตโนมัติของ BYD
+Park the car before changing auto-start settings.	กรุณาจอดรถก่อนเปลี่ยนการตั้งค่าเริ่มอัตโนมัติ
+Use the EV TripLog switch in the BYD menu.	กรุณาปิดสวิตช์ EV TripLog ในเมนู BYD
+EV TripLog switch is off. Restart the head unit to verify auto-start.	ปิดสวิตช์ EV TripLog แล้ว กรุณารีสตาร์ตหน้าจอเพื่อยืนยันการเริ่มอัตโนมัติ
+ADB is unavailable. Turn EV TripLog off manually in this menu.	ไม่สามารถใช้ ADB ได้ กรุณาปิดสวิตช์ EV TripLog เองในเมนูนี้
+Could not verify the EV TripLog switch. Turn it off manually in this menu.	ตรวจสอบสวิตช์ EV TripLog ไม่สำเร็จ กรุณาปิดเองในเมนูนี้
+Auto setup	ตั้งค่าอัตโนมัติ

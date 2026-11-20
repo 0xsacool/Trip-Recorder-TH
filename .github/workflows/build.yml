@@ -41,6 +41,12 @@ jobs:
       - name: Check translations
         run: python3 tools/check_translations.py
 
+      - name: Test BYD auto-start switch recognition
+        run: |
+          mkdir -p "$RUNNER_TEMP/autostart-test"
+          javac -d "$RUNNER_TEMP/autostart-test" src/org/triprecorderng/AutoStartUi.java tools/AutoStartUiTest.java
+          java -cp "$RUNNER_TEMP/autostart-test" org.triprecorderng.AutoStartUiTest
+
       - name: Test distance calibration
         run: |
           mkdir -p "$RUNNER_TEMP/distance-test"

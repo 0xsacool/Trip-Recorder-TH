@@ -214,6 +214,29 @@ final class Prefs {
         }
     }
 
+    static boolean autoStartSwitchVerifiedOff(Context c) {
+        long stamp=installStamp(c);
+        return stamp>0&&sp(c).getLong("auto_start_switch_off_install",-1)==stamp;
+    }
+
+    static void markAutoStartSwitchOff(Context c) {
+        long stamp=installStamp(c);
+        if(stamp>0)sp(c).edit().putLong("auto_start_switch_off_install",stamp).apply();
+    }
+
+    static void clearAutoStartSwitchOff(Context c) {
+        sp(c).edit().remove("auto_start_switch_off_install").apply();
+    }
+
+    static boolean takeAutoStartRepairReminder(Context c) {
+        long stamp=installStamp(c);
+        if(stamp<=0||autoStartSwitchVerifiedOff(c)||autoStartHealth(c)==AUTOSTART_OK)return false;
+        SharedPreferences p=sp(c);
+        if(p.getLong("auto_start_repair_reminder_install",-1)==stamp)return false;
+        p.edit().putLong("auto_start_repair_reminder_install",stamp).apply();
+        return true;
+    }
+
     static final int AUTOSTART_OK = 0;
     static final int AUTOSTART_UNKNOWN = 1;
     static final int AUTOSTART_BLOCKED = 2;
