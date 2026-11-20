@@ -367,7 +367,98 @@ final class SettingsPage {
                         host.openAutostart();
                     }
                 });
-        section(into, L.t("Trip recording"), serviceRow, route, sourceRow, location, autostart);
+        Kit.Row distance = action(L.t("Distance calibration"), distanceSummary(), L.t("Set"), false, v -> showDistanceMode());
+        section(into, L.t("Trip recording"), serviceRow, distance, route, sourceRow, location, autostart);
+    }
+
+    private String distanceSummary() {
+        int mode = Prefs.distanceMode(c);
+        if (mode == DistanceCalibration.GPS) return L.t("GPS distance");
+        if (mode == DistanceCalibration.CALIBRATED)
+            return L.t("Calibrated distance") + " (" + Ui.f((Prefs.distanceFactor(c) - 1) * 100, "%+.2f") + "%)";
+        return L.t("Vehicle distance");
+    }
+
+    private void showDistanceMode() {
+        String[] choices = {L.t("Vehicle distance"), L.t("GPS distance"), L.t("Calibrate by tire size"),
+                L.t("Calibrate by measured distance")};
+        Ui.show(new AlertDialog.Builder(c).setTitle(L.t("Distance calibration"))
+                .setItems(choices, (d, which) -> {
+                    if (which == 2 || which == 3) showCalibrationInputs(which == 2);
+                    else {
+                        Prefs.setDistanceMode(c, which == 0 ? DistanceCalibration.VEHICLE : DistanceCalibration.GPS);
+                        if (which == 1 && !host.locationAllowed()) host.requestLocation();
+                        host.toast(L.t("Distance setting applies to the next trip"));
+                        host.rebuildSoon();
+                    }
+                }).setNegativeButton(L.t("Cancel"), null));
+    }
+
+    private void showCalibrationInputs(boolean tires) {
+        LinearLayout inputs = new LinearLayout(c);
+        inputs.setOrientation(LinearLayout.VERTICAL);
+        int pad = (int)(16 * c.getResources().getDisplayMetrics().density);
+        inputs.setPadding(pad, 0, pad, 0);
+        TextView hint = new TextView(c);
+        hint.setText(L.t(tires
+                ? "Enter full tire sizes including rim (example 215/55 R18). Check the original size for your car."
+                : "Enter a reliable measured distance (GPS or surveyed route) and the distance indicated by the car on the same trip. Prefer 20 km or more."));
+        inputs.addView(hint);
+        android.widget.EditText first = new android.widget.EditText(c);
+        android.widget.EditText second = new android.widget.EditText(c);
+        first.setSingleLine(true);
+        second.setSingleLine(true);
+        first.setHint(L.t(tires ? "Original tire size" : "Measured distance (km)"));
+        second.setHint(L.t(tires ? "Current tire size" : "Vehicle distance (km)"));
+        if (tires) {
+            first.setText(Prefs.originalTire(c));
+            second.setText(Prefs.currentTire(c));
+        } else {
+            first.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
+            second.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        }
+        TextView firstLabel = new TextView(c), secondLabel = new TextView(c);
+        firstLabel.setText(first.getHint());
+        secondLabel.setText(second.getHint());
+        inputs.addView(firstLabel); inputs.addView(first);
+        inputs.addView(secondLabel); inputs.addView(second);
+        TextView preview = new TextView(c);
+        inputs.addView(preview);
+        android.text.TextWatcher watcher = new android.text.TextWatcher() {
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                double factor = calibrationFactor(tires, first.getText().toString(), second.getText().toString());
+                preview.setText(DistanceCalibration.validFactor(factor)
+                        ? L.t("Distance correction") + ": " + Ui.f((factor - 1) * 100, "%+.2f") + "%"
+                        : L.t("Invalid input or correction exceeds 20%"));
+            }
+            public void afterTextChanged(android.text.Editable s) {}
+        };
+        first.addTextChangedListener(watcher);
+        second.addTextChangedListener(watcher);
+        watcher.onTextChanged("", 0, 0, 0);
+        AlertDialog dialog = new AlertDialog.Builder(c).setTitle(L.t(tires ? "Calibrate by tire size" : "Calibrate by measured distance"))
+                .setView(inputs).setNegativeButton(L.t("Cancel"), null).setPositiveButton(L.t("Set"), null).create();
+        dialog.show();
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String a = first.getText().toString().trim(), b = second.getText().toString().trim();
+            double factor = calibrationFactor(tires, a, b);
+            if (!DistanceCalibration.validFactor(factor)) {
+                host.toast(L.t("Invalid input or correction exceeds 20%"));
+                return;
+            }
+            Prefs.setDistanceCalibration(c, factor, tires ? a : null, tires ? b : null);
+            dialog.dismiss();
+            host.toast(L.t("Distance setting applies to the next trip"));
+            host.rebuildSoon();
+        });
+    }
+
+    private static double calibrationFactor(boolean tires, String a, String b) {
+        if (tires) return DistanceCalibration.tires(a, b);
+        try { return DistanceCalibration.reference(Double.parseDouble(a.trim().replace(',', '.')),
+                Double.parseDouble(b.trim().replace(',', '.'))); }
+        catch (NumberFormatException e) { return Double.NaN; }
     }
 
     private void linkSection(LinearLayout into) {

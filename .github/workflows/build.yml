@@ -41,6 +41,12 @@ jobs:
       - name: Check translations
         run: python3 tools/check_translations.py
 
+      - name: Test distance calibration
+        run: |
+          mkdir -p "$RUNNER_TEMP/distance-test"
+          javac -d "$RUNNER_TEMP/distance-test" src/org/triprecorderng/{Trip,JourneyTracker,DistanceCalibration}.java tools/DistanceCalibrationTest.java
+          java -cp "$RUNNER_TEMP/distance-test" org.triprecorderng.DistanceCalibrationTest
+
       - name: Test trip energy fallback
         run: |
           mkdir -p "$RUNNER_TEMP/energy-test"
@@ -144,7 +150,13 @@ jobs:
             push:main|workflow_dispatch:main) CHANNEL=dev ;;
             *) CHANNEL="build-${GITHUB_REF_NAME//\//-}" ;;
           esac
-          export VERSION_NAME="${CHANNEL}-${GITHUB_RUN_NUMBER}"
+          if [ "$CHANNEL" = dev ]; then
+            git fetch --tags origin
+            LAST_DEV=$(git tag --list 'dev-*' | sed -n 's/^dev-\([0-9][0-9]*\)$/\1/p' | sort -n | tail -1)
+            export VERSION_NAME="dev-$(( ${LAST_DEV:-0} + 1 ))"
+          else
+            export VERSION_NAME="${CHANNEL}-${GITHUB_RUN_NUMBER}"
+          fi
           echo "version=$VERSION_NAME" >> "$GITHUB_OUTPUT"
           ./build.sh
           java -cp "$RUNNER_TEMP/signer-test" org.triprecorderng.ApkSignersTest TripRecorderNG.apk

@@ -22,6 +22,16 @@ final class Trip {
     String mode = "";      // "ignition" or "motion"
 
     double distanceKm;     // the distance shown: the car's journey counter when it is available, else speedKm
+    int distanceMode;     // 0 vehicle, 1 GPS, 2 calibrated; fixed when the trip starts
+    double distanceFactor = 1.0;
+    double rawDistanceKm = Double.NaN;
+    double gpsKm;
+    double gpsCoveredSec;
+    double gpsMissingSec;
+    double gpsGapKm;
+    double gpsFallbackKm; // part of the speed integral originating from GPS rather than wheels
+    double journeyGpsSeedKm;
+    double journeyGpsSeedRawKm;
     double speedKm;        // integrated from the speedometer value (reads a few percent above the real distance)
     double journeyAcc = Double.NaN;   // km counted from the car's own journey (trip) counter, NaN if never read
     double journeyLast = Double.NaN;  // last reading of that counter (kept so a restart can carry on)

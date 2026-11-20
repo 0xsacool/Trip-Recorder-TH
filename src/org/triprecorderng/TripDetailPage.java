@@ -166,6 +166,20 @@ final class TripDetailPage {
         if (!Prefs.ATTO3_EDITION && !Double.isNaN(t.fuelUsed())) addFact(more, L.t("Idle time"), Ui.duration((long) t.idleSec));
         addFact(more, L.t("Hard accel / braking"), t.hardAccel + " / " + t.hardBrake);
         addFact(more, L.t("Odometer change"), L.f("%s km", Ui.f(t.odometerDeltaKm(), "%.1f")));
+        if (!Double.isNaN(t.rawDistanceKm)) {
+            String source = L.t(t.gpsFallbackKm > 0 && Double.isNaN(t.journeyAcc) ? "Vehicle or GPS fallback" : "Vehicle distance");
+            if (t.distanceMode == DistanceCalibration.CALIBRATED)
+                source = L.t("Calibrated distance") + " (" + Ui.f((t.distanceFactor - 1) * 100, "%+.2f") + "%)";
+            else if (t.distanceMode == DistanceCalibration.GPS)
+                source = L.t(t.gpsCoveredSec == 0 ? "GPS unavailable: vehicle estimate"
+                        : t.gpsMissingSec > 0 ? "GPS with estimated gaps" : "GPS distance");
+            addFact(more, L.t("Distance source"), source);
+            addFact(more, L.t("Uncorrected distance"), L.f("%s km", Ui.f(t.rawDistanceKm, "%.2f")));
+            if (t.gpsCoveredSec > 0)
+                addFact(more, L.t("GPS distance"), L.f("%s km", Ui.f(t.gpsKm, "%.2f")));
+            if (t.distanceMode == DistanceCalibration.GPS && t.gpsMissingSec > 0)
+                addFact(more, L.t("GPS coverage"), Ui.f(100 * t.gpsCoveredSec / (t.gpsCoveredSec + t.gpsMissingSec), "%.0f") + "%");
+        }
         addFact(more, L.t("Distance measured by"),
                 !Double.isNaN(t.journeyAcc) && t.journeyAcc >= JourneyTracker.TRUST_KM
                         ? L.t("car trip counter") : L.t("speed"));

@@ -400,7 +400,11 @@ public class RecorderService extends Service {
         if (ignitionOn) lastOnMs = now;
         if (moving) lastMoveMs = now;
 
+        Location distanceFix = gps.fresh(3000);
+        double gpsSpeed = distanceFix != null && distanceFix.hasSpeed() && (!distanceFix.hasAccuracy() || distanceFix.getAccuracy() <= 50) ? distanceFix.getSpeed() * 3.6 : Double.NaN;
+        DistanceCalibration.sampleGps(trip, gpsSpeed, speed, dt);
         if (!Double.isNaN(speed)) {
+            if (v instanceof GpsVehicle) trip.gpsFallbackKm += speed * dt / 3600.0;
             integrate(speed, dt, now);
             detectEvents(speed, now);
         }
@@ -463,6 +467,8 @@ public class RecorderService extends Service {
     private void startTrip(Vehicle v, String mode, long now, long wall) {
         motorEnergy.reset();
         trip = new Trip();
+        trip.distanceMode = Prefs.distanceMode(this);
+        trip.distanceFactor = trip.distanceMode == DistanceCalibration.CALIBRATED ? Prefs.distanceFactor(this) : 1.0;
         trip.id = UUID.randomUUID().toString();
         trip.startMs = wall;
         trip.lastUpdateMs = wall;
@@ -522,8 +528,14 @@ public class RecorderService extends Service {
 
     /** Adds what the car's own trip counter says; this, not the speedometer integral, is the trip distance. */
     private void updateJourney(Vehicle v, long wall) {
-        JourneyTracker.update(trip, v.journeyKm(), Prefs.speedScale(this), wall);
-        trip.distanceKm = JourneyTracker.distance(trip);
+        double reading = v.journeyKm();
+        double scale = Prefs.speedScale(this);
+        if (Double.isNaN(trip.journeyAcc) && !Double.isNaN(reading) && reading >= 0 && reading <= 999_999) {
+            trip.journeyGpsSeedKm = trip.gpsFallbackKm;
+            trip.journeyGpsSeedRawKm = trip.gpsFallbackKm * scale;
+        }
+        JourneyTracker.update(trip, reading, scale, wall);
+        DistanceCalibration.update(trip);
     }
 
     private void refreshEnd(Vehicle v) {
@@ -565,7 +577,7 @@ public class RecorderService extends Service {
 
     private void integrate(double speed, double dt, long now) {
         trip.speedKm += speed * dt / 3600.0;
-        trip.distanceKm = JourneyTracker.distance(trip);
+        DistanceCalibration.update(trip);
         if (speed >= MOVING_KMH) trip.movingSec += dt; else trip.idleSec += dt;
         if (speed > trip.maxSpeedKmh) trip.maxSpeedKmh = speed;
         speedHist.addLast(new double[]{now, speed});
@@ -684,7 +696,7 @@ public class RecorderService extends Service {
         }
         saveTrip(true);
         double observed = JourneyTracker.observedScale(trip);
-        if (!Double.isNaN(observed)) {
+        if (!Double.isNaN(observed) && trip.gpsFallbackKm < 0.01) {
             double next = 0.7 * Prefs.speedScale(this) + 0.3 * observed;
             Prefs.setSpeedScale(this, next);
             Diag.log(String.format(java.util.Locale.US, "speed scale: trip %.3f -> stored %.3f", observed, next));
@@ -694,7 +706,7 @@ public class RecorderService extends Service {
                 trip.distanceKm, trip.speedKm,
                 Double.isNaN(trip.journeyAcc) ? "n/a" : String.format(java.util.Locale.US, "%.1f", trip.journeyAcc),
                 trip.durationSec(), trip.maxSpeedKmh));
-        if (trip.distanceKm < MIN_KEEP_KM) {
+        if (Math.max(trip.distanceKm, Double.isNaN(trip.rawDistanceKm) ? 0 : trip.rawDistanceKm) < MIN_KEEP_KM) {
             db.delete(trip.id);
             Diag.log("trip discarded (too short)");
         } else if (Prefs.autoBackup(this)) {
@@ -726,7 +738,7 @@ public class RecorderService extends Service {
             } catch (Throwable x) {
                 split = new DriveSplit();
             }
-            if (Double.isNaN(trip.speedKm) || trip.speedKm == 0) trip.speedKm = trip.distanceKm;
+            if (Double.isNaN(trip.speedKm) || trip.speedKm == 0) trip.speedKm = Double.isNaN(trip.rawDistanceKm) ? trip.distanceKm : trip.rawDistanceKm;
             long now = SystemClock.elapsedRealtime();
             lastOnMs = now;
             lastMoveMs = now;
@@ -737,7 +749,7 @@ public class RecorderService extends Service {
         } else {
             open.ended = true;
             open.endMs = open.lastUpdateMs;
-            if (open.distanceKm < MIN_KEEP_KM) db.delete(open.id); else db.upsert(open);
+            if (Math.max(open.distanceKm, Double.isNaN(open.rawDistanceKm) ? 0 : open.rawDistanceKm) < MIN_KEEP_KM) db.delete(open.id); else db.upsert(open);
             Diag.log("closed stale trip " + open.id);
         }
     }

@@ -564,3 +564,24 @@ Select AC or DC for this profile	เลือก AC หรือ DC สำหร
 Leave receipt fields blank to use the estimated cost.	เว้นช่องใบเสร็จว่างเพื่อใช้ค่าประมาณ
 Known cost: %s	ค่าใช้จ่ายที่ทราบ: %s
 Unable to save charging cost	ไม่สามารถบันทึกค่าใช้จ่ายการชาร์จ
+Distance calibration	ปรับเทียบระยะทาง
+GPS distance	ระยะทาง GPS
+Calibrated distance	ระยะทางที่ปรับเทียบแล้ว
+Vehicle distance	ระยะทางจากรถ
+Calibrate by tire size	ปรับเทียบตามขนาดยาง
+Calibrate by measured distance	ปรับเทียบด้วยระยะจริง
+Distance setting applies to the next trip	การตั้งค่าระยะทางมีผลตั้งแต่ทริปถัดไป
+Enter full tire sizes including rim (example 215/55 R18). Check the original size for your car.	กรอกขนาดยางรวมขนาดล้อ (เช่น 215/55 R18) ตรวจสอบขนาดเดิมของรถให้ถูกต้อง
+Enter a reliable measured distance (GPS or surveyed route) and the distance indicated by the car on the same trip. Prefer 20 km or more.	กรอกระยะจริงที่วัดได้ (GPS หรือระยะอ้างอิง) และระยะที่รถแสดงในทริปเดียวกัน แนะนำ 20 กม. ขึ้นไป
+Original tire size	ขนาดยางเดิม
+Current tire size	ขนาดยางปัจจุบัน
+Measured distance (km)	ระยะที่วัดจริง (กม.)
+Vehicle distance (km)	ระยะที่รถแสดง (กม.)
+Distance correction	ค่าชดเชยระยะทาง
+Invalid input or correction exceeds 20%	ข้อมูลไม่ถูกต้องหรือค่าชดเชยเกิน 20%
+Distance source	แหล่งข้อมูลระยะทาง
+GPS unavailable: vehicle estimate	ไม่มี GPS: ใช้ระยะจากรถ
+GPS with estimated gaps	GPS และระยะประมาณช่วงขาดสัญญาณ
+Uncorrected distance	ระยะก่อนชดเชย
+GPS coverage	ช่วงเวลาที่มีสัญญาณ GPS
+Vehicle or GPS fallback	ระยะจากรถหรือ GPS สำรอง

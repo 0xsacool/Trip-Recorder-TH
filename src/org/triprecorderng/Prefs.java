@@ -80,6 +80,24 @@ final class Prefs {
         return c.getApplicationContext().getSharedPreferences("triprecng", Context.MODE_PRIVATE);
     }
 
+    static int distanceMode(Context c) { return DistanceCalibration.mode(sp(c).getInt("distance_mode", 0)); }
+    static double distanceFactor(Context c) {
+        double factor = sp(c).getFloat("distance_factor", 1f);
+        return DistanceCalibration.validFactor(factor) ? factor : 1;
+    }
+    static String originalTire(Context c) { return sp(c).getString("original_tire", "215/55 R18"); }
+    static String currentTire(Context c) { return sp(c).getString("current_tire", "215/55 R18"); }
+    static void setDistanceMode(Context c, int mode) {
+        sp(c).edit().putInt("distance_mode", DistanceCalibration.mode(mode)).apply();
+    }
+    static void setDistanceCalibration(Context c, double factor, String original, String current) {
+        if (!DistanceCalibration.validFactor(factor)) return;
+        SharedPreferences.Editor e = sp(c).edit().putInt("distance_mode", DistanceCalibration.CALIBRATED)
+                .putFloat("distance_factor", (float)factor);
+        if (original != null && current != null) e.putString("original_tire", original).putString("current_tire", current);
+        e.apply();
+    }
+
     /** Presentation only; preserve the selection made on Dev-5/6. */
     static final String THEME_CLASSIC = "classic";
     static final String THEME_GTR = "gtr";

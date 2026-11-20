@@ -12,7 +12,7 @@ import java.util.List;
 /** Local SQLite storage: one row per trip plus an optional GPS track per trip. */
 final class TripDb extends SQLiteOpenHelper {
     private static final String NAME = "trips.db";
-    private static final int VERSION = 9;
+    private static final int VERSION = 10;
 
     private static TripDb instance;
     private final Context appCtx;
@@ -36,7 +36,8 @@ final class TripDb extends SQLiteOpenHelper {
                 + "start_lat REAL, start_lon REAL, end_lat REAL, end_lon REAL,"
                 + "fuel_start REAL, fuel_end REAL, ev_start REAL, ev_end REAL, hev_start REAL, hev_end REAL,"
                 + "speed_km REAL, journey_acc REAL, journey_last REAL, drive_kwh REAL, drive_s REAL,"
-                + "motor_net_kwh REAL, motor_sample_s REAL)");
+                + "motor_net_kwh REAL, motor_sample_s REAL,"
+                + "distance_mode REAL, distance_factor REAL, raw_distance_km REAL, gps_km REAL, gps_covered_s REAL, gps_missing_s REAL, gps_gap_km REAL, gps_fallback_km REAL, journey_gps_seed_km REAL, journey_gps_seed_raw_km REAL)");
         db.execSQL("CREATE TABLE points ("
                 + "trip_id TEXT, ts INTEGER, lat REAL, lon REAL, alt REAL, gps_speed REAL,"
                 + "car_speed REAL, bearing REAL, soc REAL, elec REAL)");
@@ -111,6 +112,9 @@ final class TripDb extends SQLiteOpenHelper {
             db.execSQL("INSERT OR IGNORE INTO charge_billing(charge_id,profile_id,name,type,rate,edited)"
                     + " SELECT id,'','',CASE WHEN gun IN (2,3) THEN gun ELSE 0 END,?,0 FROM charges WHERE ended=1",
                     new Object[]{Cost.elecPrice(appCtx)});
+        }
+        if (oldV < 10) {
+            for (String col : new String[]{"distance_mode", "distance_factor", "raw_distance_km", "gps_km", "gps_covered_s", "gps_missing_s", "gps_gap_km", "gps_fallback_km", "journey_gps_seed_km", "journey_gps_seed_raw_km"}) addTripColumnIfMissing(db, col);
         }
     }
 
@@ -229,6 +233,16 @@ final class TripDb extends SQLiteOpenHelper {
         cv.put("ended", t.ended ? 1 : 0);
         cv.put("mode", t.mode);
         cv.put("distance_km", t.distanceKm);
+        put(cv, "distance_mode", t.distanceMode);
+        put(cv, "distance_factor", t.distanceFactor);
+        put(cv, "raw_distance_km", t.rawDistanceKm);
+        put(cv, "gps_km", t.gpsKm);
+        put(cv, "gps_covered_s", t.gpsCoveredSec);
+        put(cv, "gps_missing_s", t.gpsMissingSec);
+        put(cv, "gps_gap_km", t.gpsGapKm);
+        put(cv, "gps_fallback_km", t.gpsFallbackKm);
+        put(cv, "journey_gps_seed_km", t.journeyGpsSeedKm);
+        put(cv, "journey_gps_seed_raw_km", t.journeyGpsSeedRawKm);
         put(cv, "odo_start", t.odoStartKm);
         put(cv, "odo_end", t.odoEndKm);
         cv.put("moving_s", t.movingSec);
@@ -323,6 +337,16 @@ final class TripDb extends SQLiteOpenHelper {
         t.driveSec = dbl(c, 32);
         t.motorNetKwh = dbl(c, 33);
         t.motorSampleSec = c.isNull(34) ? 0 : c.getDouble(34);
+        t.distanceMode = DistanceCalibration.mode(c.getInt(35));
+        t.distanceFactor = c.isNull(36) ? 1 : c.getDouble(36);
+        t.rawDistanceKm = dbl(c, 37);
+        t.gpsKm = c.isNull(38) ? 0 : c.getDouble(38);
+        t.gpsCoveredSec = c.isNull(39) ? 0 : c.getDouble(39);
+        t.gpsMissingSec = c.isNull(40) ? 0 : c.getDouble(40);
+        t.gpsGapKm = c.isNull(41) ? 0 : c.getDouble(41);
+        t.gpsFallbackKm = c.isNull(42) ? 0 : c.getDouble(42);
+        t.journeyGpsSeedKm = c.isNull(43) ? 0 : c.getDouble(43);
+        t.journeyGpsSeedRawKm = c.isNull(44) ? 0 : c.getDouble(44);
         return t;
     }
 
@@ -330,7 +354,8 @@ final class TripDb extends SQLiteOpenHelper {
             + "odo_start,odo_end,moving_s,idle_s,max_speed,soc_start,soc_end,elec_start,elec_end,"
             + "hard_accel,hard_brake,start_lat,start_lon,end_lat,end_lon,fuel_start,fuel_end,"
             + "ev_start,ev_end,hev_start,hev_end,speed_km,journey_acc,journey_last,drive_kwh,drive_s,"
-            + "motor_net_kwh,motor_sample_s";
+            + "motor_net_kwh,motor_sample_s,"
+            + "distance_mode,distance_factor,raw_distance_km,gps_km,gps_covered_s,gps_missing_s,gps_gap_km,gps_fallback_km,journey_gps_seed_km,journey_gps_seed_raw_km";
 
     synchronized List<Trip> all() {
         List<Trip> out = new ArrayList<>();
