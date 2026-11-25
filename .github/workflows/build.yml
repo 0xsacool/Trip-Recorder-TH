@@ -41,6 +41,12 @@ jobs:
       - name: Check translations
         run: python3 tools/check_translations.py
 
+      - name: Test semantic and legacy version migration
+        run: |
+          mkdir -p "$RUNNER_TEMP/version-test"
+          javac -d "$RUNNER_TEMP/version-test" src/org/triprecorderng/VersionScheme.java tools/VersionSchemeTest.java
+          java -cp "$RUNNER_TEMP/version-test" org.triprecorderng.VersionSchemeTest
+
       - name: Test BYD auto-start switch recognition
         run: |
           mkdir -p "$RUNNER_TEMP/autostart-test"
