@@ -41,6 +41,12 @@ jobs:
       - name: Check translations
         run: python3 tools/check_translations.py
 
+      - name: Verify release version declarations
+        run: |
+          source ./release-version.env
+          [[ "$STABLE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
+          [[ "$BETA_SERIES" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
+
       - name: Test semantic and legacy version migration
         run: |
           mkdir -p "$RUNNER_TEMP/version-test"
@@ -156,18 +162,34 @@ jobs:
             unset KS_PASS
             echo "::warning::No signing key available: building with a throwaway key (this APK cannot update an app signed with your own key)"
           fi
-          # the build's name: dev-N from main, stable-N from stable, anything else is not a release build
+          # Stable and Beta have independent SemVer series. Old dev-N / stable-N tags stay
+          # published so clients with the legacy updater can reach the bridge releases.
           case "$EVENT:$GITHUB_REF_NAME" in
             push:stable|workflow_dispatch:stable) CHANNEL=stable ;;
             push:main|workflow_dispatch:main) CHANNEL=dev ;;
-            *) CHANNEL="build-${GITHUB_REF_NAME//\//-}" ;;
+            *) CHANNEL=local ;;
           esac
-          if [ "$CHANNEL" = dev ]; then
+          if [ "$CHANNEL" = dev ] || [ "$CHANNEL" = stable ]; then
+            source ./release-version.env
             git fetch --tags origin
-            LAST_RELEASE=$(git tag --list 'dev-*' 'stable-*' | sed -n 's/^\(dev\|stable\)-\([0-9][0-9]*\)$/\2/p' | sort -n | tail -1)
-            export VERSION_NAME="dev-$(( ${LAST_RELEASE:-0} + 1 ))"
+            if [ "$CHANNEL" = dev ]; then
+              LAST_BETA=$(git tag --list "${BETA_SERIES}-dev.*" |
+                sed -n 's/.*-dev\.\([0-9][0-9]*\)$/\1/p' | sort -n | tail -1)
+              # dev-35 is the signed transition APK, equivalent to 1.1.0-dev.1.
+              if [ -z "$LAST_BETA" ] && [ "$BETA_SERIES" = 1.1.0 ] &&
+                 git rev-parse -q --verify refs/tags/dev-35 >/dev/null; then
+                LAST_BETA=1
+              fi
+              export VERSION_NAME="${BETA_SERIES}-dev.$(( ${LAST_BETA:-0} + 1 ))"
+            else
+              export VERSION_NAME="$STABLE_VERSION"
+              if git rev-parse -q --verify "refs/tags/$VERSION_NAME" >/dev/null; then
+                echo "::error::Stable $VERSION_NAME is already published. Bump STABLE_VERSION deliberately."
+                exit 1
+              fi
+            fi
           else
-            export VERSION_NAME="${CHANNEL}-${GITHUB_RUN_NUMBER}"
+            export VERSION_NAME="build-${GITHUB_RUN_NUMBER}"
           fi
           echo "version=$VERSION_NAME" >> "$GITHUB_OUTPUT"
           ./build.sh
@@ -215,8 +237,8 @@ jobs:
           VERSION: ${{ needs.build.outputs.version }}
         run: |
           case "$VERSION" in
-            stable-*) KIND=(--latest); SINCE=(--match 'stable-*') ;;
-            *) KIND=(--prerelease); SINCE=(--match 'dev-*' --match 'stable-*') ;;
+            *-dev.*) KIND=(--prerelease); SINCE=(--match 'dev-*' --match '*-dev.*' --match 'stable-*') ;;
+            *) KIND=(--latest); SINCE=(--match 'stable-*' --match '[0-9]*.[0-9]*.[0-9]*') ;;
           esac
           # the notes list the commits since the previous build (a stable release: since the previous stable one)
           PREV=$(git describe --tags --abbrev=0 "${SINCE[@]}" HEAD 2>/dev/null || true)
@@ -234,7 +256,7 @@ jobs:
             echo "After installing, turn EV TripLog OFF in the car's Disable background Apps list and restart the head unit once (BYD resets that switch on every install). Unofficial, use at your own risk: see the README."
           } > notes.md
           gh release create "$VERSION" dist/*.apk --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-            --title "EV TripLog v1.0.0 (${VERSION})" "${KIND[@]}" --generate-notes \
+            --title "EV TripLog ${VERSION}" "${KIND[@]}" --generate-notes \
             --notes-file notes.md
 
 
