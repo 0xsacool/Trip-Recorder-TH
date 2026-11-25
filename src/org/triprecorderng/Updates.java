@@ -31,10 +31,9 @@ import java.util.TimeZone;
  * Update check and user-confirmed install from the GitHub releases of this project.
  * The foreground may check release metadata automatically; downloading and installing require confirmation.
  *
- * <p>Every release is a build named "&lt;channel&gt;-&lt;number&gt;" ("dev-9", "stable-8"); CI puts the same name
- * in the APK's version name and in the release tag, and the number counts up across both channels. The
- * version code is always 1 on purpose: Android refuses to install a lower version code over a higher one,
- * and switching from dev back to stable has to work.
+ * <p>Release tags and APK versionNames use semantic versions (for example 1.1.0-dev.2 or
+ * 1.0.1); the legacy dev-N / stable-N tags remain readable for upgrading older installations.
+ * The Android versionCode remains 1 to permit user-confirmed Beta-to-Stable downgrades.
  *
  * <p>An install replaces this app through the car's loopback debugging (needs the Vehicle data link), after
  * checking the file's checksum and that it is signed with the same key as the installed app.
@@ -53,35 +52,34 @@ final class Updates {
 
     // ---- build names -------------------------------------------------------------------------
 
-    /** A build identity: channel and build number, as in "dev-9". */
+    /** A build identity. raw name must match both the release tag and the APK versionName. */
     static final class Build {
+        final VersionScheme.Version version;
         final String channel;
-        final int number;
 
-        Build(String channel, int number) {
-            this.channel = channel;
-            this.number = number;
+        Build(VersionScheme.Version version) {
+            this.version = version;
+            this.channel = version.channel;
         }
 
         String name() {
-            return channel + "-" + number;
+            return version.raw;
+        }
+
+        String display() {
+            return version.display();
         }
     }
 
-    /** "dev-9" or "stable-8" as a build; null for anything else (a local build is named "0.1"). */
+    /** Accepts semantic releases and earlier dev-N / stable-N builds for seamless upgrades. */
     static Build parse(String name) {
-        if (name == null) return null;
-        int dash = name.lastIndexOf('-');
-        if (dash <= 0 || dash == name.length() - 1) return null;
-        String channel = name.substring(0, dash);
-        if (!STABLE.equals(channel) && !DEV.equals(channel)) return null;
-        String digits = name.substring(dash + 1);
-        if (digits.length() > 9) return null;
-        for (int i = 0; i < digits.length(); i++) {
-            if (digits.charAt(i) < '0' || digits.charAt(i) > '9') return null;
-        }
-        int n = Integer.parseInt(digits);
-        return n > 0 ? new Build(channel, n) : null;
+        VersionScheme.Version parsed = VersionScheme.parse(name);
+        return parsed == null ? null : new Build(parsed);
+    }
+
+    static String installedDisplayName(Context ctx) {
+        Build build = installed(ctx);
+        return build == null ? installedName(ctx) : build.display();
     }
 
     /** The version name of the running app ("dev-9", or "0.1" for a build made on a computer). */
@@ -166,7 +164,7 @@ final class Updates {
         Release best = null;
         for (Release r : all) {
             if (!r.build.channel.equals(channel)) continue;
-            if (best == null || r.build.number > best.build.number) best = r;
+            if (best == null || VersionScheme.compare(r.build.version, best.build.version) > 0) best = r;
         }
         return best;
     }
@@ -174,7 +172,7 @@ final class Updates {
     /** Positive when the release is newer than the installed build, 0 when it is the same, negative when older. */
     static int compare(Build installed, Release release) {
         if (installed == null) return 1; // a build made on a computer: any release is an update
-        return Integer.compare(release.build.number, installed.number);
+        return VersionScheme.compare(release.build.version, installed.version);
     }
 
     // ---- what changed --------------------------------------------------------------------------
@@ -222,15 +220,17 @@ final class Updates {
      */
     static String changesSince(List<Release> all, String channel, Build installed, Release latest) {
         if (latest == null) return "";
-        int from = installed == null ? latest.build.number - 1 : installed.number;
         List<Release> list = new ArrayList<>();
         for (Release r : all) {
             if (!r.build.channel.equals(channel)) continue;
-            if (r.build.number > from && r.build.number <= latest.build.number) list.add(r);
+            boolean after = installed == null
+                    ? r == latest
+                    : VersionScheme.compare(r.build.version, installed.version) > 0;
+            if (after && VersionScheme.compare(r.build.version, latest.build.version) <= 0) list.add(r);
         }
         java.util.Collections.sort(list, new java.util.Comparator<Release>() {
             @Override public int compare(Release a, Release b) {
-                return Integer.compare(b.build.number, a.build.number);
+                return VersionScheme.compare(b.build.version, a.build.version);
             }
         });
         List<String> parts = new ArrayList<>();
@@ -239,7 +239,7 @@ final class Updates {
             String n = cleanNotes(r.notes);
             if (n.isEmpty()) continue;
             parts.add(n);
-            names.add(r.build.name());
+            names.add(r.build.display());
         }
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < parts.size(); i++) {

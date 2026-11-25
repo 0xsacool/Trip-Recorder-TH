@@ -1032,17 +1032,17 @@ public class MainActivity extends Activity {
         if (updateButton != null) {
             updateButton.setVisibility(overlay == null && hasNewerUpdate() ? View.VISIBLE : View.GONE);
             if (hasNewerUpdate()) {
-                updateButton.setContentDescription(L.f("Update available: %s", cachedUpdate.latest.build.name()));
+                updateButton.setContentDescription(L.f("Update available: %s", cachedUpdate.latest.build.display()));
             }
         }
         if (updatesValue != null) updatesValue.setText(updateText());
     }
 
     private String updateText() {
-        String text = L.f("Installed: %1$s%2$s   -   following: %3$s", Updates.installedName(this),
+        String text = L.f("Installed: %1$s%2$s   -   following: %3$s", Updates.installedDisplayName(this),
                 Updates.installed(this) == null ? " " + L.t("(not a release build)") : "",
                 Updates.channelTitle(Updates.channel(this)));
-        if (hasNewerUpdate()) text += "\n" + L.f("Update available: %s", cachedUpdate.latest.build.name());
+        if (hasNewerUpdate()) text += "\n" + L.f("Update available: %s", cachedUpdate.latest.build.display());
         return text;
     }
 
@@ -1134,19 +1134,19 @@ public class MainActivity extends Activity {
         Updates.Build mine = Updates.installed(this);
         int cmp = Updates.compare(mine, r);
         if (cmp == 0) {
-            showInfo(L.f("You have the latest %1$s build: %2$s.", chName, r.build.name()));
+            showInfo(L.f("You have the latest %1$s build: %2$s.", chName, r.build.display()));
             return;
         }
         String when = r.publishedMs > 0
                 ? " (" + new SimpleDateFormat("d MMM yyyy", L.dateLocale()).format(new Date(r.publishedMs)) + ")" : "";
         StringBuilder msg = new StringBuilder();
         if (cmp > 0) {
-            msg.append(L.f("A newer %1$s build is available: %2$s%3$s.", chName, r.build.name(), when));
+            msg.append(L.f("A newer %1$s build is available: %2$s%3$s.", chName, r.build.display(), when));
         } else {
             msg.append(L.f("The latest %1$s build is %2$s%3$s, which is older than the installed build %4$s. "
-                    + "Install it anyway?", chName, r.build.name(), when, Updates.installedName(this)));
+                    + "Install it anyway?", chName, r.build.display(), when, Updates.installedDisplayName(this)));
         }
-        msg.append("\n").append(L.f("Installed: %s", Updates.installedName(this)));
+        msg.append("\n").append(L.f("Installed: %s", Updates.installedDisplayName(this)));
         if (cmp > 0) {
             String changes = Updates.changesSince(c.all, channel, mine, r);
             if (!changes.isEmpty()) {
@@ -1194,7 +1194,7 @@ public class MainActivity extends Activity {
         final Context app = getApplicationContext();
         final java.util.concurrent.atomic.AtomicBoolean cancel = new java.util.concurrent.atomic.AtomicBoolean(false);
         final AlertDialog progress = Ui.show(new AlertDialog.Builder(this)
-                .setTitle(L.f("Installing %s", r.build.name()))
+                .setTitle(L.f("Installing %s", r.build.display()))
                 .setMessage(L.t("Downloading..."))
                 .setCancelable(false)
                 .setNegativeButton(L.t("Cancel"), new android.content.DialogInterface.OnClickListener() {
