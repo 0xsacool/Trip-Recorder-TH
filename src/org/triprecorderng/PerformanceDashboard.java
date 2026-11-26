@@ -190,7 +190,17 @@ final class PerformanceDashboard extends View {
                             ? Prefs.motionMode(c) : SharedMotionController.Mode.OFF, speed, safe);
                 }
                 evoData.startupAccent = motion.frame(frameNow, speed, safe);
-                if (motion.active()) postInvalidateOnAnimation();
+                SharedMotionController.Mode mode = isShown() && hasWindowFocus()
+                        && android.animation.ValueAnimator.areAnimatorsEnabled()
+                        ? Prefs.motionMode(c) : SharedMotionController.Mode.OFF;
+                if (!Prefs.performanceRefresh(c) && mode == SharedMotionController.Mode.FULL)
+                    mode = SharedMotionController.Mode.REDUCED;
+                RecorderService.Live live = RecorderService.live;
+                long wall = System.currentTimeMillis();
+                boolean fresh = live.running && live.motorPowerWall > 0
+                        && wall >= live.motorPowerWall && wall-live.motorPowerWall < 2000;
+                evoData.powerAccent = motion.powerAccent(frameNow, mode, fresh ? motorPower : Double.NaN);
+                if (motion.active() || motion.powerActive()) postInvalidateOnAnimation();
             }
             evoData.soc = soc;
             evoData.speed = speed;
