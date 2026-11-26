@@ -21,7 +21,7 @@ final class NismoHybridRenderer {
         return value.replace(" kWh/100 km", "");
     }
     private static void gauge(EvoHybridRenderer.Surface s,float cx,float cy,float r,double min,double max,double n,
-                              String label,String value,String unit,boolean power,float accent){
+                              String label,String value,String unit,boolean power,double visual){
         int div=6,sub=5;
         for(int i=0;i<=div*sub;i++){
             double v=min+(max-min)*i/(div*sub),a=angle(v,min,max);
@@ -31,11 +31,11 @@ final class NismoHybridRenderer {
             if(major)s.text(whole(v),x(cx,r*.72f,a),y(cy,r*.72f,a)+6,17,WHITE,true,true,0,47);
         }
         // The center is an LCD-style readout. Keep the needle in the outer annulus.
-        double a=angle(n,min,max);
-        if(power && EvoHybridRenderer.valid(n) && n!=0){
+        double a=angle(power?visual:n,min,max);
+        if(power && EvoHybridRenderer.valid(n) && EvoHybridRenderer.valid(visual) && visual!=0){
             float zero=(float)angle(0,min,max);
-            float span=(float)Math.abs(angle(n,min,max)-zero)*accent;
-            s.arc(cx,cy,r*.99f,n<0?zero-span:zero,span,6,n<0?CYAN:RED);
+            float span=(float)Math.abs(angle(visual,min,max)-zero);
+            s.arc(cx,cy,r*.99f,visual<0?zero-span:zero,span,6,visual<0?CYAN:RED);
         }
         if(EvoHybridRenderer.valid(a)){
             s.line(x(cx,r*.52f,a),y(cy,r*.52f,a),x(cx,r*.92f,a),y(cy,r*.92f,a),NEEDLE,4.5f);
@@ -60,7 +60,7 @@ final class NismoHybridRenderer {
         s.gaugeBounds(0,left-radius,cy-radius,radius*2,radius*2);
         s.gaugeBounds(1,right-radius,cy-radius,radius*2,radius*2);
         if(EvoHybridRenderer.custom(d,0))EvoHybridRenderer.customDial(s,d,0,left,cy,radius,CYAN,true);
-        else gauge(s,left,cy,radius,-100,200,d.power,"MOTOR POWER",whole(d.power),"kW",true,d.powerAccent);
+        else gauge(s,left,cy,radius,-100,200,d.power,"MOTOR POWER",whole(d.power),"kW",true,d.nismoPower);
         if(EvoHybridRenderer.custom(d,1))EvoHybridRenderer.customDial(s,d,1,right,cy,radius,CYAN,true);
         else gauge(s,right,cy,radius,0,30,avg,"AVG. CONSUMPTION",consumption(d.average),"kWh/100 km",false,1);
         s.text("GT-R NISMO EDITION",600,40,22,WHITE,true,true,0,275);
