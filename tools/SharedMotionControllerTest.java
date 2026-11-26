@@ -23,5 +23,16 @@ final class SharedMotionControllerTest {
         m.begin(100, SharedMotionController.Mode.REDUCED, 0, true);
         check(m.frame(749,0,true)>0);
         check(m.frame(750,0,true)==0 && !m.active());
+        check(m.powerAccent(1000, SharedMotionController.Mode.FULL, 100)==0);
+        check(m.powerActive());
+        check(m.powerAccent(1090, SharedMotionController.Mode.FULL, 100)==.5f);
+        check(m.powerAccent(1180, SharedMotionController.Mode.FULL, 100)==1);
+        check(!m.powerActive());
+        check(m.powerAccent(1181, SharedMotionController.Mode.OFF, 100)==0);
+        check(!m.powerActive());
+        m.powerAccent(1200, SharedMotionController.Mode.REDUCED, -50);
+        check(m.powerAccent(1300, SharedMotionController.Mode.REDUCED, -50)==.5f);
+        check(m.powerAccent(1301, SharedMotionController.Mode.REDUCED, Double.NaN)==0);
+        check(!m.powerActive());
     }
 }
