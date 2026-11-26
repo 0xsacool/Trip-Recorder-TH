@@ -37,6 +37,7 @@ final class EvoHybridRenderer {
     static final class Data {
         double soc, speed, power;
         float startupAccent, powerAccent;
+        double nismoPower=Double.NaN;
         double liveRpm=Double.NaN;
         double avgConsumption=Double.NaN,batteryTemp=Double.NaN,chargingVoltage=Double.NaN,remainingRange=Double.NaN;
         GaugeMetric[] gauges={GaugeMetric.DEFAULT,GaugeMetric.DEFAULT};
