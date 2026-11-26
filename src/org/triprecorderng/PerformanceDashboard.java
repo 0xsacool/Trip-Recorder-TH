@@ -200,8 +200,8 @@ final class PerformanceDashboard extends View {
                 boolean fresh = live.running && live.motorPowerWall > 0
                         && wall >= live.motorPowerWall && wall-live.motorPowerWall < 2000;
                 evoData.powerAccent = motion.powerAccent(frameNow, mode, fresh ? motorPower : Double.NaN);
-                if(Prefs.THEME_NISMO.equals(theme)) evoData.powerAccent = mode == SharedMotionController.Mode.OFF ? 1f : (float)Math.min(1, evoData.powerAccent / Math.max(.01, Math.min(1, Math.abs(motorPower)/100)));
-                if (motion.active() || motion.powerActive()) postInvalidateOnAnimation();
+                if(Prefs.THEME_NISMO.equals(theme)) evoData.nismoPower=motion.gauge(frameNow,mode,fresh?motorPower:Double.NaN);
+                if (motion.active() || motion.powerActive() || motion.gaugeActive()) postInvalidateOnAnimation();
             }
             evoData.soc = soc;
             evoData.speed = speed;
