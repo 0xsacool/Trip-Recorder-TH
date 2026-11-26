@@ -47,5 +47,24 @@ final class SharedMotionController {
         return accent;
     }
     boolean powerActive() { return accentStart >= 0; }
+    private double gaugeValue=Double.NaN, gaugeFrom, gaugeTarget;
+    private long gaugeStart=-1;
+    private int gaugeDuration;
+    double gauge(long now, Mode mode, double power) {
+        if (!Double.isFinite(power) || mode==Mode.OFF || !Double.isFinite(gaugeValue)) {
+            gaugeValue=gaugeTarget=power; gaugeStart=-1; return power;
+        }
+        if(gaugeStart>=0){
+            double t=Math.max(0,Math.min(1,(double)(now-gaugeStart)/gaugeDuration));
+            gaugeValue=gaugeFrom+(gaugeTarget-gaugeFrom)*t*(2-t);
+            if(t>=1)gaugeStart=-1;
+        }
+        if(power!=gaugeTarget){
+            gaugeFrom=gaugeValue; gaugeTarget=power; gaugeStart=now;
+            gaugeDuration=mode==Mode.FULL?180:100;
+        }
+        return gaugeValue;
+    }
+    boolean gaugeActive(){return gaugeStart>=0;}
     boolean active() { return start >= 0; }
 }
