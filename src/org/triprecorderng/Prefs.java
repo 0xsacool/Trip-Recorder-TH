@@ -24,6 +24,14 @@ final class Prefs {
         return THEME_CLASSIC.equals(dashboardTheme(c));
     }
 
+    static SharedMotionController.Mode motionMode(Context c) {
+        try { return SharedMotionController.Mode.valueOf(sp(c).getString("dashboard_motion", "REDUCED")); }
+        catch (IllegalArgumentException e) { return SharedMotionController.Mode.REDUCED; }
+    }
+    static void setMotionMode(Context c, SharedMotionController.Mode mode) {
+        sp(c).edit().putString("dashboard_motion", mode.name()).apply();
+    }
+
     static boolean performanceRefresh(Context c) {
         return sp(c).getBoolean("dashboard_performance_refresh", false);
     }

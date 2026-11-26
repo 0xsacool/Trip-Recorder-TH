@@ -37,6 +37,15 @@ final class PerformanceDashboard extends View {
     private boolean graphPressed;
     private int pressedGauge=-1;
     private long lastSlowRefresh;
+    private final SharedMotionController motion = new SharedMotionController();
+    private boolean motionAttempted;
+    private boolean motionSafe() {
+        RecorderService.Live live = RecorderService.live;
+        long now = System.currentTimeMillis();
+        return live.running && live.driveWall > 0 && now >= live.driveWall
+                && now-live.driveWall < 2000 && SharedMotionController.stationary(live.speed)
+                && !live.tripActive && RecorderService.current == null;
+    }
     private double speed = Double.NaN, soc = Double.NaN;
     private RangeEstimate.Result range = new RangeEstimate.Result(Double.NaN, RangeEstimate.EPA);
     private double average = Double.NaN, distance = Double.NaN, energy = Double.NaN;
@@ -172,6 +181,17 @@ final class PerformanceDashboard extends View {
         super.onDraw(canvas);
         if (getWidth() <= 0 || getHeight() <= 0) return;
         if (evoCanvas != null) {
+            if (Prefs.THEME_GTR.equals(theme)) {
+                long frameNow = android.os.SystemClock.elapsedRealtime();
+                boolean safe = motionSafe() && isShown() && hasWindowFocus();
+                if (!motionAttempted) {
+                    motionAttempted = true;
+                    motion.begin(frameNow, android.animation.ValueAnimator.areAnimatorsEnabled()
+                            ? Prefs.motionMode(c) : SharedMotionController.Mode.OFF, speed, safe);
+                }
+                evoData.startupAccent = motion.frame(frameNow, speed, safe);
+                if (motion.active()) postInvalidateOnAnimation();
+            }
             evoData.soc = soc;
             evoData.speed = speed;
             evoData.power = motorPower;
@@ -294,7 +314,7 @@ final class PerformanceDashboard extends View {
         }
         return super.onTouchEvent(e);
     }
-    @Override protected void onDetachedFromWindow(){telemetry.dismiss();super.onDetachedFromWindow();}
+    @Override protected void onDetachedFromWindow(){motion.cancel();telemetry.dismiss();super.onDetachedFromWindow();}
 
     private static final int U9_ORANGE = 0xFFFF791A, U9_REGEN = 0xFF33BFFF;
     private static final int U9_BORDER = 0xFF54575B;

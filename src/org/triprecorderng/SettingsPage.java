@@ -222,6 +222,15 @@ final class SettingsPage {
                                     host.rebuildSoon();
                                 })
                         .setNegativeButton(L.t("Cancel"), null).show());
+        final String[] motionChoices = {"Off", "Reduced", "Full"};
+        Kit.Row motion = action("Motion effects (GT-R)", motionChoices[Prefs.motionMode(c).ordinal()],
+                L.t("Change"), false, v -> new AlertDialog.Builder(c)
+                        .setTitle("Motion effects (GT-R)")
+                        .setSingleChoiceItems(motionChoices, Prefs.motionMode(c).ordinal(), (dialog, which) -> {
+                            Prefs.setMotionMode(c, SharedMotionController.Mode.values()[which]);
+                            dialog.dismiss();
+                            host.rebuildSoon();
+                        }).setNegativeButton(L.t("Cancel"), null).show());
         String[] menuChoices = {L.t("Always Show"), L.t("Tap to Hide"), L.t("Auto Hide (5 seconds)")};
         Kit.Row menu = action(L.t("Dashboard menu"), menuChoices[Prefs.dashboardMenuMode(c)],
                 L.t("Change"), false, v -> new AlertDialog.Builder(c)
@@ -286,7 +295,7 @@ final class SettingsPage {
             }
         });
         host.bindUpdateViews(updates.desc, channel.desc);
-        section(into, L.t("General"), language, appearance, theme, refreshMode, menu, updates, prices, chargingProfiles, battery, range, epa, advanced, channel);
+        section(into, L.t("General"), language, appearance, theme, refreshMode, motion, menu, updates, prices, chargingProfiles, battery, range, epa, advanced, channel);
     }
 
     private void showEpaDialog() {

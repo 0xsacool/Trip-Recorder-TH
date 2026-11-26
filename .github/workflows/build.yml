@@ -105,6 +105,12 @@ jobs:
           javac -d "$RUNNER_TEMP/evo-test" src/org/triprecorderng/EvoHybridRenderer.java tools/EvoHybridRendererTest.java
           java -cp "$RUNNER_TEMP/evo-test" org.triprecorderng.EvoHybridRendererTest
 
+      - name: Test shared motion policy
+        run: |
+          mkdir -p "$RUNNER_TEMP/motion-test"
+          javac -d "$RUNNER_TEMP/motion-test" src/org/triprecorderng/SharedMotionController.java tools/SharedMotionControllerTest.java
+          java -cp "$RUNNER_TEMP/motion-test" org.triprecorderng.SharedMotionControllerTest
+
       - name: Test GT-R hybrid renderer
         run: |
           mkdir -p "$RUNNER_TEMP/gtr-test"
