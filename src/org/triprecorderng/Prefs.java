@@ -109,6 +109,7 @@ final class Prefs {
     /** Presentation only; preserve the selection made on Dev-5/6. */
     static final String THEME_CLASSIC = "classic";
     static final String THEME_GTR = "gtr";
+    static final String THEME_NISMO = "gtr_nismo";
     static final String THEME_TYPE_R = "type_r";
     static final String THEME_GR = "gr_motorsport";
     static final String THEME_N = "n_performance";
@@ -118,7 +119,7 @@ final class Prefs {
     static final String THEME_EVO_HYBRID = "jdm_evo_ix";
 
     static String[] dashboardThemes() {
-        return new String[]{THEME_CLASSIC, THEME_GTR, THEME_TYPE_R, THEME_GR, THEME_N, THEME_RS, THEME_TAYCAN, THEME_U9_XTREME, THEME_EVO_HYBRID};
+        return new String[]{THEME_CLASSIC, THEME_GTR, THEME_NISMO, THEME_TYPE_R, THEME_GR, THEME_N, THEME_RS, THEME_TAYCAN, THEME_U9_XTREME, THEME_EVO_HYBRID};
     }
 
     private static boolean knownTheme(String value) {
@@ -152,6 +153,7 @@ final class Prefs {
         if (THEME_U9_XTREME.equals(theme)) return "BYD XTREME EDITION";
         if (THEME_GR.equals(theme)) return "GR Motorsport Edition";
         if (THEME_TYPE_R.equals(theme)) return "Type R Edition";
+        if (THEME_NISMO.equals(theme)) return "GT-R NISMO Edition";
         if (THEME_GTR.equals(theme)) return "GT-R Performance";
         return L.t("Classic");
     }
