@@ -1,99 +1,68 @@
 package org.triprecorderng;
 
-/** R35-inspired immutable metal housing with live, native vector instruments. */
+/** Flat racing HUD. Motion affects visual power only, never measured speed. */
 final class NismoHybridRenderer {
-    static final int BG=0xff08090b, WHITE=0xfff5f5f6, MUTED=0xffb6bbc0,
-        RED=0xffff3845, CYAN=0xff28d9ec, EDGE=0xff484c50, NEEDLE=0xffff2638;
-    static final float PLATE_X=64, PLATE_W=1072, PLATE_SCALE=PLATE_W/2061,
-        PLATE_H=763*PLATE_SCALE;
-    static final float START=140, SWEEP=260;
-    static double angle(double n,double min,double max) {
-        return EvoHybridRenderer.valid(n)?START+SWEEP*Math.max(0,Math.min(1,(n-min)/(max-min))):Double.NaN;
-    }
-    private static float x(float c,float r,double a){return c+r*(float)Math.cos(Math.toRadians(a));}
-    private static float y(float c,float r,double a){return c+r*(float)Math.sin(Math.toRadians(a));}
-    private static void mark(EvoHybridRenderer.Surface s,float cx,float cy,float r,double a,float length,int col,float w){
-        s.line(x(cx,r-length,a),y(cy,r-length,a),x(cx,r,a),y(cy,r,a),col,w);
-    }
-    private static String whole(double n){return EvoHybridRenderer.valid(n)?Long.toString(Math.round(n)):"--";}
-    private static String consumption(String value){
-        if(value==null)return "--";
-        return value.replace(" kWh/100 km", "");
-    }
-    private static void gauge(EvoHybridRenderer.Surface s,float cx,float cy,float r,double min,double max,double n,
-                              String label,String value,String unit,boolean power,double visual){
-        int div=6,sub=5;
-        for(int i=0;i<=div*sub;i++){
-            double v=min+(max-min)*i/(div*sub),a=angle(v,min,max);
-            int color=power?(v<0?CYAN:v>=150?RED:WHITE):(v<=10?CYAN:v>=25?RED:WHITE);
-            boolean major=i%sub==0;
-            mark(s,cx,cy,r*.96f,a,r*(major?.12f:.055f),color,major?3.2f:1.5f);
-            if(major)s.text(whole(v),x(cx,r*.72f,a),y(cy,r*.72f,a)+6,17,WHITE,true,true,0,47);
-        }
-        // The center is an LCD-style readout. Keep the needle in the outer annulus.
-        double a=angle(power?visual:n,min,max);
-        if(power && EvoHybridRenderer.valid(n) && EvoHybridRenderer.valid(visual) && visual!=0){
-            float zero=(float)angle(0,min,max);
-            float span=(float)Math.abs(angle(visual,min,max)-zero);
-            s.arc(cx,cy,r*.99f,visual<0?zero-span:zero,span,6,visual<0?CYAN:RED);
-        }
-        if(EvoHybridRenderer.valid(a)){
-            s.line(x(cx,r*.52f,a),y(cy,r*.52f,a),x(cx,r*.92f,a),y(cy,r*.92f,a),NEEDLE,4.5f);
-            s.line(x(cx,r*.52f,a),y(cy,r*.52f,a),x(cx,r*.92f,a),y(cy,r*.92f,a),0xffffd0d0,1f);
-        }
-        s.circle(cx,cy,r*.51f,0xff101113);
-        s.text(label,cx,cy-24,14,MUTED,true,true,0,125);
-        s.text(value,cx,cy+24,48,WHITE,true,true,0,130);
-        s.text(unit,cx,cy+47,16,MUTED,true,true,0,127);
-        if(power)s.text("REGEN / POWER",cx,cy+r*.78f,13,CYAN,true,true,0,146);
-        else s.text("EFFICIENCY",cx,cy+r*.78f,13,MUTED,true,true,0,146);
-    }
-    private static void metric(EvoHybridRenderer.Surface s,String name,String value,float x,float y,float width){
-        s.text(name,x+width/2,y+12,11,MUTED,true,false,0,width-10);
-        s.text(value,x+width/2,y+31,20,WHITE,true,false,0,width-10);
+    static final int BG=0xff08090b, PANEL=0xff101113, WHITE=0xfff5f5f6,
+        MUTED=0xffb6bbc0, RED=0xffff3845, CYAN=0xff28d9ec, EDGE=0xff484c50, TRACK=0xff303337;
+    static boolean valid(double n){return EvoHybridRenderer.valid(n);}
+    static String whole(double n){return valid(n)?Long.toString(Math.round(n)):"--";}
+    static float fraction(double n,double max){return valid(n)?(float)Math.max(0,Math.min(1,n/max)):0;}
+    static void metric(EvoHybridRenderer.Surface s,String label,String value,float x,float y,float w){
+        s.text(label,x+12,y+17,13,MUTED,true,false,-1,w-24);
+        s.text(value,x+12,y+44,25,WHITE,true,false,-1,w-24);
     }
     static void draw(EvoHybridRenderer.Surface s,EvoHybridRenderer.Data d,double avg,double[] samples,int count){
-        s.rect(0,0,EvoHybridRenderer.WIDTH,EvoHybridRenderer.HEIGHT,BG);
-        s.plate(PLATE_X,0,PLATE_W,PLATE_H);
-        float cy=386*PLATE_SCALE, radius=276*PLATE_SCALE;
-        float left=PLATE_X+385*PLATE_SCALE,right=PLATE_X+1674*PLATE_SCALE;
-        s.gaugeBounds(0,left-radius,cy-radius,radius*2,radius*2);
-        s.gaugeBounds(1,right-radius,cy-radius,radius*2,radius*2);
-        if(EvoHybridRenderer.custom(d,0))EvoHybridRenderer.customDial(s,d,0,left,cy,radius,CYAN,true);
-        else gauge(s,left,cy,radius,-100,200,d.power,"MOTOR POWER",whole(d.power),"kW",true,d.nismoPower);
-        if(EvoHybridRenderer.custom(d,1))EvoHybridRenderer.customDial(s,d,1,right,cy,radius,CYAN,true);
-        else gauge(s,right,cy,radius,0,30,avg,"AVG. CONSUMPTION",consumption(d.average),"kWh/100 km",false,1);
-        s.text("GT-R NISMO EDITION",600,40,22,WHITE,true,true,0,275);
-        s.text(d.source,600,73,12,MUTED,false,false,0,320);
-        s.text(whole(d.speed),590,151,92,WHITE,true,true,0,265);
-        s.text("km/h",755,145,19,MUTED,true,true,1,65);
-        s.line(450,169,750,169,RED,2.1f);
-        if(d.startupAccent>0)s.arc(left,cy,radius*1.04f,140,260*d.startupAccent,2,RED);
-        s.text(d.batteryLabel,600,192,14,MUTED,true,true,0,230);
-        s.text(whole(d.soc)+"%",600,243,48,WHITE,true,true,0,220);
-        s.outline(467,254,266,12,5,EDGE,1.6f);
-        if(EvoHybridRenderer.valid(d.soc))s.rect(469,256,262*Math.max(0,Math.min(1,(float)d.soc/100)),8,CYAN);
-        s.text(d.rangeLabel,600,289,15,MUTED,true,true,0,260);
-        s.text(d.range,600,326,40,WHITE,true,true,0,286);
-        s.text(d.status,600,349,16,d.statusColor,true,false,0,280);
-        s.text(d.tripLabel,600,365,12,MUTED,false,false,0,280);
-        s.line(10,395,1190,395,EDGE,1.2f);
-        String[] head={d.tripCaption,d.timeCaption,d.energyCaption};
-        String[] values={d.distance,d.elapsed,d.energy};
-        for(int i=0;i<3;i++){
-            float xx=10+i*269.3f;
-            if(i>0)s.line(xx,399,xx,435,EDGE,1);
-            metric(s,head[i],values[i],xx,398,269.3f);
+        s.rect(0,0,1200,470,BG);
+        s.text("NISMO",24,32,28,WHITE,true,true,-1,130);
+        s.text("GT3",150,32,28,RED,true,true,-1,90);
+        s.text(d.source,600,28,13,MUTED,false,false,0,350);
+        s.text(d.status,1176,28,17,d.statusColor,true,false,1,270);
+        s.line(24,45,1176,45,EDGE,1);
+        s.rect(24,62,300,264,PANEL);
+        s.rect(876,62,300,264,PANEL);
+        s.gaugeBounds(0,24,62,300,125);
+        s.gaugeBounds(1,876,62,300,125);
+        double visual=valid(d.power)?(valid(d.nismoPower)?d.nismoPower:d.power):Double.NaN;
+        int accent=valid(visual)&&visual<0?CYAN:RED;
+        if(EvoHybridRenderer.custom(d,0))EvoHybridRenderer.customDigital(s,d,0,24,62,300,125,accent,true);
+        else {
+            s.text("MOTOR POWER",40,88,16,MUTED,true,true,-1,268);
+            s.text(whole(d.power),40,153,65,WHITE,true,true,-1,210);
+            s.text("kW",308,151,22,MUTED,true,false,1,55);
+            s.text(valid(d.power)?(d.power<0?"REGEN":d.power>0?"DRIVE":"COASTING"):"--",40,179,16,accent,true,true,-1,260);
         }
-        s.line(10,436,818,436,EDGE,1);
-        String[] labels={"BATTERY TEMP MIN / MAX","CELL VOLTAGE MIN / MAX","CHARGING VOLTAGE"};
-        String[] data={d.temp,d.cells,d.voltage};
-        for(int i=0;i<3;i++){
-            float xx=10+i*269.3f;
-            if(i>0)s.line(xx,438,xx,468,EDGE,1);
-            metric(s,labels[i],data[i],xx,437,269.3f);
+        s.line(40,194,308,194,EDGE,1);
+        metric(s,d.tripCaption,d.distance,28,201,290);
+        metric(s,d.avgCaption,d.average,28,260,290);
+        if(EvoHybridRenderer.custom(d,1))EvoHybridRenderer.customDigital(s,d,1,876,62,300,125,CYAN,true);
+        else {
+            s.text(d.batteryLabel,892,88,16,MUTED,true,true,-1,268);
+            s.text(whole(d.soc)+"%",892,151,58,WHITE,true,true,-1,268);
+            s.rect(892,163,268,12,TRACK);
+            s.rect(892,163,268*fraction(d.soc,100),12,CYAN);
         }
-        s.line(833,399,833,467,EDGE,1);
-        EvoHybridRenderer.history(s,d,samples,count,842,398,349,68);
+        s.line(892,194,1160,194,EDGE,1);
+        metric(s,d.rangeLabel,d.range,880,201,290);
+        metric(s,d.timeCaption,d.elapsed,880,260,290);
+        float cx=600,cy=190;
+        float amount=fraction(Math.abs(visual),visual<0?100:200);
+        for(int i=0;i<48;i++){
+            float angle=160+i*220f/47;
+            double a=Math.toRadians(angle);
+            float co=(float)Math.cos(a),si=(float)Math.sin(a);
+            float f=visual<0?(48-i)/48f:(i+1)/48f;
+            s.line(cx+151*co,cy+151*si,cx+169*co,cy+169*si,f<=amount?accent:TRACK,6);
+        }
+        if(d.startupAccent>0)s.arc(cx,cy,178,160,220*d.startupAccent,2,RED);
+        s.text(whole(d.speed),cx,213,112,WHITE,true,true,0,340);
+        s.text("km/h",cx,242,22,MUTED,true,false,0,180);
+        s.text(d.tripLabel,cx,286,14,MUTED,false,false,0,380);
+        s.line(24,339,1176,339,EDGE,1);
+        metric(s,"BATTERY TEMP MIN / MAX",d.temp,24,350,240);
+        metric(s,"CELL VOLTAGE MIN / MAX",d.cells,264,350,260);
+        metric(s,"CHARGING VOLTAGE",d.voltage,524,350,220);
+        metric(s,d.energyCaption,d.energy,24,408,240);
+        s.line(754,350,754,454,EDGE,1);
+        EvoHybridRenderer.history(s,d,samples,count,766,350,410,104);
     }
 }
