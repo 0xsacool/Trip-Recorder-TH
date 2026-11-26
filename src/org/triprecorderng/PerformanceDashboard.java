@@ -74,7 +74,7 @@ final class PerformanceDashboard extends View {
         this.telemetry = new TelemetryPicker(c);
         this.fallbackGraph = new EvoHybridCanvas(c,null);
         this.evoCanvas = Prefs.THEME_EVO_HYBRID.equals(theme) ? new EvoHybridCanvas(c)
-                : Prefs.THEME_GTR.equals(theme) ? new EvoHybridCanvas(c,"gtr_hybrid_plate.webp")
+                : (Prefs.THEME_GTR.equals(theme)||Prefs.THEME_NISMO.equals(theme)) ? new EvoHybridCanvas(c,"gtr_hybrid_plate.webp")
                 : Prefs.THEME_TYPE_R.equals(theme) ? new EvoHybridCanvas(c,"typer_hybrid_plate.webp")
                 : AdditionalHybridRenderer.asset(theme)!=null ? new EvoHybridCanvas(c,AdditionalHybridRenderer.asset(theme)) : null;
         this.host = host;
@@ -181,7 +181,7 @@ final class PerformanceDashboard extends View {
         super.onDraw(canvas);
         if (getWidth() <= 0 || getHeight() <= 0) return;
         if (evoCanvas != null) {
-            if (Prefs.THEME_GTR.equals(theme)) {
+            if (Prefs.THEME_GTR.equals(theme)||Prefs.THEME_NISMO.equals(theme)) {
                 long frameNow = android.os.SystemClock.elapsedRealtime();
                 boolean safe = motionSafe() && isShown() && hasWindowFocus();
                 if (!motionAttempted) {
@@ -200,6 +200,7 @@ final class PerformanceDashboard extends View {
                 boolean fresh = live.running && live.motorPowerWall > 0
                         && wall >= live.motorPowerWall && wall-live.motorPowerWall < 2000;
                 evoData.powerAccent = motion.powerAccent(frameNow, mode, fresh ? motorPower : Double.NaN);
+                if(Prefs.THEME_NISMO.equals(theme)) evoData.powerAccent = mode == SharedMotionController.Mode.OFF ? 1f : (float)Math.min(1, evoData.powerAccent / Math.max(.01, Math.min(1, Math.abs(motorPower)/100)));
                 if (motion.active() || motion.powerActive()) postInvalidateOnAnimation();
             }
             evoData.soc = soc;
@@ -228,7 +229,8 @@ final class PerformanceDashboard extends View {
             evoData.timeCaption = L.t("Time");
             evoData.energyCaption = energyCaption();
             evoData.avgCaption = L.t("Average consumption");
-            if(Prefs.THEME_GTR.equals(theme))evoCanvas.drawGtr(canvas,getWidth(),getHeight(),evoData,average,evoData.history,evoData.historyCount);
+            if(Prefs.THEME_NISMO.equals(theme))evoCanvas.drawNismo(canvas,getWidth(),getHeight(),evoData,average,evoData.history,evoData.historyCount);
+            else if(Prefs.THEME_GTR.equals(theme))evoCanvas.drawGtr(canvas,getWidth(),getHeight(),evoData,average,evoData.history,evoData.historyCount);
             else if(Prefs.THEME_TYPE_R.equals(theme))evoCanvas.drawTypeR(canvas,getWidth(),getHeight(),evoData);
             else if(AdditionalHybridRenderer.asset(theme)!=null)evoCanvas.drawAdditional(canvas,getWidth(),getHeight(),evoData,theme,average);
             else evoCanvas.draw(canvas, getWidth(), getHeight(), evoData);
