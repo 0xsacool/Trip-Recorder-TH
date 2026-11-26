@@ -25,5 +25,27 @@ final class SharedMotionController {
         float t = (float)(now-start)/duration;
         return t < .65f ? t/.65f : (1-t)/.35f;
     }
+    // Decorative intensity only; the actual power needle and number remain direct.
+    private float accent;
+    private long accentStart = -1;
+    private float from, target;
+    private int accentDuration;
+    float powerAccent(long now, Mode mode, double power) {
+        if (mode == Mode.OFF || Double.isNaN(power) || Double.isInfinite(power)) {
+            accent = from = target = 0; accentStart = -1; return 0;
+        }
+        if (accentStart >= 0) {
+            float t = Math.max(0, Math.min(1, (float)(now-accentStart)/accentDuration));
+            accent = from + (target-from)*t;
+            if (t >= 1) accentStart = -1;
+        }
+        float next = (float)Math.min(1, Math.abs(power)/100);
+        if (Math.abs(next-target) >= .02f || (next == 0 && target != 0)) {
+            from = accent; target = next; accentStart = now;
+            accentDuration = mode == Mode.FULL ? 180 : 100;
+        }
+        return accent;
+    }
+    boolean powerActive() { return accentStart >= 0; }
     boolean active() { return start >= 0; }
 }
