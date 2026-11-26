@@ -79,6 +79,13 @@ final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
         GtrHybridRenderer.draw(this,d,average,history,count);
         c.restore();c=null;
     }
+    void drawNismo(Canvas canvas,int width,int height,EvoHybridRenderer.Data d,double average,double[] history,int count){
+        float scale=Math.min(width/EvoHybridRenderer.WIDTH,height/EvoHybridRenderer.HEIGHT);
+        c=canvas;
+        c.save();transform(scale,(width-EvoHybridRenderer.WIDTH*scale)/2f,(height-EvoHybridRenderer.HEIGHT*scale)/2f);
+        NismoHybridRenderer.draw(this,d,average,history,count);
+        c.restore();c=null;
+    }
     void drawTypeR(Canvas canvas,int width,int height,EvoHybridRenderer.Data d){
         float scale=Math.min(width/EvoHybridRenderer.WIDTH,height/EvoHybridRenderer.HEIGHT);
         c=canvas;
