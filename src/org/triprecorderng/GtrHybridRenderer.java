@@ -65,6 +65,8 @@ final class GtrHybridRenderer {
         s.line(450,169,750,169,RED,2.1f);
         // Decorative trim only: never sweep a live instrument or obscure its value.
         if(d.startupAccent>0)s.line(600-150*d.startupAccent,172,600+150*d.startupAccent,172,RED,1.2f);
+        if(d.powerAccent>0 && EvoHybridRenderer.valid(d.power) && d.power!=0)
+            s.line(600,180,600+(d.power<0?-1:1)*145*d.powerAccent,180,d.power<0?CYAN:RED,2f);
         s.text(d.batteryLabel,600,192,14,MUTED,true,true,0,230);
         s.text(whole(d.soc)+"%",600,243,48,WHITE,true,true,0,220);
         s.outline(467,254,266,12,5,EDGE,1.6f);
