@@ -2,6 +2,10 @@
 # Runs on an isolated Android 10 emulator in CI. All screenshots carry the fixture label.
 set -euo pipefail
 root="$(pwd)"
+sdkbin="$(dirname "$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager | sort -V | tail -1)")"
+export PATH="$sdkbin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH"
+export ANDROID_SDK_ROOT="$ANDROID_HOME"
+sdkmanager 'emulator' 'platforms;android-34' 'build-tools;35.0.0' 'system-images;android-29;google_apis;x86_64'
 out="$root/nismo-evidence"
 preview="$(mktemp -d)"
 mkdir -p "$out"
@@ -9,8 +13,6 @@ cp -R src res assets build.sh "$preview/"
 cp tools/nismo-preview/AndroidManifest.xml "$preview/"
 cp tools/nismo-preview/NismoPreviewActivity.java "$preview/src/org/triprecorderng/"
 (cd "$preview" && bash build.sh)
-export PATH="$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH"
-sdkmanager 'system-images;android-29;google_apis;x86_64'
 echo no | avdmanager create avd --name gt3 --package 'system-images;android-29;google_apis;x86_64' --force
 sudo setfacl -m "u:$(id -un):rw" /dev/kvm
 emulator -avd gt3 -no-window -no-boot-anim -no-audio -no-snapshot -gpu swiftshader_indirect >"$out/emulator.log" 2>&1 &

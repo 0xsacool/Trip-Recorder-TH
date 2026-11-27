@@ -234,7 +234,6 @@ jobs:
           java -cp "$RUNNER_TEMP" org.triprecorderng.NismoHybridRendererTest
       - name: Capture Android 10 dashboard and frame timings
         run: |
-          sdkmanager 'platforms;android-34' 'build-tools;35.0.0'
           bash tools/nismo-preview/capture.sh
       - uses: actions/upload-artifact@v7
         if: always()
