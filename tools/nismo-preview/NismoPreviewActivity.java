@@ -50,6 +50,18 @@ public final class NismoPreviewActivity extends Activity implements ThisTripPage
         Prefs.setPerformanceRefresh(this,!scene.equals("eco"));
         Prefs.setMotionMode(this,SharedMotionController.Mode.valueOf(mode == null ? "FULL" : mode));
         Prefs.setEpaRangeKm(this,387.5);
+        if(scene.equals("custom-range")){
+            Prefs.setGt3Limits(this,new int[]{300,15000,120});
+            Prefs.setSequentialGt3(this,false);
+        }else if(scene.equals("range-restart")){
+            if(Prefs.sequentialGt3(this) || Prefs.gt3Limit(this,SequentialGt3.Scale.POWER)!=300 ||
+                    Prefs.gt3Limit(this,SequentialGt3.Scale.RPM)!=15000 || Prefs.gt3Limit(this,SequentialGt3.Scale.REGEN)!=120)
+                throw new AssertionError("GT3 settings lost after process restart");
+            Prefs.setSequentialGt3(this,true);
+        }else {
+            Prefs.setGt3Limits(this,new int[]{200,12000,100});
+            Prefs.setSequentialGt3(this,true);
+        }
         boolean selector = scene.equals("selector");
         if(!scene.equals("restore")) getSharedPreferences("triprecng",MODE_PRIVATE).edit()
                 .putString("custom_gauge_gtr_nismo_0",selector ? "RPM" : "DEFAULT")
@@ -91,7 +103,7 @@ public final class NismoPreviewActivity extends Activity implements ThisTripPage
         boolean linked = !scene.equals("missing");
         boolean finishing=scene.equals("results");
         boolean drive = scene.equals("drive") || scene.equals("dynamic") || scene.equals("regen") || scene.equals("selector")
-                || scene.equals("eco") || scene.equals("thai") || (finishing && tick<2);
+                || scene.equals("eco") || scene.equals("thai") || scene.equals("custom-range") || scene.equals("range-restart") || (finishing && tick<2);
         if(finishing && tick>=2 && !trip.ended){trip.ended=true;trip.endMs=now;}
         RecorderService.Live live = RecorderService.live;
         live.running = linked;

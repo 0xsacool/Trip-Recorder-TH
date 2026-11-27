@@ -219,7 +219,7 @@ jobs:
           retention-days: ${{ github.ref == 'refs/heads/stable' && 90 || 14 }}
 
   nismo-visual:
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feature/gtr-nismo-edition'
+    if: github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/feature/gtr-nismo-edition' || github.ref == 'refs/heads/feature/sequential-gt3')
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -230,7 +230,8 @@ jobs:
           java-version: '21'
       - name: Test NISMO instrument motion
         run: |
-          javac -d "$RUNNER_TEMP" src/org/triprecorderng/{SharedMotionController,EvoHybridRenderer,NismoHybridRenderer}.java tools/NismoHybridRendererTest.java
+          javac -d "$RUNNER_TEMP" src/org/triprecorderng/{SharedMotionController,EvoHybridRenderer,NismoHybridRenderer,SequentialGt3}.java tools/{NismoHybridRendererTest,SequentialGt3Test}.java
+          java -cp "$RUNNER_TEMP" org.triprecorderng.SequentialGt3Test
           java -cp "$RUNNER_TEMP" org.triprecorderng.NismoHybridRendererTest
       - name: Capture Android 10 dashboard and frame timings
         run: |
