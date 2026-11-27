@@ -306,8 +306,48 @@ final class SettingsPage {
                     v->new AlertDialog.Builder(c).setTitle(label).setSingleChoiceItems(modes,Prefs.nismoHeaderMode(c),
                             (dialog,which)->{Prefs.setNismoHeaderMode(c,which);dialog.dismiss();host.rebuildSoon();})
                             .setNegativeButton(L.t("Cancel"),null).show());
-            section(into,"NISMO GT3",header);
+            String styleTitle=th ? "รูปแบบมาตรวัด" : "Gauge Motion Style";
+            String[] styles={"Standard","Sequential GT3"};
+            int selected=Prefs.sequentialGt3(c) ? 1 : 0;
+            Kit.Row style=action(styleTitle,styles[selected],L.t("Change"),false,
+                    v->new AlertDialog.Builder(c).setTitle(styleTitle).setSingleChoiceItems(styles,selected,
+                        (dialog,which)->{Prefs.setSequentialGt3(c,which==1);dialog.dismiss();host.rebuildSoon();}).show());
+            String limitsTitle=th ? "ช่วงมาตรวัด GT3" : "GT3 gauge ranges";
+            Kit.Row limits=action(limitsTitle,"kW / rpm",L.t("Change"),false,v->showGt3Ranges(limitsTitle,th));
+            section(into,"NISMO GT3",header,style,limits);
         }
+    }
+
+    private void showGt3Ranges(String title,boolean th){
+        LinearLayout form=new LinearLayout(c);form.setOrientation(LinearLayout.VERTICAL);
+        int pad=Ui.dp(c,16);form.setPadding(pad,0,pad,0);
+        String[] names=th ? new String[]{"กำลังมอเตอร์","รอบมอเตอร์","กำลังรีเจน"} :
+                new String[]{"Max motor power","Max motor RPM","Max regenerative power"};
+        android.widget.EditText[] fields=new android.widget.EditText[3];
+        for(SequentialGt3.Scale scale:SequentialGt3.Scale.values()){
+            int i=scale.ordinal();
+            android.widget.TextView label=new android.widget.TextView(c);
+            label.setText(names[i]+" ("+scale.unit+")");form.addView(label);
+            fields[i]=new android.widget.EditText(c);fields[i].setSingleLine();
+            fields[i].setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+            fields[i].setText(Integer.toString(Prefs.gt3Limit(c,scale)));form.addView(fields[i]);
+        }
+        android.widget.ScrollView scroll=new android.widget.ScrollView(c);scroll.addView(form);
+        AlertDialog dialog=new AlertDialog.Builder(c).setTitle(title).setView(scroll)
+                .setNegativeButton(L.t("Cancel"),null).setNeutralButton(th ? "คืนค่าเริ่มต้น" : "Reset to default",null)
+                .setPositiveButton(L.t("Save"),null).create();
+        dialog.show();
+        dialog.getButton(-3).setOnClickListener(v->{for(SequentialGt3.Scale scale:SequentialGt3.Scale.values())
+                fields[scale.ordinal()].setText(Integer.toString(scale.standard));});
+        dialog.getButton(-1).setOnClickListener(v->{
+            int[] values=new int[3];
+            for(SequentialGt3.Scale scale:SequentialGt3.Scale.values()){
+                int i=scale.ordinal();
+                try{values[i]=Integer.parseInt(fields[i].getText().toString().trim());}catch(NumberFormatException ignored){values[i]=0;}
+                if(!scale.valid(values[i])){fields[i].setError(scale.min+" – "+scale.max+" "+scale.unit);return;}
+            }
+            Prefs.setGt3Limits(c,values);dialog.dismiss();host.rebuildSoon();
+        });
     }
 
     private void showEpaDialog() {

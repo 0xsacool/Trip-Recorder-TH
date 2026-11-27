@@ -58,6 +58,26 @@ final class Prefs {
         sp(c).edit().putInt("dashboard_menu_mode", DashboardMenu.normalize(mode)).apply();
     }
 
+    static boolean sequentialGt3(Context c){return sp(c).getBoolean("gt3_sequential",true);}
+    static void setSequentialGt3(Context c,boolean enabled){sp(c).edit().putBoolean("gt3_sequential",enabled).apply();}
+    static int gt3Limit(Context c,SequentialGt3.Scale scale){
+        int n=sp(c).getInt("gt3_max_"+scale.name(),scale.standard);
+        return scale.valid(n) ? n : scale.standard;
+    }
+    static void setGt3Limits(Context c,int[] limits){
+        SharedPreferences.Editor editor=sp(c).edit();
+        for(SequentialGt3.Scale scale:SequentialGt3.Scale.values()){
+            int n=limits[scale.ordinal()];
+            if(!scale.valid(n))throw new IllegalArgumentException(scale.name());
+            editor.putInt("gt3_max_"+scale.name(),n);
+        }
+        editor.apply();
+    }
+    static void configureGt3(Context c,NismoHybridRenderer.BankMotion bank){
+        bank.sequential=sequentialGt3(c);bank.maxPower=gt3Limit(c,SequentialGt3.Scale.POWER);
+        bank.maxRpm=gt3Limit(c,SequentialGt3.Scale.RPM);bank.maxRegen=gt3Limit(c,SequentialGt3.Scale.REGEN);
+    }
+
     static int nismoHeaderMode(Context c) {
         SharedPreferences p=sp(c);
         int fallback=p.getInt("dashboard_menu_mode",DashboardMenu.AUTO)==DashboardMenu.AUTO ? 2 : 0;

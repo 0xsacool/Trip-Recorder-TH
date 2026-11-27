@@ -33,14 +33,28 @@ final class NismoHybridRenderer {
     static final class BankMotion {
         private final SharedMotionController.Gauge gauge = new SharedMotionController.Gauge();
         private EvoHybridRenderer.GaugeMetric previous;
+        private final SequentialGt3 bands=new SequentialGt3();
+        boolean sequential;
+        int maxPower=200,maxRpm=12000,maxRegen=100;
+        String label(){return bands.label();}
+        int color(boolean day){return bands.color(day);}
         double sample(long now,SharedMotionController.Mode mode,EvoHybridRenderer.GaugeMetric metric,EvoHybridRenderer.Data d) {
             if (previous != metric) {
+                bands.reset();
                 previous = metric;
                 gauge.update(now,SharedMotionController.Mode.OFF,Double.NaN);
             }
+            if(sequential && (metric==EvoHybridRenderer.GaugeMetric.POWER || metric==EvoHybridRenderer.GaugeMetric.RPM)){
+                boolean rpm=metric==EvoHybridRenderer.GaugeMetric.RPM;
+                double raw=metric.read(d);
+                boolean regen=!rpm && raw<0;
+                return bands.sample(now,mode,rpm ? SequentialGt3.Scale.RPM : regen ? SequentialGt3.Scale.REGEN : SequentialGt3.Scale.POWER,
+                        regen ? -raw : raw,rpm ? maxRpm : regen ? maxRegen : maxPower);
+            }
+            bands.reset();
             return gauge.update(now,mode,level(metric,d));
         }
-        boolean active() { return gauge.active(); }
+        boolean active() { return bands.active() || gauge.active(); }
     }
     static void bank(EvoHybridRenderer.Surface s, boolean right, double fraction, int ink) {
         for (int i=0;i<STEPS;i++) {
@@ -86,6 +100,11 @@ final class NismoHybridRenderer {
         s.readingWithUnit(value,"--".equals(value) ? "" : m.unit,x,211,78,24,align,235,WHITE,MUTED);
         if (m==EvoHybridRenderer.GaugeMetric.POWER && Double.isFinite(d.power))
             s.text(d.power<0 ? "REGEN" : d.power>0 ? "DRIVE" : "COAST",x,241,19,ink,true,true,align,221);
+        String stage=right ? d.rightStage : d.leftStage;
+        if(stage!=null){
+            ink=right ? d.rightInk : d.leftInk;
+            s.text(stage,right ? 890 : 306,240,18,ink,true,false,right ? -1 : 1,42);
+        }
         bank(s,right,right ? d.rightLevel : d.leftLevel,ink);
 
         int left=right ? 880 : 72;

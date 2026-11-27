@@ -94,6 +94,8 @@ final class PerformanceDashboard extends View {
                 : AdditionalHybridRenderer.asset(theme)!=null ? new EvoHybridCanvas(c,AdditionalHybridRenderer.asset(theme)) : null;
         this.host = host;
         if (nismo) {
+            Prefs.configureGt3(c,leftBank);
+            Prefs.configureGt3(c,rightBank);
             boolean light = Prefs.lightAppearance(c);
             materialChanged = lastNismoLight != null && lastNismoLight != light && motionSafe()
                     && configuredMotion != SharedMotionController.Mode.OFF && android.animation.ValueAnimator.areAnimatorsEnabled();
@@ -361,6 +363,8 @@ final class PerformanceDashboard extends View {
         evoData.batteryTemp=cellsFresh ? maxTemp : Double.NaN;
         evoData.leftLevel=leftBank.sample(now,mode,NismoHybridRenderer.selected(evoData,0),evoData);
         evoData.rightLevel=rightBank.sample(now,mode,NismoHybridRenderer.selected(evoData,1),evoData);
+        evoData.leftStage=leftBank.label();evoData.rightStage=rightBank.label();
+        evoData.leftInk=leftBank.color(evoData.historyLight);evoData.rightInk=rightBank.color(evoData.historyLight);
         evoData.charging = parked && chargeSession;
         evoData.results = parked && completedTrip && now<resultsUntil && !evoData.charging;
         boolean full = mode == SharedMotionController.Mode.FULL;

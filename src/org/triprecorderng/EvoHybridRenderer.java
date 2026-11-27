@@ -49,6 +49,8 @@ final class EvoHybridRenderer {
         float startupAccent, powerAccent;
         double leftLevel=Double.NaN, rightLevel=Double.NaN;
         boolean thai;
+        String leftStage,rightStage;
+        int leftInk,rightInk;
         boolean charging, recording, results;
         float chargePhase, historyOffset, selectionAccent, materialBlend;
         int pressedSlot = -1;
