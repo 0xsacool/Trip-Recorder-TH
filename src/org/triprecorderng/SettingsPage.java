@@ -177,7 +177,7 @@ final class SettingsPage {
                 lightSupported?L.t("Change"):L.t("Details"),false,v->{
                     if(!Prefs.lightAppearanceSupported(c)){
                         Ui.show(new AlertDialog.Builder(c).setTitle(L.t("Appearance"))
-                                .setMessage(L.t("Light and Auto are available with Classic and NISMO GT3."))
+                                .setMessage(L.t("Light and Auto are available with Classic."))
                                 .setPositiveButton(L.t("OK"),null));
                         return;
                     }
@@ -296,16 +296,16 @@ final class SettingsPage {
             }
         });
         host.bindUpdateViews(updates.desc, channel.desc);
-        section(into, L.t("General"), language, appearance, theme, refreshMode, motion, menu, updates, prices, chargingProfiles, battery, range, epa, advanced, channel);
+        boolean th=L.TH.equals(L.current());
+        String label=th ? "แถบด้านบนแดชบอร์ด" : "Dashboard header";
+        String[] modes=th ? new String[]{"มาตรฐาน","กะทัดรัด","ซ่อนอัตโนมัติ"} :
+                new String[]{"Standard","Compact","Auto Hide"};
+        Kit.Row header=action(label,modes[Prefs.dashboardHeaderMode(c)],L.t("Change"),false,
+                v->new AlertDialog.Builder(c).setTitle(label).setSingleChoiceItems(modes,Prefs.dashboardHeaderMode(c),
+                        (dialog,which)->{Prefs.setDashboardHeaderMode(c,which);dialog.dismiss();host.rebuildSoon();})
+                        .setNegativeButton(L.t("Cancel"),null).show());
+        section(into, L.t("General"), language, appearance, theme, refreshMode, motion, header, menu, updates, prices, chargingProfiles, battery, range, epa, advanced, channel);
         if(Prefs.THEME_NISMO.equals(Prefs.dashboardTheme(c))) {
-            boolean th=L.TH.equals(L.current());
-            String label=th ? "แถบด้านบน NISMO" : "NISMO dashboard header";
-            String[] modes=th ? new String[]{"มาตรฐาน","กะทัดรัด","ซ่อนอัตโนมัติ"} :
-                    new String[]{"Standard","Compact","Auto Hide"};
-            Kit.Row header=action(label,modes[Prefs.nismoHeaderMode(c)],L.t("Change"),false,
-                    v->new AlertDialog.Builder(c).setTitle(label).setSingleChoiceItems(modes,Prefs.nismoHeaderMode(c),
-                            (dialog,which)->{Prefs.setNismoHeaderMode(c,which);dialog.dismiss();host.rebuildSoon();})
-                            .setNegativeButton(L.t("Cancel"),null).show());
             String styleTitle=th ? "รูปแบบมาตรวัด" : "Gauge Motion Style";
             String[] styles={"Standard","Sequential GT3"};
             int selected=Prefs.sequentialGt3(c) ? 1 : 0;
@@ -314,7 +314,7 @@ final class SettingsPage {
                         (dialog,which)->{Prefs.setSequentialGt3(c,which==1);dialog.dismiss();host.rebuildSoon();}).show());
             String limitsTitle=th ? "ช่วงมาตรวัด GT3" : "GT3 gauge ranges";
             Kit.Row limits=action(limitsTitle,"kW / rpm",L.t("Change"),false,v->showGt3Ranges(limitsTitle,th));
-            section(into,"NISMO GT3",header,style,limits);
+            section(into,"NISMO GT3",style,limits);
         }
     }
 

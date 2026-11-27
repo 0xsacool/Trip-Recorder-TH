@@ -21,8 +21,7 @@ final class Prefs {
         return Appearance.light(appearanceMode(c),c.getResources().getConfiguration().uiMode,lightAppearanceSupported(c));
     }
     static boolean lightAppearanceSupported(Context c) {
-        String theme = dashboardTheme(c);
-        return THEME_CLASSIC.equals(theme) || THEME_NISMO.equals(theme);
+        return THEME_CLASSIC.equals(dashboardTheme(c));
     }
 
     static SharedMotionController.Mode motionMode(Context c) {
@@ -78,13 +77,15 @@ final class Prefs {
         bank.maxRpm=gt3Limit(c,SequentialGt3.Scale.RPM);bank.maxRegen=gt3Limit(c,SequentialGt3.Scale.REGEN);
     }
 
-    static int nismoHeaderMode(Context c) {
-        SharedPreferences p=sp(c);
-        int fallback=p.getInt("dashboard_menu_mode",DashboardMenu.AUTO)==DashboardMenu.AUTO ? 2 : 0;
-        return DashboardMenu.normalize(p.getInt("nismo_header_mode",fallback));
+    static int dashboardHeaderMode(Context c) {
+        SharedPreferences prefs = sp(c);
+        if (!prefs.contains("dashboard_header_mode") && prefs.contains("nismo_header_mode")) {
+            setDashboardHeaderMode(c, prefs.getInt("nismo_header_mode", DashboardMenu.AUTO));
+        }
+        return DashboardMenu.normalize(prefs.getInt("dashboard_header_mode", DashboardMenu.AUTO));
     }
-    static void setNismoHeaderMode(Context c,int mode) {
-        sp(c).edit().putInt("nismo_header_mode",DashboardMenu.normalize(mode)).apply();
+    static void setDashboardHeaderMode(Context c, int mode) {
+        sp(c).edit().putInt("dashboard_header_mode", DashboardMenu.normalize(mode)).apply();
     }
 
     static boolean dynamicRange(Context c) { return sp(c).getBoolean("range_dynamic", false); }

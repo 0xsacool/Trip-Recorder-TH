@@ -285,7 +285,7 @@ public class MainActivity extends Activity {
 
     private void refreshDashboardMenu(boolean entering) {
         dashboardMenu.configure(Prefs.dashboardMenuMode(this));
-        headerMode=Prefs.THEME_NISMO.equals(Prefs.dashboardTheme(this)) ? Prefs.nismoHeaderMode(this) : 0;
+        headerMode=Prefs.dashboardHeaderMode(this);
         headerMenu.configure(headerMode==2 ? DashboardMenu.AUTO : DashboardMenu.ALWAYS);
         if(entering) headerMenu.enterDashboard();
         applyHeader();

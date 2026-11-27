@@ -34,8 +34,8 @@ public final class NismoPreviewActivity extends Activity implements ThisTripPage
             Prefs.setDashboardTheme(this,Prefs.THEME_NISMO);
             int header=getIntent().getIntExtra("header",-1);
             if(header<0)getSharedPreferences("triprecng",MODE_PRIVATE).edit()
-                    .remove("nismo_header_mode").remove("dashboard_menu_mode").apply();
-            else Prefs.setNismoHeaderMode(this,header);
+                    .remove("dashboard_header_mode").remove("nismo_header_mode").remove("dashboard_menu_mode").apply();
+            else Prefs.setDashboardHeaderMode(this,header);
             startActivity(new android.content.Intent(this,MainActivity.class).putExtra("skip_alert",true));
             finish();return;
         }
