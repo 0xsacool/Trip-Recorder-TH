@@ -1,0 +1,7 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="org.triprecorderng.preview">
+    <application android:label="GT3 simulated telemetry" android:hardwareAccelerated="true"
+        android:theme="@android:style/Theme.Material.NoActionBar.Fullscreen">
+        <activity android:name="org.triprecorderng.NismoPreviewActivity" android:screenOrientation="landscape"
+            android:exported="true" />
+    </application>
+</manifest>

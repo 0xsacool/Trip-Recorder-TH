@@ -39,6 +39,13 @@ final class PerformanceDashboard extends View {
     private long lastSlowRefresh;
     private final SharedMotionController motion = new SharedMotionController();
     private boolean motionAttempted;
+    private final boolean nismo;
+    private final SharedMotionController.Mode configuredMotion;
+    private final boolean performanceRefresh;
+    private static Boolean lastNismoLight;
+    private long materialStart = -1, accelerationStart = -1;
+    private boolean materialChanged;
+    private boolean chargeSession, chargingActive, completedTrip;
     private boolean motionSafe() {
         RecorderService.Live live = RecorderService.live;
         long now = System.currentTimeMillis();
@@ -71,13 +78,24 @@ final class PerformanceDashboard extends View {
         this.typeR = Prefs.typeRTheme(c);
         this.gr = Prefs.grTheme(c);
         this.theme = Prefs.dashboardTheme(c);
+        nismo = Prefs.THEME_NISMO.equals(theme);
+        configuredMotion = Prefs.motionMode(c);
+        performanceRefresh = Prefs.performanceRefresh(c);
         this.telemetry = new TelemetryPicker(c);
         this.fallbackGraph = new EvoHybridCanvas(c,null);
         this.evoCanvas = Prefs.THEME_EVO_HYBRID.equals(theme) ? new EvoHybridCanvas(c)
-                : (Prefs.THEME_GTR.equals(theme)||Prefs.THEME_NISMO.equals(theme)) ? new EvoHybridCanvas(c,"gtr_hybrid_plate.webp")
+                : nismo ? new EvoHybridCanvas(c,"nismo_gt3")
+                : Prefs.THEME_GTR.equals(theme) ? new EvoHybridCanvas(c,"gtr_hybrid_plate.webp")
                 : Prefs.THEME_TYPE_R.equals(theme) ? new EvoHybridCanvas(c,"typer_hybrid_plate.webp")
                 : AdditionalHybridRenderer.asset(theme)!=null ? new EvoHybridCanvas(c,AdditionalHybridRenderer.asset(theme)) : null;
         this.host = host;
+        if (nismo) {
+            boolean light = Prefs.lightAppearance(c);
+            materialChanged = lastNismoLight != null && lastNismoLight != light && motionSafe()
+                    && configuredMotion != SharedMotionController.Mode.OFF && android.animation.ValueAnimator.areAnimatorsEnabled();
+            if (materialChanged) evoCanvas.prepareMaterialTransition(c);
+            lastNismoLight = light;
+        }
         setBackgroundColor(Prefs.lightAppearance(c)?new CockpitPalette(theme,true).background():
                 Prefs.THEME_U9_XTREME.equals(theme) ? 0xFF08090A : gr ? 0xFF080808 : typeR ? 0xFF08090B : 0xFF090D11);
         setFocusable(true);
@@ -120,6 +138,8 @@ final class PerformanceDashboard extends View {
         evoData.liveRpm=frontRpm;
         // Fast values redraw on every new reading; expensive trip summaries and labels stay at 1 Hz.
         long elapsedNow = android.os.SystemClock.elapsedRealtime();
+        if (nismo && valid(previousSpeed) && speed > previousSpeed && motorPower > 0)
+            accelerationStart = elapsedNow;
         if (lastSlowRefresh != 0 && elapsedNow - lastSlowRefresh < 1000) {
             if (Double.compare(previousSpeed, speed) != 0 || Double.compare(previousPower, motorPower) != 0 || Double.compare(previousRpm,frontRpm)!=0)
                 invalidate();
@@ -150,6 +170,9 @@ final class PerformanceDashboard extends View {
                 frontRpm);
 
         String charging = ChargeRecorder.status;
+        chargeSession = linked && charging != null && !charging.isEmpty() && ChargeRecorder.current != null;
+        chargingActive = chargeSession && !charging.endsWith(L.t(" - paused"));
+        completedTrip = current == null && shown != null && shown.ended;
         if (!live.running) {
             status = L.t("Service stopped"); statusColor = RED;
         } else if (!fresh) {
@@ -174,6 +197,7 @@ final class PerformanceDashboard extends View {
                 + number(maxTemp, "%.0f") + " C. Power " + number(motorPower, "%.1f") + " kW. "
                 + tripLabel + ": " + number(distance, "%.1f") + " km, "
                 + energyCaption() + " " + energyNumber(energy) + " kWh.");
+        if (evoCanvas != null) refreshInstrumentLabels();
         invalidate();
     }
 
@@ -181,55 +205,11 @@ final class PerformanceDashboard extends View {
         super.onDraw(canvas);
         if (getWidth() <= 0 || getHeight() <= 0) return;
         if (evoCanvas != null) {
-            if (Prefs.THEME_GTR.equals(theme)||Prefs.THEME_NISMO.equals(theme)) {
-                long frameNow = android.os.SystemClock.elapsedRealtime();
-                boolean safe = motionSafe() && isShown() && hasWindowFocus();
-                if (!motionAttempted) {
-                    motionAttempted = true;
-                    motion.begin(frameNow, android.animation.ValueAnimator.areAnimatorsEnabled()
-                            ? Prefs.motionMode(c) : SharedMotionController.Mode.OFF, speed, safe);
-                }
-                evoData.startupAccent = motion.frame(frameNow, speed, safe);
-                SharedMotionController.Mode mode = isShown() && hasWindowFocus()
-                        && android.animation.ValueAnimator.areAnimatorsEnabled()
-                        ? Prefs.motionMode(c) : SharedMotionController.Mode.OFF;
-                if (!Prefs.performanceRefresh(c) && mode == SharedMotionController.Mode.FULL)
-                    mode = SharedMotionController.Mode.REDUCED;
-                RecorderService.Live live = RecorderService.live;
-                long wall = System.currentTimeMillis();
-                boolean fresh = live.running && live.motorPowerWall > 0
-                        && wall >= live.motorPowerWall && wall-live.motorPowerWall < 2000;
-                evoData.powerAccent = motion.powerAccent(frameNow, mode, fresh ? motorPower : Double.NaN);
-                if(Prefs.THEME_NISMO.equals(theme)) evoData.nismoPower=motion.gauge(frameNow,mode,fresh?motorPower:Double.NaN);
-                if (motion.active() || motion.powerActive() || motion.gaugeActive()) postInvalidateOnAnimation();
-            }
-            evoData.soc = soc;
             evoData.speed = speed;
             evoData.power = motorPower;
-            evoData.avgConsumption=average;
-            evoData.batteryTemp=maxTemp;
-            evoData.chargingVoltage=chargeVoltage;
-            evoData.remainingRange=range.km;
-            evoData.range = range.text();
-            evoData.source = source;
-            evoData.status = status;
-            evoData.statusColor = statusColor;
-            evoData.tripLabel = tripLabel;
-            evoData.temp = tempReading();
-            evoData.cells = cellReading();
-            evoData.voltage = number(chargeVoltage, "%.0f") + " V";
-            evoData.distance = number(distance, "%.1f") + " km";
-            evoData.elapsed = elapsed;
-            evoData.energy = energyNumber(energy) + " kWh";
-            evoData.average = energyNumber(average) + " kWh/100 km";
             telemetry.select(evoData);
-            evoData.batteryLabel = L.t("Battery");
-            evoData.rangeLabel = range.label;
-            evoData.tripCaption = L.t("Trip");
-            evoData.timeCaption = L.t("Time");
-            evoData.energyCaption = energyCaption();
-            evoData.avgCaption = L.t("Average consumption");
-            if(Prefs.THEME_NISMO.equals(theme))evoCanvas.drawNismo(canvas,getWidth(),getHeight(),evoData,average,evoData.history,evoData.historyCount);
+            if (nismo || Prefs.THEME_GTR.equals(theme)) updateMotion();
+            if(nismo)evoCanvas.drawNismo(canvas,getWidth(),getHeight(),evoData);
             else if(Prefs.THEME_GTR.equals(theme))evoCanvas.drawGtr(canvas,getWidth(),getHeight(),evoData,average,evoData.history,evoData.historyCount);
             else if(Prefs.THEME_TYPE_R.equals(theme))evoCanvas.drawTypeR(canvas,getWidth(),getHeight(),evoData);
             else if(AdditionalHybridRenderer.asset(theme)!=null)evoCanvas.drawAdditional(canvas,getWidth(),getHeight(),evoData,theme,average);
@@ -301,8 +281,86 @@ final class PerformanceDashboard extends View {
         canvas.restore();
     }
 
+    private void refreshInstrumentLabels() {
+        evoData.soc = soc;
+        evoData.avgConsumption = average;
+        evoData.batteryTemp = maxTemp;
+        evoData.chargingVoltage = chargeVoltage;
+        evoData.remainingRange = range.km;
+        evoData.range = range.text();
+        evoData.source = source;
+        evoData.status = status;
+        evoData.statusColor = statusColor;
+        evoData.tripLabel = tripLabel;
+        evoData.temp = tempReading();
+        evoData.cells = cellReading();
+        evoData.voltage = number(chargeVoltage, "%.0f") + " V";
+        evoData.distance = number(distance, "%.1f") + " km";
+        evoData.elapsed = elapsed;
+        evoData.energy = energyNumber(energy) + " kWh";
+        evoData.average = energyNumber(average) + " kWh/100 km";
+        evoData.batteryLabel = L.t("Battery");
+        evoData.rangeLabel = range.label;
+        evoData.tripCaption = L.t("Trip");
+        evoData.timeCaption = L.t("Time");
+        evoData.energyCaption = energyCaption();
+        evoData.avgCaption = L.t("Average consumption");
+    }
+
+    private void updateMotion() {
+        long now = android.os.SystemClock.elapsedRealtime();
+        boolean visible = isShown() && hasWindowFocus() && getWindowVisibility() == VISIBLE;
+        SharedMotionController.Mode mode = visible && android.animation.ValueAnimator.areAnimatorsEnabled()
+                ? configuredMotion : SharedMotionController.Mode.OFF;
+        if (!performanceRefresh && mode == SharedMotionController.Mode.FULL)
+            mode = SharedMotionController.Mode.REDUCED;
+        boolean parked = motionSafe();
+        boolean safe = parked && visible && mode != SharedMotionController.Mode.OFF;
+        if (!motionAttempted && (visible || !parked)) {
+            motionAttempted = true;
+            motion.begin(now, mode, speed, safe);
+            if (materialChanged && safe) materialStart = now;
+        }
+        evoData.startupAccent = motion.frame(now, speed, safe);
+        long wall = System.currentTimeMillis();
+        RecorderService.Live live = RecorderService.live;
+        boolean powerFresh = live.running && live.motorPowerWall > 0 && wall >= live.motorPowerWall
+                && wall - live.motorPowerWall < 2000;
+        if (!nismo) {
+            evoData.powerAccent = motion.powerAccent(now, mode, powerFresh ? motorPower : Double.NaN);
+            if (motion.active() || motion.powerActive()) postInvalidateOnAnimation();
+            return;
+        }
+        boolean speedFresh = live.running && live.driveWall > 0 && wall >= live.driveWall && wall-live.driveWall < 2000;
+        evoData.speed = speedFresh ? speed : Double.NaN;
+        evoData.power = powerFresh && speedFresh ? motorPower : Double.NaN;
+        evoData.nismoPower = motion.drive.update(now,mode,evoData.power);
+        evoData.nismoSoc = motion.battery.update(now,mode,soc);
+        evoData.charging = parked && chargeSession;
+        evoData.results = parked && completedTrip && !evoData.charging;
+        boolean full = mode == SharedMotionController.Mode.FULL;
+        evoData.chargePhase = full && evoData.charging && chargingActive && valid(soc) ? (now % 1800)/1800f : -1;
+        long sampleAge = now - evoData.historySecond*1000;
+        boolean scroll = full && evoData.historyMetric != EvoHybridRenderer.Metric.MOTOR_RPM
+                && evoData.historyCount >= 2 && sampleAge >= 0 && sampleAge < 1000;
+        evoData.historyOffset = full && evoData.historyCount >= 2 ? Math.min(1,Math.max(0,sampleAge/1000f)) : 0;
+        evoData.historyColor = NismoHybridRenderer.RED;
+        evoData.powerAccent = full && evoData.power > 0 ? decay(now,accelerationStart,240) : 0;
+        evoData.selectionAccent = mode == SharedMotionController.Mode.OFF ? 0 : decay(now,telemetry.changeTime(),180);
+        evoData.pressedSlot = pressedGauge >= 0 ? pressedGauge : graphPressed ? 2 :
+                evoData.selectionAccent > 0 ? telemetry.changedSlot() : -1;
+        if (!safe) materialStart = -1;
+        evoData.materialBlend = .25f * decay(now,materialStart,200);
+        if (motion.active() || motion.drive.active() || motion.battery.active() || evoData.powerAccent > 0 ||
+                evoData.selectionAccent > 0 || evoData.materialBlend > 0) postInvalidateOnAnimation();
+        else if (scroll || evoData.chargePhase >= 0) postInvalidateDelayed(32);
+    }
+    private static float decay(long now,long start,int duration) {
+        return start < 0 ? 0 : Math.max(0,1-(now-start)/(float)duration);
+    }
     private RectF chartBounds(){return evoCanvas!=null?evoCanvas.graphBounds():new RectF(fallbackGraphBounds);}
     @Override public boolean onTouchEvent(MotionEvent e){
+        if (nismo) invalidate();
         RectF hit=chartBounds();
         if(e.getActionMasked()==MotionEvent.ACTION_DOWN){
             graphPressed=hit.contains(e.getX(),e.getY());
@@ -327,6 +385,16 @@ final class PerformanceDashboard extends View {
         return super.onTouchEvent(e);
     }
     @Override protected void onDetachedFromWindow(){motion.cancel();telemetry.dismiss();super.onDetachedFromWindow();}
+    @Override public void onWindowFocusChanged(boolean focused) {
+        super.onWindowFocusChanged(focused);
+        if (!nismo) return;
+        if (!focused && motionAttempted) { motion.cancel(); materialStart = -1; }
+        if (focused) invalidate();
+    }
+    @Override protected void onVisibilityChanged(View view,int visibility) {
+        super.onVisibilityChanged(view,visibility);
+        if (nismo && visibility != VISIBLE && motionAttempted) { motion.cancel(); materialStart = -1; }
+    }
 
     private static final int U9_ORANGE = 0xFFFF791A, U9_REGEN = 0xFF33BFFF;
     private static final int U9_BORDER = 0xFF54575B;

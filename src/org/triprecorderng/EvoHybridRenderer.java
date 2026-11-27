@@ -37,7 +37,13 @@ final class EvoHybridRenderer {
     static final class Data {
         double soc, speed, power;
         float startupAccent, powerAccent;
-        double nismoPower=Double.NaN;
+        double nismoPower=Double.NaN, nismoSoc=Double.NaN;
+        boolean charging, chargeFlow, results;
+        float chargePhase, historyOffset, selectionAccent, materialBlend;
+        int pressedSlot = -1;
+        long historySecond = -1;
+        private History selectedHistory;
+        private long historyRevision = -1;
         double liveRpm=Double.NaN;
         double avgConsumption=Double.NaN,batteryTemp=Double.NaN,chargingVoltage=Double.NaN,remainingRange=Double.NaN;
         GaugeMetric[] gauges={GaugeMetric.DEFAULT,GaugeMetric.DEFAULT};
@@ -124,7 +130,9 @@ final class EvoHybridRenderer {
         History(int capacity){samples=new double[capacity];}
         int count;
         private long lastSecond=-1;
+        private long revision;
         void sample(long elapsedMillis,double value){
+            revision++;
             long second=elapsedMillis/1000;
             if(second==lastSecond&&count>0){samples[count-1]=valid(value)?value:Double.NaN;return;}
             if(lastSecond>=0&&second>lastSecond){
@@ -167,6 +175,10 @@ final class EvoHybridRenderer {
             int capacity=seconds==300?300:60;
             if(m==Metric.MOTOR_RPM){d.historyCount=0;d.historyMetric=m;d.historySeconds=capacity;return;}
             History h=series[m.ordinal()];
+            if (d.selectedHistory==h && d.historyRevision==h.revision && d.historySeconds==capacity && d.historyMetric==m) return;
+            d.selectedHistory=h;
+            d.historyRevision=h.revision;
+            d.historySecond = h.lastSecond;
             if(d.history==null||d.history.length!=capacity)d.history=new double[capacity];
             d.historyCount=Math.min(capacity,h.count);
             System.arraycopy(h.samples,h.count-d.historyCount,d.history,0,d.historyCount);
@@ -181,6 +193,9 @@ final class EvoHybridRenderer {
         history(s,samples,count,metric,seconds,accent,false,x,y,width,height);
     }
     static void history(Surface s,double[] samples,int count,Metric metric,int seconds,int accent,boolean light,float x,float y,float width,float height) {
+        history(s,samples,count,metric,seconds,accent,light,x,y,width,height,0);
+    }
+    private static void history(Surface s,double[] samples,int count,Metric metric,int seconds,int accent,boolean light,float x,float y,float width,float height,float offset) {
         s.historyBounds(x,y,width,height);
         float l=x+32,r=x+width-5,t=y+15,b=y+height-4;
         final int muted=light?0xff526574:0xffb6bbc0, grid=light?0xffd0dbe2:0xff303337;
@@ -196,8 +211,8 @@ final class EvoHybridRenderer {
         }
         if(metric==Metric.POWER){hi=step*2;lo=-step;}
         int divisions=metric==Metric.BATTERY_LEVEL?4:3;
-        double[] ticks=new double[divisions+1];for(int i=0;i<=divisions;i++)ticks[i]=hi-(hi-lo)*i/divisions;
-        for(double v:ticks){
+        for(int tick=0;tick<=divisions;tick++){
+            double v=hi-(hi-lo)*tick/divisions;
             float yy=b-(b-t)*(float)((v-lo)/(hi-lo));
             s.line(l,yy,r,yy,v==0?0xff637078:grid,1);
             s.text(Long.toString(Math.round(v)),l-5,yy+3,10,muted,false,false,1,27);
@@ -206,9 +221,12 @@ final class EvoHybridRenderer {
         boolean started=false;float px=0,py=0;
         for(int i=0;i<count;i++){
             if(!valid(samples[i])){started=false;continue;}
-            float xx=capacity==1?r:l+(r-l)*(capacity-count+i)/Math.max(1,capacity-1);
+            float xx=capacity==1?r:l+(r-l)*(capacity-count+i-offset)/Math.max(1,capacity-1);
             float yy=b-(b-t)*(float)((samples[i]-lo)/(hi-lo));
-            if(started)s.line(px,py,xx,yy,accent,2.2f);else s.circle(xx,yy,2.3f,accent);
+            if(started && xx>=l){
+                float leftY=px<l ? py+(yy-py)*(l-px)/(xx-px) : py;
+                s.line(Math.max(l,px),leftY,xx,yy,accent,2.2f);
+            }else if(xx>=l)s.circle(xx,yy,2.3f,accent);
             started=true;px=xx;py=yy;
         }
     }
@@ -216,7 +234,7 @@ final class EvoHybridRenderer {
         history(s,d,d.history,d.historyCount,x,y,width,height);
     }
     static void history(Surface s,Data d,double[] samples,int count,float x,float y,float width,float height){
-        if(d.historyMetric!=Metric.MOTOR_RPM){history(s,samples,count,d.historyMetric,d.historySeconds,d.historyColor,d.historyLight,x,y,width,height);return;}
+        if(d.historyMetric!=Metric.MOTOR_RPM){history(s,samples,count,d.historyMetric,d.historySeconds,d.historyColor,d.historyLight,x,y,width,height,d.historyOffset);return;}
         // A live instrument, not a historical plot. Keep the hitbox and header in exactly the same place.
         s.historyBounds(x,y,width,height);
         float l=x+8,r=x+width-6;

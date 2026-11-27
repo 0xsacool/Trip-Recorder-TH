@@ -21,15 +21,25 @@ final class Prefs {
         return Appearance.light(appearanceMode(c),c.getResources().getConfiguration().uiMode,lightAppearanceSupported(c));
     }
     static boolean lightAppearanceSupported(Context c) {
-        return THEME_CLASSIC.equals(dashboardTheme(c));
+        String theme = dashboardTheme(c);
+        return THEME_CLASSIC.equals(theme) || THEME_NISMO.equals(theme);
     }
 
     static SharedMotionController.Mode motionMode(Context c) {
-        try { return SharedMotionController.Mode.valueOf(sp(c).getString("dashboard_motion", "REDUCED")); }
+        boolean nismo = THEME_NISMO.equals(dashboardTheme(c));
+        SharedPreferences prefs = sp(c);
+        String legacy = prefs.getString("dashboard_motion", nismo ? "FULL" : "REDUCED");
+        String value = nismo ? prefs.getString("nismo_motion", legacy) : legacy;
+        try { return SharedMotionController.Mode.valueOf(value); }
         catch (IllegalArgumentException e) { return SharedMotionController.Mode.REDUCED; }
     }
     static void setMotionMode(Context c, SharedMotionController.Mode mode) {
-        sp(c).edit().putString("dashboard_motion", mode.name()).apply();
+        boolean nismo = THEME_NISMO.equals(dashboardTheme(c));
+        SharedPreferences prefs = sp(c);
+        SharedPreferences.Editor edit = prefs.edit();
+        if (!nismo && !prefs.contains("nismo_motion"))
+            edit.putString("nismo_motion", prefs.getString("dashboard_motion", "FULL"));
+        edit.putString(nismo ? "nismo_motion" : "dashboard_motion", mode.name()).apply();
     }
 
     static boolean performanceRefresh(Context c) {
@@ -153,7 +163,7 @@ final class Prefs {
         if (THEME_U9_XTREME.equals(theme)) return "BYD XTREME EDITION";
         if (THEME_GR.equals(theme)) return "GR Motorsport Edition";
         if (THEME_TYPE_R.equals(theme)) return "Type R Edition";
-        if (THEME_NISMO.equals(theme)) return "GT-R NISMO Edition";
+        if (THEME_NISMO.equals(theme)) return "NISMO GT3 Edition";
         if (THEME_GTR.equals(theme)) return "GT-R Performance";
         return L.t("Classic");
     }

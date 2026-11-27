@@ -1,0 +1,109 @@
+package org.triprecorderng;
+
+import android.app.Activity;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.SystemClock;
+import android.view.Gravity;
+import android.view.View;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import java.util.Collections;
+import java.util.List;
+
+/** Installed only in the isolated QA APK. Exercises the production dashboard entry point. */
+public final class NismoPreviewActivity extends Activity implements ThisTripPage.Host {
+    private final Handler handler = new Handler();
+    private final Trip trip = new Trip();
+    private Runnable refresh;
+    private String scene;
+    private int tick;
+    private final Runnable advance = new Runnable() {
+        public void run() {
+            sample();
+            refresh.run();
+            handler.postDelayed(this,250);
+        }
+    };
+    @Override public void onCreate(Bundle state) {
+        super.onCreate(state);
+        scene = getIntent().getStringExtra("scene");
+        if (scene == null) scene = "drive";
+        String mode = getIntent().getStringExtra("motion");
+        boolean light = getIntent().getBooleanExtra("light",false);
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+                View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+        L.setSetting(this,"en");
+        Prefs.setDashboardTheme(this,Prefs.THEME_NISMO);
+        Prefs.setAppearanceMode(this,light ? Appearance.LIGHT : Appearance.DARK);
+        Ui.setAppearance(light);
+        Prefs.setPerformanceRefresh(this,true);
+        Prefs.setMotionMode(this,SharedMotionController.Mode.valueOf(mode == null ? "FULL" : mode));
+        Prefs.setEpaRangeKm(this,387.5);
+        boolean selector = scene.equals("selector");
+        getSharedPreferences("triprecng",MODE_PRIVATE).edit()
+                .putString("custom_gauge_gtr_nismo_0",selector ? "RPM" : "DEFAULT")
+                .putString("telemetry_metric",selector ? "SPEED" : "POWER")
+                .putInt("telemetry_seconds",selector ? 300 : 60).apply();
+        trip.distanceKm = 28.4;
+        trip.startMs = System.currentTimeMillis()-1920000;
+        trip.lastUpdateMs = System.currentTimeMillis();
+        trip.movingSec = 1920;
+        trip.elecStart = 100;
+        trip.elecEnd = 104.8;
+        trip.ended = scene.equals("results");
+        if (trip.ended) trip.endMs = trip.lastUpdateMs;
+        sample();
+        if (!scene.equals("missing")) {
+            TelemetryPicker history = new TelemetryPicker(this);
+            long end = SystemClock.elapsedRealtime();
+            for(int i=60;i>0;i--) {
+                double wave = 58+22*Math.sin(i*.31)+18*Math.sin(i*.83);
+                history.sample(end-1000L*i,i==22 ? Double.NaN : wave,86,17,33,64,4280);
+            }
+        }
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setBackgroundColor(light ? 0xffeff1f3 : 0xff08090b);
+        TextView label = new TextView(this);
+        label.setTextColor(light ? 0xff152434 : 0xffbdc3ca);
+        label.setGravity(Gravity.CENTER);
+        label.setTextSize(13);
+        label.setText("SIMULATED TELEMETRY  /  "+scene+"  /  "+(light ? "DAY" : "NIGHT")+"  /  "+mode);
+        root.addView(label,new LinearLayout.LayoutParams(-1,Ui.dp(this,24)));
+        root.addView(PerformanceDashboard.build(this,this),new LinearLayout.LayoutParams(-1,0,1));
+        setContentView(root);
+        handler.postDelayed(advance,250);
+    }
+    private void sample() {
+        long now = System.currentTimeMillis();
+        boolean linked = !scene.equals("missing");
+        boolean drive = scene.equals("drive") || scene.equals("dynamic") || scene.equals("regen") || scene.equals("selector");
+        RecorderService.Live live = RecorderService.live;
+        live.running = linked;
+        live.lastTickWall = live.driveWall = live.motorPowerWall = live.frontRpmWall = live.telemetryWall = linked ? now : 0;
+        live.vehicle = linked ? "QA" : "none";
+        live.speed = linked ? drive ? 86 : 0 : Double.NaN;
+        live.motorPower = linked ? drive ? scene.equals("regen") ? -48 : 68 : 0 : Double.NaN;
+        if (scene.equals("dynamic")) {
+            live.speed = 70+10*Math.sin(tick*.21);
+            live.motorPower = 28+110*Math.sin(tick*.25);
+        }
+        live.tripActive = drive;
+        live.soc = linked ? 64 : Double.NaN;
+        live.frontRpm = linked ? drive ? 4280 : 0 : Double.NaN;
+        live.telemetry = new double[]{31,33,Double.NaN,407,3.230,3.236};
+        live.gpsFix = linked;
+        RecorderService.current = drive ? trip : null;
+        if (scene.equals("charging")) {
+            if (ChargeRecorder.current == null) ChargeRecorder.current = new Charge();
+            ChargeRecorder.status = "Charging (AC)";
+        } else { ChargeRecorder.current = null; ChargeRecorder.status = ""; }
+        tick++;
+    }
+    public List<Trip> trips() { return trip.ended ? Collections.singletonList(trip) : Collections.emptyList(); }
+    public void openTrip(Trip t) {}
+    public void openSetting() {}
+    public void refresher(Runnable r) { refresh = r; }
+    @Override protected void onDestroy() { handler.removeCallbacks(advance); super.onDestroy(); }
+}

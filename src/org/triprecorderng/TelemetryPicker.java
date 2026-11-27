@@ -28,6 +28,14 @@ final class TelemetryPicker {
     private PopupWindow popup;
     private final String gaugeTheme;
     private final EvoHybridRenderer.GaugeMetric[] gauges=new EvoHybridRenderer.GaugeMetric[2];
+    private int changedSlot = -1;
+    private long changeTime = -1;
+    private void changed(int slot) {
+        changedSlot = slot;
+        changeTime = android.os.SystemClock.elapsedRealtime();
+    }
+    long changeTime() { return changeTime; }
+    int changedSlot() { return changedSlot; }
 
     TelemetryPicker(Context c){
         this.c=c;
@@ -63,10 +71,10 @@ final class TelemetryPicker {
         TextView title=row("CUSTOM GAUGE "+(slot+1),false);title.setTextColor(accent);title.setTextSize(13);list.addView(title,new LinearLayout.LayoutParams(-1,-2));
         for(EvoHybridRenderer.GaugeMetric m:EvoHybridRenderer.GaugeMetric.values()){
             TextView item=row(m.label+(m.unit.isEmpty()?"":" ("+m.unit+")"),m==gauges[slot]);list.addView(item,new LinearLayout.LayoutParams(-1,-2));
-            item.setOnClickListener(v->{gauges[slot]=m;prefs.edit().putString(gaugeKey(slot),m.name()).apply();dismiss();anchor.invalidate();});
+            item.setOnClickListener(v->{gauges[slot]=m;changed(slot);prefs.edit().putString(gaugeKey(slot),m.name()).apply();dismiss();anchor.invalidate();});
         }
         TextView reset=row("Reset theme gauges",false);list.addView(reset,new LinearLayout.LayoutParams(-1,-2));
-        reset.setOnClickListener(v->{gauges[0]=gauges[1]=EvoHybridRenderer.GaugeMetric.DEFAULT;prefs.edit().remove(gaugeKey(0)).remove(gaugeKey(1)).apply();dismiss();anchor.invalidate();});
+        reset.setOnClickListener(v->{gauges[0]=gauges[1]=EvoHybridRenderer.GaugeMetric.DEFAULT;changed(slot);prefs.edit().remove(gaugeKey(0)).remove(gaugeKey(1)).apply();dismiss();anchor.invalidate();});
         showList(anchor,bounds,list,bg,true);
     }
     String description(){return metric.title+", "+(metric==EvoHybridRenderer.Metric.MOTOR_RPM?"Live":seconds==300?"5 min":"60s")+". Tap to choose data";}
@@ -77,7 +85,7 @@ final class TelemetryPicker {
         t.setPadding(dp(12),0,dp(12),0);t.setMinHeight(dp(44));return t;
     }
     private void save(){prefs.edit().putString("telemetry_metric",metric.name()).putInt("telemetry_seconds",seconds).apply();}
-    private void choose(View anchor){save();dismiss();anchor.invalidate();}
+    private void choose(View anchor){changed(2);save();dismiss();anchor.invalidate();}
     void dismiss(){if(popup!=null){popup.dismiss();popup=null;}}
     void show(View anchor,RectF graph){
         if(popup!=null&&popup.isShowing()){dismiss();return;}

@@ -223,9 +223,10 @@ final class SettingsPage {
                                 })
                         .setNegativeButton(L.t("Cancel"), null).show());
         final String[] motionChoices = {"Off", "Reduced", "Full"};
-        Kit.Row motion = action("Motion effects (GT-R)", motionChoices[Prefs.motionMode(c).ordinal()],
+        String motionTitle = Prefs.THEME_NISMO.equals(Prefs.dashboardTheme(c)) ? "Motion effects (NISMO GT3)" : "Motion effects (GT-R)";
+        Kit.Row motion = action(motionTitle, motionChoices[Prefs.motionMode(c).ordinal()],
                 L.t("Change"), false, v -> new AlertDialog.Builder(c)
-                        .setTitle("Motion effects (GT-R)")
+                        .setTitle(motionTitle)
                         .setSingleChoiceItems(motionChoices, Prefs.motionMode(c).ordinal(), (dialog, which) -> {
                             Prefs.setMotionMode(c, SharedMotionController.Mode.values()[which]);
                             dialog.dismiss();

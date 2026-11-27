@@ -13,6 +13,8 @@ import java.io.InputStream;
 /** Android adapter; only decodes the housing once per dashboard lifetime. */
 final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
     private final Bitmap bitmap;
+    private Bitmap previousMaterial;
+    private float materialBlend;
     private final CockpitPalette palette;
     private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
     private final RectF box = new RectF();
@@ -33,15 +35,23 @@ final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
     EvoHybridCanvas(Context context) { this(context,"evo_hybrid_plate.webp"); }
     EvoHybridCanvas(Context context,String asset) {
         palette=new CockpitPalette(Prefs.dashboardTheme(context),Prefs.sportTheme(context)&&Prefs.lightAppearance(context));
+        boolean gt3 = "nismo_gt3".equals(asset);
+        if (gt3) asset = palette.light ? "nismo_gt3_day.webp" : "nismo_gt3_night.webp";
+        bitmap = decode(context,asset,palette.light && !gt3);
+    }
+    void prepareMaterialTransition(Context context) {
+        previousMaterial = decode(context,palette.light ? "nismo_gt3_night.webp" : "nismo_gt3_day.webp",false);
+    }
+    private Bitmap decode(Context context,String asset,boolean adapt) {
         Bitmap b=null;
         if(asset!=null)try(InputStream in=context.getAssets().open(asset)){
             BitmapFactory.Options o=new BitmapFactory.Options();
             o.inScaled=false;
             // Transform the plate once, in-place, off the live rendering path.
-            o.inMutable=palette.light;
+            o.inMutable=adapt;
             o.inPreferredConfig=Bitmap.Config.ARGB_8888;
             b=BitmapFactory.decodeStream(in,null,o);
-            if(b!=null&&palette.light){
+            if(b!=null&&adapt){
                 if(!b.isMutable()){
                     Bitmap original=b;b=original.copy(Bitmap.Config.ARGB_8888,true);
                     original.recycle();
@@ -56,7 +66,7 @@ final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
                 }
             }
         }catch(java.io.IOException e){android.util.Log.w("EvoHybrid","Backplate unavailable",e);}
-        bitmap=b;
+        return b;
     }
     void drawHistory(Canvas canvas,int width,int height,EvoHybridRenderer.Data history){
         if(width<=0||height<=0)return;
@@ -79,11 +89,13 @@ final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
         GtrHybridRenderer.draw(this,d,average,history,count);
         c.restore();c=null;
     }
-    void drawNismo(Canvas canvas,int width,int height,EvoHybridRenderer.Data d,double average,double[] history,int count){
+    void drawNismo(Canvas canvas,int width,int height,EvoHybridRenderer.Data d){
         float scale=Math.min(width/EvoHybridRenderer.WIDTH,height/EvoHybridRenderer.HEIGHT);
         c=canvas;
         c.save();transform(scale,(width-EvoHybridRenderer.WIDTH*scale)/2f,(height-EvoHybridRenderer.HEIGHT*scale)/2f);
-        NismoHybridRenderer.draw(this,d,average,history,count);
+        materialBlend=d.materialBlend;
+        if(materialBlend<=0) previousMaterial=null;
+        NismoHybridRenderer.draw(this,d);
         c.restore();c=null;
     }
     void drawTypeR(Canvas canvas,int width,int height,EvoHybridRenderer.Data d){
@@ -104,6 +116,10 @@ final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
     public void plate(float x,float y,float w,float h){
         if(bitmap==null)return;
         fill(0xffffffff);box.set(x,y,x+w,y+h);c.drawBitmap(bitmap,null,box,p);
+        if(previousMaterial!=null && materialBlend>0){
+            p.setAlpha(Math.round(255*materialBlend));c.drawBitmap(previousMaterial,null,box,p);
+            p.setAlpha(255);
+        }
     }
     public void rect(float x,float y,float w,float h,int color){fill(palette.fill(color));c.drawRect(x,y,x+w,y+h,p);}
     public void outline(float x,float y,float w,float h,float radius,int color,float thickness){
