@@ -60,8 +60,7 @@ final class NismoHybridRenderer {
         if (EvoHybridRenderer.custom(d,0)) EvoHybridRenderer.customDigital(s,d,0,78,99,250,149,powerColor,true);
         else {
             s.text("MOTOR POWER",98,132,21,MUTED,true,true,-1,216);
-            s.text(whole(d.power),98,203,71,WHITE,true,true,-1,160);
-            s.text("kW",311,202,23,MUTED,true,true,1,54);
+            s.readingWithUnit(whole(d.power),"kW",98,203,71,25,-1,218,WHITE,MUTED);
             String direction = !EvoHybridRenderer.valid(d.power) ? "--" :
                     d.power < 0 ? "REGEN" : d.power > 0 ? "DRIVE" : "COAST";
             s.text(direction,100,234,20,powerColor,true,true,-1,180);
@@ -70,8 +69,7 @@ final class NismoHybridRenderer {
         if (EvoHybridRenderer.custom(d,1)) EvoHybridRenderer.customDigital(s,d,1,872,99,253,149,CYAN,true);
         else {
             s.text(d.batteryLabel,1111,132,21,MUTED,true,true,1,225);
-            s.text(whole(d.soc),1068,206,72,WHITE,true,true,1,150);
-            s.text("%",1109,204,28,MUTED,true,true,1,39);
+            s.readingWithUnit(whole(d.soc),"%",1109,206,72,28,1,218,WHITE,MUTED);
         }
         s.text(d.rangeLabel,1110,275,14,MUTED,true,true,1,210);
         s.text(d.range,1110,301,26,WHITE,true,true,1,210);
@@ -81,17 +79,30 @@ final class NismoHybridRenderer {
         s.text("SPEED",600,143,20,MUTED,true,true,0,190);
         s.text(whole(d.speed),600,238,110,WHITE,true,true,0,290);
         s.text("km/h",600,263,22,MUTED,true,true,0,110);
-        s.text(d.status,600,301,17,d.statusColor,true,true,0,184);
+        if (d.recording) {
+            s.circle(514,295,4.5f,RED);
+            s.text(d.status,604,301,17,WHITE,true,true,0,161);
+        } else s.text(d.status,600,301,17,d.statusColor,true,true,0,184);
 
         s.line(62,386,748,386,0xff484c50,1);
         s.line(271,341,258,380,0xff484c50,1);
         s.line(494,341,481,380,0xff484c50,1);
-        metric(s,d.tripCaption,d.distance,70,351,182);
-        metric(s,d.timeCaption,d.elapsed,289,351,179);
-        metric(s,d.energyCaption,d.energy,513,351,229);
-        metric(s,"BATTERY MIN / MAX",d.temp,70,407,186);
-        metric(s,"CELL MIN / MAX",d.cells,289,407,213);
-        metric(s,"CV",d.voltage,513,407,214);
+        // Small instrument legends mirror the two physical telemetry rows.
+        s.line(72,373,79,347,MUTED,2); s.line(93,373,86,347,MUTED,2);
+        s.line(83,351,83,357,MUTED,2); s.line(83,362,83,369,MUTED,2);
+        s.arc(295,361,11,0,360,2,MUTED); s.line(295,353,295,361,MUTED,2);
+        s.line(295,361,301,364,MUTED,2);
+        s.line(528,347,516,362,RED,3); s.line(516,362,526,362,RED,3); s.line(526,362,517,375,RED,3);
+        metric(s,d.tripCaption,d.distance,107,351,146);
+        metric(s,d.timeCaption,d.elapsed,318,351,155);
+        metric(s,d.energyCaption,d.energy,543,351,198);
+        s.outline(79,400,7,20,3,RED,1.6f); s.circle(82.5f,423,5,RED);
+        s.outline(285,404,18,22,2,CYAN,1.6f); s.rect(291,400,6,2,CYAN);
+        s.line(513,416,518,416,CYAN,2); s.line(518,416,522,405,CYAN,2);
+        s.line(522,405,527,424,CYAN,2); s.line(527,424,531,416,CYAN,2);
+        metric(s,"BATTERY MIN / MAX",d.temp,107,407,150);
+        metric(s,"CELL MIN / MAX",d.cells,318,407,181);
+        metric(s,"CV",d.voltage,543,407,198);
         EvoHybridRenderer.history(s,d,790,337,359,101);
         if (d.pressedSlot >= 0 || d.selectionAccent > 0) {
             int slot = d.pressedSlot;

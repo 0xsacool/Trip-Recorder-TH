@@ -173,11 +173,11 @@ final class SettingsPage {
                 });
         String[] appearanceChoices={L.t("Dark"),L.t("Light"),L.t("Auto (system)")};
         boolean lightSupported=Prefs.lightAppearanceSupported(c);
-        Kit.Row appearance=action(L.t("Appearance"),lightSupported?appearanceChoices[Prefs.appearanceMode(c)]:L.t("Dark only for performance themes"),
+        Kit.Row appearance=action(L.t("Appearance"),lightSupported?appearanceChoices[Prefs.appearanceMode(c)]:L.t("Dark"),
                 lightSupported?L.t("Change"):L.t("Details"),false,v->{
                     if(!Prefs.lightAppearanceSupported(c)){
                         Ui.show(new AlertDialog.Builder(c).setTitle(L.t("Appearance"))
-                                .setMessage(L.t("Dark only for performance themes")+"\n\n"+L.t("Light and Auto remain available with Classic."))
+                                .setMessage(L.t("Light and Auto are available with Classic and NISMO GT3."))
                                 .setPositiveButton(L.t("OK"),null));
                         return;
                     }

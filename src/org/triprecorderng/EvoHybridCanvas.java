@@ -146,4 +146,16 @@ final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
         float actual=p.measureText(v);if(actual>maxWidth)p.setTextSize(size*maxWidth/actual);
         c.drawText(v,x,y,p);
     }
+    @Override public void readingWithUnit(String value,String unit,float x,float y,float size,float unitSize,
+                                         int align,float width,int ink,int muted) {
+        p.setTypeface(italic);
+        p.setTextSize(size);
+        float digits=p.measureText(value);
+        p.setTextSize(unitSize);
+        float suffix=p.measureText(unit);
+        float scale=Math.min(1,width/(digits+5+suffix));
+        float left=align>0 ? x-(digits+5+suffix)*scale : x;
+        text(value,left,y,size*scale,ink,true,true,-1,width);
+        text(unit,left+(digits+5)*scale,y,unitSize*scale,muted,true,true,-1,width);
+    }
 }

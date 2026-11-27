@@ -13,13 +13,20 @@ cp -R src res assets build.sh "$preview/"
 cp tools/nismo-preview/AndroidManifest.xml "$preview/"
 cp tools/nismo-preview/NismoPreviewActivity.java "$preview/src/org/triprecorderng/"
 (cd "$preview" && bash build.sh)
-echo no | avdmanager create avd --name gt3 --package 'system-images;android-29;google_apis;x86_64' --force
+export ANDROID_AVD_HOME="$preview/avds"
+export ANDROID_USER_HOME="$preview/android-user"
+mkdir -p "$ANDROID_AVD_HOME" "$ANDROID_USER_HOME"
+echo no | avdmanager create avd --name gt3 --path "$ANDROID_AVD_HOME/gt3.avd" --package 'system-images;android-29;google_apis;x86_64' --force
+emulator -list-avds | grep -Fx gt3
 sudo setfacl -m "u:$(id -un):rw" /dev/kvm
 emulator -avd gt3 -no-window -no-boot-anim -no-audio -no-snapshot -gpu swiftshader_indirect >"$out/emulator.log" 2>&1 &
 emupid=$!
 trap 'kill "$emupid" 2>/dev/null || true' EXIT
-timeout 300 adb wait-for-device
-timeout 300 bash -c 'until [[ "$(adb shell getprop sys.boot_completed | tr -d "\r")" == 1 ]]; do sleep 2; done'
+deadline=$((SECONDS+300))
+until [[ "$(timeout 3 adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == 1 ]]; do
+    if ! kill -0 "$emupid" 2>/dev/null || ((SECONDS>=deadline)); then cat "$out/emulator.log"; exit 1; fi
+    sleep 2
+done
 adb shell wm size 720x1600
 adb shell wm density 160
 adb shell input keyevent 82

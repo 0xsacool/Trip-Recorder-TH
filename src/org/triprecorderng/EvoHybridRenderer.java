@@ -33,12 +33,18 @@ final class EvoHybridRenderer {
         }
         // align: -1 left, 0 center, +1 right
         void text(String value,float x,float baseline,float size,int color,boolean heavy,boolean slant,int align,float maxWidth);
+        default void readingWithUnit(String value,String unit,float x,float y,float size,float unitSize,int align,float width,int ink,int muted) {
+            float numberWidth=Math.min(width-unitSize*1.6f,size*.59f*value.length());
+            float left=align>0 ? x-numberWidth-unitSize*1.6f : x;
+            text(value,left,y,size,ink,true,true,-1,numberWidth);
+            text(unit,left+numberWidth+4,y,unitSize,muted,true,true,-1,width-numberWidth-4);
+        }
     }
     static final class Data {
         double soc, speed, power;
         float startupAccent, powerAccent;
         double nismoPower=Double.NaN, nismoSoc=Double.NaN;
-        boolean charging, chargeFlow, results;
+        boolean charging, recording, results;
         float chargePhase, historyOffset, selectionAccent, materialBlend;
         int pressedSlot = -1;
         long historySecond = -1;

@@ -173,6 +173,7 @@ final class PerformanceDashboard extends View {
         chargeSession = linked && charging != null && !charging.isEmpty() && ChargeRecorder.current != null;
         chargingActive = chargeSession && !charging.endsWith(L.t(" - paused"));
         completedTrip = current == null && shown != null && shown.ended;
+        evoData.recording = fresh && current != null;
         if (!live.running) {
             status = L.t("Service stopped"); statusColor = RED;
         } else if (!fresh) {
@@ -312,7 +313,7 @@ final class PerformanceDashboard extends View {
         boolean visible = isShown() && hasWindowFocus() && getWindowVisibility() == VISIBLE;
         SharedMotionController.Mode mode = visible && android.animation.ValueAnimator.areAnimatorsEnabled()
                 ? configuredMotion : SharedMotionController.Mode.OFF;
-        if (!performanceRefresh && mode == SharedMotionController.Mode.FULL)
+        if (!nismo && !performanceRefresh && mode == SharedMotionController.Mode.FULL)
             mode = SharedMotionController.Mode.REDUCED;
         boolean parked = motionSafe();
         boolean safe = parked && visible && mode != SharedMotionController.Mode.OFF;
@@ -352,8 +353,10 @@ final class PerformanceDashboard extends View {
         if (!safe) materialStart = -1;
         evoData.materialBlend = .25f * decay(now,materialStart,200);
         if (motion.active() || motion.drive.active() || motion.battery.active() || evoData.powerAccent > 0 ||
-                evoData.selectionAccent > 0 || evoData.materialBlend > 0) postInvalidateOnAnimation();
-        else if (scroll || evoData.chargePhase >= 0) postInvalidateDelayed(32);
+                evoData.selectionAccent > 0 || evoData.materialBlend > 0) {
+            if (performanceRefresh) postInvalidateOnAnimation();
+            else postInvalidateDelayed(50);
+        } else if (scroll || evoData.chargePhase >= 0) postInvalidateDelayed(performanceRefresh ? 32 : 100);
     }
     private static float decay(long now,long start,int duration) {
         return start < 0 ? 0 : Math.max(0,1-(now-start)/(float)duration);
