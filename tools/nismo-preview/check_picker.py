@@ -88,3 +88,23 @@ tap(find("content-desc","Setting"))
 time.sleep(5.3)
 assert not any(n.get("content-desc")=="Show dashboard header" for n in hierarchy())
 print("PASS actual MainActivity Standard, Compact, Auto Hide, restore and settings. Content heights:",standard,compact,immersive)
+
+# Start in the settings reached by restoring the hidden header. Exercise the
+# actual dialogs and the Activity recreation that applies the Android window theme.
+def settings_choice(row, option):
+    tap(find("text", row, True))
+    tap(find("text", option, True))
+    time.sleep(.7)
+
+settings_choice("Dashboard theme", "Classic")
+settings_choice("Appearance", "Light")
+settings_choice("Dashboard theme", "GT-R Performance")
+tap(find("text", "Appearance", True))
+find("text", "Light and Auto are available with Classic.")
+assert not any(n.get("text") in ("Light","Auto (system)") for n in hierarchy())
+tap(find("text", "OK"))
+settings_choice("Dashboard theme", "Classic")
+tap(find("text", "Appearance", True))
+assert find("text", "Light").get("checked") == "true"
+tap(find("text", "Cancel"))
+print("PASS restored header to Settings, Classic Light -> GT-R dark popup -> Classic Light selection")
