@@ -219,7 +219,8 @@ jobs:
           retention-days: ${{ github.ref == 'refs/heads/stable' && 90 || 14 }}
 
   nismo-visual:
-    if: github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/feature/gtr-nismo-edition' || github.ref == 'refs/heads/feature/sequential-gt3')
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/feature/gtr-nismo-edition' || github.ref == 'refs/heads/feature/sequential-gt3' || github.ref == 'refs/heads/feature/universal-dashboard')
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -233,6 +234,14 @@ jobs:
           javac -d "$RUNNER_TEMP" src/org/triprecorderng/{SharedMotionController,EvoHybridRenderer,NismoHybridRenderer,SequentialGt3}.java tools/{NismoHybridRendererTest,SequentialGt3Test}.java
           java -cp "$RUNNER_TEMP" org.triprecorderng.SequentialGt3Test
           java -cp "$RUNNER_TEMP" org.triprecorderng.NismoHybridRendererTest
+      - uses: actions/download-artifact@v8
+        with:
+          name: EVTripLog-${{ github.run_number }}
+          path: candidate
+      - name: Download Dev 6 upgrade baseline
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download 1.1.0-dev.6 --pattern '*.apk' --dir baseline
       - name: Capture Android 10 dashboard and frame timings
         run: |
           bash tools/nismo-preview/capture.sh

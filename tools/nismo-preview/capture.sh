@@ -11,7 +11,7 @@ preview="$(mktemp -d)"
 mkdir -p "$out"
 cp -R src res assets build.sh "$preview/"
 cp tools/nismo-preview/AndroidManifest.xml "$preview/"
-cp tools/nismo-preview/NismoPreviewActivity.java "$preview/src/org/triprecorderng/"
+cp tools/nismo-preview/{DashboardPolicyTest,NismoPreviewActivity}.java "$preview/src/org/triprecorderng/"
 (cd "$preview" && bash build.sh)
 export ANDROID_AVD_HOME="$preview/avds"
 export ANDROID_USER_HOME="$preview/android-user"
@@ -49,6 +49,9 @@ done
 # Open the real graph picker and select the other history window.
 start parked false FULL
 python3 tools/nismo-preview/check_picker.py "$out"
+adb shell am instrument -w "$pkg/org.triprecorderng.DashboardPolicyTest" | tee "$out/dashboard-policy.txt"
+grep -Fq 'result=PASS universal dashboard' "$out/dashboard-policy.txt"
+adb pull "/sdcard/Android/data/$pkg/files/." "$out/themes"
 start dynamic false FULL
 adb shell dumpsys gfxinfo "$pkg" reset >/dev/null
 sleep 12
@@ -57,3 +60,5 @@ adb shell dumpsys meminfo "$pkg" >"$out/meminfo.txt"
 grep -E 'Total frames rendered: [1-9][0-9]+' "$out/gfxinfo.txt"
 adb logcat -d -b crash >"$out/crash.log"
 if grep -q 'FATAL EXCEPTION' "$out/crash.log"; then cat "$out/crash.log"; exit 1; fi
+
+bash tools/nismo-preview/upgrade.sh baseline/*.apk candidate/*.apk

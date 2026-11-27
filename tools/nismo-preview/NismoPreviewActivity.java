@@ -46,6 +46,7 @@ public final class NismoPreviewActivity extends Activity implements ThisTripPage
         L.setSetting(this,scene.equals("thai") ? "th" : "en");
         Prefs.setDashboardTheme(this,Prefs.THEME_NISMO);
         Prefs.setAppearanceMode(this,light ? Appearance.LIGHT : Appearance.DARK);
+        light = Prefs.lightAppearance(this);
         Ui.setAppearance(light);
         Prefs.setPerformanceRefresh(this,!scene.equals("eco"));
         Prefs.setMotionMode(this,SharedMotionController.Mode.valueOf(mode == null ? "FULL" : mode));
