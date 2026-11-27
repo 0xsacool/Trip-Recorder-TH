@@ -12,6 +12,11 @@ final class NismoHybridRendererTest {
         int plates, gauges, graphs, red, cyan;
         final List<float[]> segments=new ArrayList<>();
         final List<float[]> hits=new ArrayList<>();
+        int driveLines,regenLines;
+        public void traceLine(float x,float y,float xx,float yy,int color){
+            check(xx>x,"sample order");
+            if(color==NismoHybridRenderer.CYAN)regenLines++;else driveLines++;
+        }
         public void plate(float x,float y,float w,float h){plates++;}
         public void rect(float x,float y,float w,float h,int color){}
         public void line(float x,float y,float x2,float y2,int color,float weight){}
@@ -84,6 +89,13 @@ final class NismoHybridRendererTest {
         check(bank.sample(50,SharedMotionController.Mode.FULL,EvoHybridRenderer.GaugeMetric.SOC,d)==.25,"metric swap");
         d.soc=Double.NaN;
         check(Double.isNaN(bank.sample(51,SharedMotionController.Mode.FULL,EvoHybridRenderer.GaugeMetric.SOC,d))&&!bank.active(),"stale metric");
-        System.out.println("PASS: four targets, all eight metrics, five levels, mirrored geometry, opacity, loss, mode and metric transitions");
+        d.historyMetric=EvoHybridRenderer.Metric.POWER;d.historySeconds=300;d.historyColor=NismoHybridRenderer.RED;
+        d.nismoHistory=true;d.history=new double[300];d.historyCount=300;
+        for(int i=0;i<300;i++) d.history[i]=i%2==0 ? 80 : -80;
+        d.history[40]=Double.NaN;
+        s=new Surface();
+        EvoHybridRenderer.history(s,d,0,0,400,100);
+        check(s.driveLines==297 && s.regenLines==297,"both sides of each crossing, no bridging gaps");
+        System.out.println("PASS: four targets, eight metrics, five levels, mirrored geometry, opacity, mode changes and signed 300-sample trace");
     }
 }

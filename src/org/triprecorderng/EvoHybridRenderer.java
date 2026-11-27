@@ -10,6 +10,9 @@ final class EvoHybridRenderer {
     static final float START = 140, SWEEP = 260;
     interface Surface {
         default void nismoLogo() {}
+        default void beginTrace() {}
+        default void traceLine(float x,float y,float xx,float yy,int color) { line(x,y,xx,yy,color,2.2f); }
+        default void endTrace() {}
         void plate(float x, float y, float w, float h);
         void rect(float x,float y,float w,float h,int color);
         void outline(float x,float y,float w,float h,float radius,int color,float thickness);
@@ -229,6 +232,7 @@ final class EvoHybridRenderer {
         boolean started=false, any=false;float px=0,py=0;
         float zeroY=b-(b-t)*(float)(-lo/(hi-lo));
         boolean signed=nismo && metric==Metric.POWER;
+        if(nismo)s.beginTrace();
         for(int i=0;i<count;i++){
             if(!valid(samples[i])){started=false;continue;}
             any=true;
@@ -239,14 +243,18 @@ final class EvoHybridRenderer {
                 float left=Math.max(l,px);
                 if(signed && (leftY-zeroY)*(yy-zeroY)<0){
                     float cross=left+(xx-left)*(zeroY-leftY)/(yy-leftY);
-                    s.line(left,leftY,cross,zeroY,leftY>zeroY ? 0xff28d9ec : accent,2.2f);
+                    s.traceLine(left,leftY,cross,zeroY,leftY>zeroY ? 0xff28d9ec : accent);
                     left=cross;leftY=zeroY;
                 }
-                s.line(left,leftY,xx,yy,signed && (yy+leftY)/2>zeroY ? 0xff28d9ec : accent,2.2f);
+                if(nismo)s.traceLine(left,leftY,xx,yy,signed && (yy+leftY)/2>zeroY ? 0xff28d9ec : accent);
+                else s.line(left,leftY,xx,yy,accent,2.2f);
             }else if(xx>=l)s.circle(xx,yy,2.3f,signed && yy>zeroY ? 0xff28d9ec : accent);
             started=true;px=xx;py=yy;
         }
-        if(nismo && !any)s.text("--",(l+r)/2,(t+b)/2,18,muted,true,false,0,r-l);
+        if(nismo){
+            s.endTrace();
+            if(!any)s.text("--",(l+r)/2,(t+b)/2,18,muted,true,false,0,r-l);
+        }
     }
     static void history(Surface s,Data d,float x,float y,float width,float height){
         history(s,d,d.history,d.historyCount,x,y,width,height);

@@ -43,7 +43,7 @@ public final class NismoPreviewActivity extends Activity implements ThisTripPage
         boolean light = getIntent().getBooleanExtra("light",false);
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
                 View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
-        L.setSetting(this,"en");
+        L.setSetting(this,scene.equals("thai") ? "th" : "en");
         Prefs.setDashboardTheme(this,Prefs.THEME_NISMO);
         Prefs.setAppearanceMode(this,light ? Appearance.LIGHT : Appearance.DARK);
         Ui.setAppearance(light);
@@ -91,7 +91,7 @@ public final class NismoPreviewActivity extends Activity implements ThisTripPage
         boolean linked = !scene.equals("missing");
         boolean finishing=scene.equals("results");
         boolean drive = scene.equals("drive") || scene.equals("dynamic") || scene.equals("regen") || scene.equals("selector")
-                || scene.equals("eco") || (finishing && tick<2);
+                || scene.equals("eco") || scene.equals("thai") || (finishing && tick<2);
         if(finishing && tick>=2 && !trip.ended){trip.ended=true;trip.endMs=now;}
         RecorderService.Live live = RecorderService.live;
         live.running = linked;

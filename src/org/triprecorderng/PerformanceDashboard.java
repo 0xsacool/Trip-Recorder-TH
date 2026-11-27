@@ -313,7 +313,10 @@ final class PerformanceDashboard extends View {
         evoData.energy = energyNumber(energy) + " kWh";
         evoData.average = energyNumber(average) + " kWh/100 km";
         evoData.batteryLabel = L.t("Battery");
-        evoData.rangeLabel = range.label;
+        evoData.rangeLabel = nismo && evoData.thai
+                ? (RangeEstimate.DYNAMIC.equals(range.label) ? "ระยะจากการขับ" :
+                    RangeEstimate.EPA.equals(range.label) ? "ระยะ EPA" : "ระยะ EPA (สำรอง)")
+                : range.label;
         evoData.tripCaption = L.t("Trip");
         evoData.timeCaption = L.t("Time");
         evoData.energyCaption = energyCaption();

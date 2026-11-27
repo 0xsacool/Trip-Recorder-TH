@@ -41,7 +41,7 @@ start() {
 capture() { adb exec-out screencap -p >"$out/$1.png"; }
 for spec in 'drive false FULL' 'drive true FULL' 'regen false REDUCED' 'parked false OFF' \
         'charging true FULL' 'results false FULL' 'oldtrip false FULL' 'missing true OFF' 'selector false FULL' \
-        'eco true FULL' 'stale true REDUCED'; do
+        'eco true FULL' 'stale true REDUCED' 'thai true FULL'; do
     read -r scene light motion <<< "$spec"
     start "$scene" "$light" "$motion"
     capture "$scene-$light-$motion"

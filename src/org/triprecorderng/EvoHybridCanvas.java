@@ -15,6 +15,8 @@ final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
     private final Bitmap bitmap;
     private Bitmap previousMaterial;
     private android.graphics.drawable.Drawable nismoLogo;
+    private float[] driveTrace,regenTrace;
+    private int driveFloats,regenFloats;
     private float materialBlend;
     private final CockpitPalette palette;
     private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
@@ -38,6 +40,8 @@ final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
         palette=new CockpitPalette(Prefs.dashboardTheme(context),Prefs.sportTheme(context)&&Prefs.lightAppearance(context));
         boolean gt3 = "nismo_gt3".equals(asset);
         if (gt3) {
+            // One line per sample per color, including the split at a zero crossing.
+            driveTrace=new float[300*4];regenTrace=new float[300*4];
             asset = palette.light ? "nismo_gt3_day.webp" : "nismo_gt3_night.webp";
             String name=palette.light ? "nismo_gt3_logo_day" : "nismo_gt3_logo_night";
             nismoLogo=context.getDrawable(context.getResources().getIdentifier(name,"drawable",context.getPackageName()));
@@ -128,6 +132,22 @@ final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
         }
     }
     public void nismoLogo(){if(nismoLogo!=null)nismoLogo.draw(c);}
+    public void beginTrace(){driveFloats=regenFloats=0;}
+    public void traceLine(float x,float y,float xx,float yy,int color) {
+        boolean regen=color==NismoHybridRenderer.CYAN;
+        float[] points=regen ? regenTrace : driveTrace;
+        int i=regen ? regenFloats : driveFloats;
+        points[i]=x;points[i+1]=y;points[i+2]=xx;points[i+3]=yy;
+        if(regen)regenFloats+=4;else driveFloats+=4;
+    }
+    public void endTrace() {
+        drawTrace(driveTrace,driveFloats,NismoHybridRenderer.RED);
+        drawTrace(regenTrace,regenFloats,NismoHybridRenderer.CYAN);
+    }
+    private void drawTrace(float[] points,int count,int color) {
+        if(count==0)return;
+        fill(palette.stroke(color));p.setStrokeWidth(2.2f);c.drawLines(points,0,count,p);
+    }
     public void rect(float x,float y,float w,float h,int color){fill(palette.fill(color));c.drawRect(x,y,x+w,y+h,p);}
     public void outline(float x,float y,float w,float h,float radius,int color,float thickness){
         fill(palette.stroke(color));p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(thickness);box.set(x,y,x+w,y+h);c.drawRoundRect(box,radius,radius,p);
