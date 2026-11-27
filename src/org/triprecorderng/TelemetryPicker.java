@@ -27,7 +27,7 @@ final class TelemetryPicker {
     private int seconds;
     private PopupWindow popup;
     private final String gaugeTheme;
-    private final EvoHybridRenderer.GaugeMetric[] gauges=new EvoHybridRenderer.GaugeMetric[2];
+    private final EvoHybridRenderer.GaugeMetric[] gauges;
     private int changedSlot = -1;
     private long changeTime = -1;
     private void changed(int slot) {
@@ -41,6 +41,7 @@ final class TelemetryPicker {
         this.c=c;
         prefs=c.getApplicationContext().getSharedPreferences("triprecng",Context.MODE_PRIVATE);
         gaugeTheme=Prefs.dashboardTheme(c);
+        gauges=new EvoHybridRenderer.GaugeMetric[Prefs.THEME_NISMO.equals(gaugeTheme) ? 4 : 2];
         for(int i=0;i<gauges.length;i++){
             try{gauges[i]=EvoHybridRenderer.GaugeMetric.valueOf(prefs.getString(gaugeKey(i),"DEFAULT"));}
             catch(IllegalArgumentException e){gauges[i]=EvoHybridRenderer.GaugeMetric.DEFAULT;}
@@ -60,7 +61,7 @@ final class TelemetryPicker {
     }
     void select(EvoHybridRenderer.Data d){
         HISTORY.select(d,metric,seconds);d.historyColor=historyAccent;d.historyLight=light;
-        d.gauges[0]=gauges[0];d.gauges[1]=gauges[1];
+        System.arraycopy(gauges,0,d.gauges,0,gauges.length);
     }
     private String gaugeKey(int slot){return "custom_gauge_"+gaugeTheme+"_"+slot;}
     void showGauge(View anchor,RectF bounds,int slot){
@@ -68,13 +69,18 @@ final class TelemetryPicker {
         dismiss();
         LinearLayout list=new LinearLayout(c);list.setOrientation(LinearLayout.VERTICAL);list.setPadding(dp(4),dp(4),dp(4),dp(4));
         GradientDrawable bg=new GradientDrawable();bg.setColor(light?Kit.CARD:0xff181c20);bg.setCornerRadius(dp(6));bg.setStroke(dp(1),light?Kit.LINE:0xff4f555c);list.setBackground(bg);
-        TextView title=row("CUSTOM GAUGE "+(slot+1),false);title.setTextColor(accent);title.setTextSize(13);list.addView(title,new LinearLayout.LayoutParams(-1,-2));
+        int displaySlot=gauges.length==4 ? (slot==1 ? 3 : slot==2 ? 2 : slot+1) : slot+1;
+        TextView title=row("CUSTOM GAUGE "+displaySlot,false);title.setTextColor(accent);title.setTextSize(13);list.addView(title,new LinearLayout.LayoutParams(-1,-2));
         for(EvoHybridRenderer.GaugeMetric m:EvoHybridRenderer.GaugeMetric.values()){
             TextView item=row(m.label+(m.unit.isEmpty()?"":" ("+m.unit+")"),m==gauges[slot]);list.addView(item,new LinearLayout.LayoutParams(-1,-2));
             item.setOnClickListener(v->{gauges[slot]=m;changed(slot);prefs.edit().putString(gaugeKey(slot),m.name()).apply();dismiss();anchor.invalidate();});
         }
         TextView reset=row("Reset theme gauges",false);list.addView(reset,new LinearLayout.LayoutParams(-1,-2));
-        reset.setOnClickListener(v->{gauges[0]=gauges[1]=EvoHybridRenderer.GaugeMetric.DEFAULT;changed(slot);prefs.edit().remove(gaugeKey(0)).remove(gaugeKey(1)).apply();dismiss();anchor.invalidate();});
+        reset.setOnClickListener(v->{
+            SharedPreferences.Editor edit=prefs.edit();
+            for(int i=0;i<gauges.length;i++){gauges[i]=EvoHybridRenderer.GaugeMetric.DEFAULT;edit.remove(gaugeKey(i));}
+            edit.apply();changed(slot);dismiss();anchor.invalidate();
+        });
         showList(anchor,bounds,list,bg,true);
     }
     String description(){return metric.title+", "+(metric==EvoHybridRenderer.Metric.MOTOR_RPM?"Live":seconds==300?"5 min":"60s")+". Tap to choose data";}
@@ -85,7 +91,7 @@ final class TelemetryPicker {
         t.setPadding(dp(12),0,dp(12),0);t.setMinHeight(dp(44));return t;
     }
     private void save(){prefs.edit().putString("telemetry_metric",metric.name()).putInt("telemetry_seconds",seconds).apply();}
-    private void choose(View anchor){changed(2);save();dismiss();anchor.invalidate();}
+    private void choose(View anchor){changed(4);save();dismiss();anchor.invalidate();}
     void dismiss(){if(popup!=null){popup.dismiss();popup=null;}}
     void show(View anchor,RectF graph){
         if(popup!=null&&popup.isShowing()){dismiss();return;}

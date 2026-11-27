@@ -40,26 +40,15 @@ start() {
 }
 capture() { adb exec-out screencap -p >"$out/$1.png"; }
 for spec in 'drive false FULL' 'drive true FULL' 'regen false REDUCED' 'parked false OFF' \
-        'charging true FULL' 'results false FULL' 'missing true OFF' 'selector false FULL'; do
+        'charging true FULL' 'results false FULL' 'oldtrip false FULL' 'missing true OFF' 'selector false FULL' \
+        'eco true FULL' 'stale true REDUCED'; do
     read -r scene light motion <<< "$spec"
     start "$scene" "$light" "$motion"
     capture "$scene-$light-$motion"
 done
 # Open the real graph picker and select the other history window.
 start parked false FULL
-adb shell input tap 1305 550
-sleep .4
-adb shell uiautomator dump /sdcard/gt3-window.xml
-adb pull /sdcard/gt3-window.xml "$out/selector.xml"
-python3 - "$out/selector.xml" <<'PY'
-import re, subprocess, sys, xml.etree.ElementTree as ET
-nodes=ET.parse(sys.argv[1]).iter('node')
-item=next(n for n in nodes if n.get('text','').startswith('5 min'))
-x1,y1,x2,y2=map(int,re.findall(r'\d+',item.get('bounds')))
-subprocess.run(['adb','shell','input','tap',str((x1+x2)//2),str((y1+y2)//2)],check=True)
-PY
-sleep .4
-capture picker-5min
+python3 tools/nismo-preview/check_picker.py "$out"
 start dynamic false FULL
 adb shell dumpsys gfxinfo "$pkg" reset >/dev/null
 sleep 12

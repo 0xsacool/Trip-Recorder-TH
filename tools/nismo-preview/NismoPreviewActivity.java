@@ -29,6 +29,16 @@ public final class NismoPreviewActivity extends Activity implements ThisTripPage
         super.onCreate(state);
         scene = getIntent().getStringExtra("scene");
         if (scene == null) scene = "drive";
+        if(scene.equals("header")) {
+            L.setSetting(this,"en");
+            Prefs.setDashboardTheme(this,Prefs.THEME_NISMO);
+            int header=getIntent().getIntExtra("header",-1);
+            if(header<0)getSharedPreferences("triprecng",MODE_PRIVATE).edit()
+                    .remove("nismo_header_mode").remove("dashboard_menu_mode").apply();
+            else Prefs.setNismoHeaderMode(this,header);
+            startActivity(new android.content.Intent(this,MainActivity.class).putExtra("skip_alert",true));
+            finish();return;
+        }
         String mode = getIntent().getStringExtra("motion");
         boolean light = getIntent().getBooleanExtra("light",false);
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
@@ -37,12 +47,13 @@ public final class NismoPreviewActivity extends Activity implements ThisTripPage
         Prefs.setDashboardTheme(this,Prefs.THEME_NISMO);
         Prefs.setAppearanceMode(this,light ? Appearance.LIGHT : Appearance.DARK);
         Ui.setAppearance(light);
-        Prefs.setPerformanceRefresh(this,true);
+        Prefs.setPerformanceRefresh(this,!scene.equals("eco"));
         Prefs.setMotionMode(this,SharedMotionController.Mode.valueOf(mode == null ? "FULL" : mode));
         Prefs.setEpaRangeKm(this,387.5);
         boolean selector = scene.equals("selector");
-        getSharedPreferences("triprecng",MODE_PRIVATE).edit()
+        if(!scene.equals("restore")) getSharedPreferences("triprecng",MODE_PRIVATE).edit()
                 .putString("custom_gauge_gtr_nismo_0",selector ? "RPM" : "DEFAULT")
+                .remove("custom_gauge_gtr_nismo_1").remove("custom_gauge_gtr_nismo_2").remove("custom_gauge_gtr_nismo_3")
                 .putString("telemetry_metric",selector ? "SPEED" : "POWER")
                 .putInt("telemetry_seconds",selector ? 300 : 60).apply();
         trip.distanceKm = 28.4;
@@ -51,7 +62,7 @@ public final class NismoPreviewActivity extends Activity implements ThisTripPage
         trip.movingSec = 1920;
         trip.elecStart = 100;
         trip.elecEnd = 104.8;
-        trip.ended = scene.equals("results");
+        trip.ended = scene.equals("oldtrip");
         if (trip.ended) trip.endMs = trip.lastUpdateMs;
         sample();
         if (!scene.equals("missing")) {
@@ -78,11 +89,17 @@ public final class NismoPreviewActivity extends Activity implements ThisTripPage
     private void sample() {
         long now = System.currentTimeMillis();
         boolean linked = !scene.equals("missing");
-        boolean drive = scene.equals("drive") || scene.equals("dynamic") || scene.equals("regen") || scene.equals("selector");
+        boolean finishing=scene.equals("results");
+        boolean drive = scene.equals("drive") || scene.equals("dynamic") || scene.equals("regen") || scene.equals("selector")
+                || scene.equals("eco") || (finishing && tick<2);
+        if(finishing && tick>=2 && !trip.ended){trip.ended=true;trip.endMs=now;}
         RecorderService.Live live = RecorderService.live;
         live.running = linked;
         live.lastTickWall = live.driveWall = live.motorPowerWall = live.frontRpmWall = live.telemetryWall = linked ? now : 0;
         live.vehicle = linked ? "QA" : "none";
+        if(scene.equals("stale")){
+            live.lastTickWall=live.driveWall=live.motorPowerWall=live.frontRpmWall=live.telemetryWall=now-11000;
+        }
         live.speed = linked ? drive ? 86 : 0 : Double.NaN;
         live.motorPower = linked ? drive ? scene.equals("regen") ? -48 : 68 : 0 : Double.NaN;
         if (scene.equals("dynamic")) {

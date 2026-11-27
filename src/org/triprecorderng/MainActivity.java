@@ -61,6 +61,11 @@ public class MainActivity extends Activity {
     private LinearLayout menuToggle;
     private MenuPanelIcon menuPanelIcon;
     private final DashboardMenu dashboardMenu = new DashboardMenu();
+    private final DashboardMenu headerMenu = new DashboardMenu();
+    private LinearLayout appBar;
+    private TextView restoreHeader;
+    private int headerMode;
+    private boolean headerCollapsed;
     private LinearLayout shellBody;
     private boolean bottomNav;
     private boolean xtremeNav;
@@ -260,7 +265,11 @@ public class MainActivity extends Activity {
     }
 
     private final Runnable autoHideMenu = () -> {
-        if (TelemetryPicker.isOpen()) { restartMenuTimer(); return; }
+        if (TelemetryPicker.isOpen() || !hasWindowFocus()) { restartMenuTimer(); return; }
+        if (headerMenu.schedule(resumed,tab==TAB_THIS,overlay!=null)) {
+            headerMenu.hideAutomatically();
+            applyHeader();
+        }
         if (dashboardMenu.schedule(resumed, tab == TAB_THIS, overlay != null)) {
             dashboardMenu.hideAutomatically();
             applyDashboardMenu();
@@ -269,12 +278,17 @@ public class MainActivity extends Activity {
 
     private void restartMenuTimer() {
         ui.removeCallbacks(autoHideMenu);
-        if (dashboardMenu.schedule(resumed, tab == TAB_THIS, overlay != null))
+        if (dashboardMenu.schedule(resumed, tab == TAB_THIS, overlay != null) ||
+                headerMenu.schedule(resumed,tab==TAB_THIS,overlay!=null))
             ui.postDelayed(autoHideMenu, DashboardMenu.AUTO_HIDE_MS);
     }
 
     private void refreshDashboardMenu(boolean entering) {
         dashboardMenu.configure(Prefs.dashboardMenuMode(this));
+        headerMode=Prefs.THEME_NISMO.equals(Prefs.dashboardTheme(this)) ? Prefs.nismoHeaderMode(this) : 0;
+        headerMenu.configure(headerMode==2 ? DashboardMenu.AUTO : DashboardMenu.ALWAYS);
+        if(entering) headerMenu.enterDashboard();
+        applyHeader();
         if (entering && tab == TAB_THIS && overlay == null) dashboardMenu.enterDashboard();
         applyDashboardMenu();
         restartMenuTimer();
@@ -296,6 +310,34 @@ public class MainActivity extends Activity {
         if (margins.leftMargin != left) {
             margins.leftMargin = left;
             content.requestLayout();
+        }
+    }
+
+    private void applyHeader() {
+        if(appBar==null || restoreHeader==null) return;
+        boolean dashboard=tab==TAB_THIS && overlay==null;
+        boolean compact=dashboard && headerMode==1;
+        boolean collapse=dashboard && !headerMenu.showNavigation(true,false);
+        appBar.setPadding(Ui.dp(this,24),Ui.dp(this,compact ? 0 : 14),Ui.dp(this,24),0);
+        android.view.ViewGroup.LayoutParams params=appBar.getLayoutParams();
+        int height=Ui.dp(this,compact ? 48 : 64);
+        if(params.height!=height){params.height=height;appBar.setLayoutParams(params);}
+        titleView.setTextSize(compact ? 21 : 26);
+        ((LinearLayout)qaButton).getChildAt(1).setVisibility(compact ? View.GONE : View.VISIBLE);
+        ((LinearLayout)settingButton).getChildAt(1).setVisibility(compact ? View.GONE : View.VISIBLE);
+        restoreHeader.setVisibility(collapse ? View.VISIBLE : View.GONE);
+        if(headerCollapsed==collapse) return;
+        headerCollapsed=collapse;
+        appBar.animate().cancel();
+        boolean animate=dashboard && android.animation.ValueAnimator.areAnimatorsEnabled() &&
+                Prefs.motionMode(this)!=SharedMotionController.Mode.OFF;
+        appBar.setVisibility(View.VISIBLE);
+        if(!animate){
+            appBar.setAlpha(1);appBar.setTranslationY(0);
+            appBar.setVisibility(collapse ? View.GONE : View.VISIBLE);
+        } else {
+            appBar.animate().alpha(collapse ? 0 : 1).translationY(collapse ? -Ui.dp(this,8) : 0)
+                .setDuration(120).withEndAction(()->{if(headerCollapsed) appBar.setVisibility(View.GONE);}).start();
         }
     }
 
@@ -354,6 +396,7 @@ public class MainActivity extends Activity {
 
         // title bar
         LinearLayout bar = new LinearLayout(this);
+        appBar=bar;
         bar.setOrientation(LinearLayout.HORIZONTAL);
         bar.setGravity(Gravity.CENTER_VERTICAL);
         bar.setPadding(p24, Ui.dp(this, 14), p24, 0);
@@ -426,6 +469,14 @@ public class MainActivity extends Activity {
         bar.addView(placeButton);
         bar.addView(deleteButton);
         column.addView(bar, new LinearLayout.LayoutParams(-1, Ui.dp(this, 64)));
+        restoreHeader=Ui.text(this,"⌄",22,Ui.TEXT_VALUE);
+        restoreHeader.setGravity(Gravity.TOP|Gravity.CENTER_HORIZONTAL);
+        restoreHeader.setContentDescription(L.TH.equals(L.current()) ? "แสดงแถบด้านบน" : "Show dashboard header");
+        restoreHeader.setFocusable(true);
+        restoreHeader.setVisibility(View.GONE);
+        restoreHeader.setOnClickListener(v->{headerMenu.enterDashboard();applyHeader();restartMenuTimer();});
+        root.addView(restoreHeader,new FrameLayout.LayoutParams(Ui.dp(this,72),Ui.dp(this,44),
+                Gravity.TOP|Gravity.CENTER_HORIZONTAL));
 
         LinearLayout body = new LinearLayout(this);
         shellBody = body;
@@ -559,6 +610,7 @@ public class MainActivity extends Activity {
 
     private LinearLayout barButton(int glyph, String text, View.OnClickListener l) {
         LinearLayout row = new LinearLayout(this);
+        row.setContentDescription(text);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
         row.setPadding(Ui.dp(this, 18), 0, Ui.dp(this, 6), 0);

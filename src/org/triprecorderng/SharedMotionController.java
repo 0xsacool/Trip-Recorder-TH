@@ -68,12 +68,11 @@ final class SharedMotionController {
                 from = value;
                 target = reading;
                 start = now;
-                duration = mode == Mode.FULL ? 180 : 100;
+                duration = mode == Mode.FULL ? 130 : 100;
             }
             return value;
         }
         boolean active() { return start >= 0; }
     }
-    final Gauge drive = new Gauge(), battery = new Gauge();
     boolean active() { return start >= 0; }
 }

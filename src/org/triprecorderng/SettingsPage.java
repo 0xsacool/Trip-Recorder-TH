@@ -297,6 +297,17 @@ final class SettingsPage {
         });
         host.bindUpdateViews(updates.desc, channel.desc);
         section(into, L.t("General"), language, appearance, theme, refreshMode, motion, menu, updates, prices, chargingProfiles, battery, range, epa, advanced, channel);
+        if(Prefs.THEME_NISMO.equals(Prefs.dashboardTheme(c))) {
+            boolean th=L.TH.equals(L.current());
+            String label=th ? "แถบด้านบน NISMO" : "NISMO dashboard header";
+            String[] modes=th ? new String[]{"มาตรฐาน","กะทัดรัด","ซ่อนอัตโนมัติ"} :
+                    new String[]{"Standard","Compact","Auto Hide"};
+            Kit.Row header=action(label,modes[Prefs.nismoHeaderMode(c)],L.t("Change"),false,
+                    v->new AlertDialog.Builder(c).setTitle(label).setSingleChoiceItems(modes,Prefs.nismoHeaderMode(c),
+                            (dialog,which)->{Prefs.setNismoHeaderMode(c,which);dialog.dismiss();host.rebuildSoon();})
+                            .setNegativeButton(L.t("Cancel"),null).show());
+            section(into,"NISMO GT3",header);
+        }
     }
 
     private void showEpaDialog() {

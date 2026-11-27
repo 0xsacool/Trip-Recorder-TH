@@ -58,6 +58,15 @@ final class Prefs {
         sp(c).edit().putInt("dashboard_menu_mode", DashboardMenu.normalize(mode)).apply();
     }
 
+    static int nismoHeaderMode(Context c) {
+        SharedPreferences p=sp(c);
+        int fallback=p.getInt("dashboard_menu_mode",DashboardMenu.AUTO)==DashboardMenu.AUTO ? 2 : 0;
+        return DashboardMenu.normalize(p.getInt("nismo_header_mode",fallback));
+    }
+    static void setNismoHeaderMode(Context c,int mode) {
+        sp(c).edit().putInt("nismo_header_mode",DashboardMenu.normalize(mode)).apply();
+    }
+
     static boolean dynamicRange(Context c) { return sp(c).getBoolean("range_dynamic", false); }
 
     static void setDynamicRange(Context c, boolean value) {

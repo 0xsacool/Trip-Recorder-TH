@@ -9,6 +9,7 @@ final class EvoHybridRenderer {
     static final float PLATE_SCALE = PLATE_W / 1903;
     static final float START = 140, SWEEP = 260;
     interface Surface {
+        default void nismoLogo() {}
         void plate(float x, float y, float w, float h);
         void rect(float x,float y,float w,float h,int color);
         void outline(float x,float y,float w,float h,float radius,int color,float thickness);
@@ -43,7 +44,8 @@ final class EvoHybridRenderer {
     static final class Data {
         double soc, speed, power;
         float startupAccent, powerAccent;
-        double nismoPower=Double.NaN, nismoSoc=Double.NaN;
+        double leftLevel=Double.NaN, rightLevel=Double.NaN;
+        boolean thai;
         boolean charging, recording, results;
         float chargePhase, historyOffset, selectionAccent, materialBlend;
         int pressedSlot = -1;
@@ -52,7 +54,7 @@ final class EvoHybridRenderer {
         private long historyRevision = -1;
         double liveRpm=Double.NaN;
         double avgConsumption=Double.NaN,batteryTemp=Double.NaN,chargingVoltage=Double.NaN,remainingRange=Double.NaN;
-        GaugeMetric[] gauges={GaugeMetric.DEFAULT,GaugeMetric.DEFAULT};
+        GaugeMetric[] gauges={GaugeMetric.DEFAULT,GaugeMetric.DEFAULT,GaugeMetric.DEFAULT,GaugeMetric.DEFAULT};
         String range, source, status, tripLabel, temp, cells, voltage;
         String distance, elapsed, energy, average, money;
         String batteryLabel, rangeLabel, tripCaption, timeCaption, energyCaption, avgCaption, costCaption;
@@ -61,7 +63,7 @@ final class EvoHybridRenderer {
         Metric historyMetric=Metric.POWER;
         int historySeconds=60;
         int historyColor=0xff28d9ec;
-        boolean historyLight;
+        boolean historyLight, nismoHistory;
         int statusColor;
     }
     enum GaugeMetric {
@@ -199,9 +201,9 @@ final class EvoHybridRenderer {
         history(s,samples,count,metric,seconds,accent,false,x,y,width,height);
     }
     static void history(Surface s,double[] samples,int count,Metric metric,int seconds,int accent,boolean light,float x,float y,float width,float height) {
-        history(s,samples,count,metric,seconds,accent,light,x,y,width,height,0);
+        history(s,samples,count,metric,seconds,accent,light,x,y,width,height,0,false);
     }
-    private static void history(Surface s,double[] samples,int count,Metric metric,int seconds,int accent,boolean light,float x,float y,float width,float height,float offset) {
+    private static void history(Surface s,double[] samples,int count,Metric metric,int seconds,int accent,boolean light,float x,float y,float width,float height,float offset,boolean nismo) {
         s.historyBounds(x,y,width,height);
         float l=x+32,r=x+width-5,t=y+15,b=y+height-4;
         final int muted=light?0xff526574:0xffb6bbc0, grid=light?0xffd0dbe2:0xff303337;
@@ -224,23 +226,33 @@ final class EvoHybridRenderer {
             s.text(Long.toString(Math.round(v)),l-5,yy+3,10,muted,false,false,1,27);
         }
         for(int i=0;i<7;i++)s.line(l+(r-l)*i/6,t,l+(r-l)*i/6,b,grid,1);
-        boolean started=false;float px=0,py=0;
+        boolean started=false, any=false;float px=0,py=0;
+        float zeroY=b-(b-t)*(float)(-lo/(hi-lo));
+        boolean signed=nismo && metric==Metric.POWER;
         for(int i=0;i<count;i++){
             if(!valid(samples[i])){started=false;continue;}
+            any=true;
             float xx=capacity==1?r:l+(r-l)*(capacity-count+i-offset)/Math.max(1,capacity-1);
             float yy=b-(b-t)*(float)((samples[i]-lo)/(hi-lo));
             if(started && xx>=l){
                 float leftY=px<l ? py+(yy-py)*(l-px)/(xx-px) : py;
-                s.line(Math.max(l,px),leftY,xx,yy,accent,2.2f);
-            }else if(xx>=l)s.circle(xx,yy,2.3f,accent);
+                float left=Math.max(l,px);
+                if(signed && (leftY-zeroY)*(yy-zeroY)<0){
+                    float cross=left+(xx-left)*(zeroY-leftY)/(yy-leftY);
+                    s.line(left,leftY,cross,zeroY,leftY>zeroY ? 0xff28d9ec : accent,2.2f);
+                    left=cross;leftY=zeroY;
+                }
+                s.line(left,leftY,xx,yy,signed && (yy+leftY)/2>zeroY ? 0xff28d9ec : accent,2.2f);
+            }else if(xx>=l)s.circle(xx,yy,2.3f,signed && yy>zeroY ? 0xff28d9ec : accent);
             started=true;px=xx;py=yy;
         }
+        if(nismo && !any)s.text("--",(l+r)/2,(t+b)/2,18,muted,true,false,0,r-l);
     }
     static void history(Surface s,Data d,float x,float y,float width,float height){
         history(s,d,d.history,d.historyCount,x,y,width,height);
     }
     static void history(Surface s,Data d,double[] samples,int count,float x,float y,float width,float height){
-        if(d.historyMetric!=Metric.MOTOR_RPM){history(s,samples,count,d.historyMetric,d.historySeconds,d.historyColor,d.historyLight,x,y,width,height,d.historyOffset);return;}
+        if(d.historyMetric!=Metric.MOTOR_RPM){history(s,samples,count,d.historyMetric,d.historySeconds,d.historyColor,d.historyLight,x,y,width,height,d.historyOffset,d.nismoHistory);return;}
         // A live instrument, not a historical plot. Keep the hitbox and header in exactly the same place.
         s.historyBounds(x,y,width,height);
         float l=x+8,r=x+width-6;

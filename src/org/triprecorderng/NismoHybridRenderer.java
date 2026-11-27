@@ -15,33 +15,96 @@ final class NismoHybridRenderer {
         long n = Math.round(value);
         return n >= -200 && n <= 800 ? DIGITS[(int)n + 200] : Long.toString(n);
     }
-    private static void bank(EvoHybridRenderer.Surface s, boolean right, double fraction, int ink,
-                             float phase, float startup, float acceleration) {
-        for (int i = 0; i < STEPS; i++) {
-            float y = 282 - 14 * i, x = 383 - 4.55f * i;
-            if (right) x = 1200 - x - 19;
-            float fill = (float)Math.max(0, Math.min(1, fraction * STEPS - i));
-            float shear = right ? 3.3f : -3.3f;
-            s.slant(x, y, 19, 10, shear, TRACK);
-            if (fill > 0) s.slant(x, y, 19 * fill, 10, shear, ink);
-            if (acceleration > 0 && fill > 0)
-                s.line(x+shear,y,x+shear+19*fill,y,WHITE,acceleration*1.6f);
-            if ((phase >= 0 && i == (int)(phase * STEPS) && fill > 0) ||
-                    (startup > 0 && i == Math.round(startup * (STEPS - 1))))
-                s.line(x, y + 10, x + (phase >= 0 ? 19 * fill : 19), y + 10, MUTED, 1);
+    // Slot indices 0/1 are the two main instruments persisted by Build 51.
+    private static final EvoHybridRenderer.GaugeMetric[] DEFAULTS = {
+        EvoHybridRenderer.GaugeMetric.POWER, EvoHybridRenderer.GaugeMetric.RPM,
+        EvoHybridRenderer.GaugeMetric.SOC, EvoHybridRenderer.GaugeMetric.RANGE
+    };
+    static EvoHybridRenderer.GaugeMetric selected(EvoHybridRenderer.Data d,int slot) {
+        return d.gauges[slot] == EvoHybridRenderer.GaugeMetric.DEFAULT ? DEFAULTS[slot] : d.gauges[slot];
+    }
+    static double level(EvoHybridRenderer.GaugeMetric metric,EvoHybridRenderer.Data d) {
+        double v = metric.read(d);
+        if (!Double.isFinite(v)) return Double.NaN;
+        if (metric == EvoHybridRenderer.GaugeMetric.POWER && v < 0)
+            return Math.max(-1,v/-metric.min);
+        return Math.max(0,Math.min(1,(v-Math.max(0,metric.min))/(metric.upper(d)-Math.max(0,metric.min))));
+    }
+    static final class BankMotion {
+        private final SharedMotionController.Gauge gauge = new SharedMotionController.Gauge();
+        private EvoHybridRenderer.GaugeMetric previous;
+        double sample(long now,SharedMotionController.Mode mode,EvoHybridRenderer.GaugeMetric metric,EvoHybridRenderer.Data d) {
+            if (previous != metric) {
+                previous = metric;
+                gauge.update(now,SharedMotionController.Mode.OFF,Double.NaN);
+            }
+            return gauge.update(now,mode,level(metric,d));
         }
+        boolean active() { return gauge.active(); }
+    }
+    static void bank(EvoHybridRenderer.Surface s, boolean right, double fraction, int ink) {
+        for (int i=0;i<STEPS;i++) {
+            float width=12+1.5f*i;
+            float center=392.5f-4.55f*i;
+            float x=(right ? 1200-center : center)-width/2;
+            float shear=right ? 3.3f : -3.3f;
+            float y=282-14*i;
+            s.slant(x,y,width,10,shear,TRACK);
+            int alpha=(int)Math.round(255*Math.max(0,Math.min(1,Math.abs(fraction)*STEPS-i)));
+            if (alpha>0) s.slant(x,y,width,10,shear,(ink & 0xffffff) | alpha<<24);
+        }
+    }
+    private static String label(EvoHybridRenderer.GaugeMetric m,EvoHybridRenderer.Data d) {
+        switch (m) {
+            case RANGE: return d.rangeLabel;
+            case SOC: return d.batteryLabel;
+            case CONSUMPTION: return d.avgCaption;
+            case RPM: return d.thai ? "รอบมอเตอร์หน้า" : "FRONT MOTOR";
+            case POWER: return d.thai ? "กำลังมอเตอร์" : "MOTOR POWER";
+            case SPEED: return d.thai ? "ความเร็ว" : "SPEED";
+            case TEMPERATURE: return d.thai ? "อุณหภูมิแบตฯ สูงสุด" : "BATTERY TEMP MAX";
+            case VOLTAGE: return d.thai ? "แรงดันชาร์จ" : "CHARGING VOLTAGE";
+            default: return m.title;
+        }
+    }
+    private static String reading(EvoHybridRenderer.GaugeMetric m,EvoHybridRenderer.Data d) {
+        return m == EvoHybridRenderer.GaugeMetric.CONSUMPTION || m == EvoHybridRenderer.GaugeMetric.RANGE
+                ? m.reading(d) : whole(m.read(d));
+    }
+    private static void chevron(EvoHybridRenderer.Surface s,float x,float y) {
+        s.line(x-4,y-2,x,y+2,MUTED,1.5f); s.line(x,y+2,x+4,y-2,MUTED,1.5f);
+    }
+    private static void instruments(EvoHybridRenderer.Surface s,EvoHybridRenderer.Data d,boolean right) {
+        int primary=right ? 1 : 0, secondary=right ? 3 : 2;
+        EvoHybridRenderer.GaugeMetric m=selected(d,primary), small=selected(d,secondary);
+        int ink=m == EvoHybridRenderer.GaugeMetric.POWER ? (d.power<0 ? CYAN : RED) : (right ? CYAN : RED);
+        int align=right ? 1 : -1, x=right ? 1110 : 88;
+        s.gaugeBounds(primary,right ? 860 : 70,95,270,154);
+        s.text(label(m,d),x,134,22,MUTED,true,true,align,206);
+        chevron(s,right ? 882 : 317,126);
+        String value=reading(m,d);
+        s.readingWithUnit(value,"--".equals(value) ? "" : m.unit,x,211,78,24,align,235,WHITE,MUTED);
+        if (m==EvoHybridRenderer.GaugeMetric.POWER && Double.isFinite(d.power))
+            s.text(d.power<0 ? "REGEN" : d.power>0 ? "DRIVE" : "COAST",x,241,19,ink,true,true,align,221);
+        bank(s,right,right ? d.rightLevel : d.leftLevel,ink);
+
+        int left=right ? 880 : 72;
+        s.gaugeBounds(secondary,left-6,252,262,54);
+        s.text(label(small,d),left,286,16,MUTED,true,true,-1,98);
+        value=reading(small,d);
+        s.readingWithUnit(value,"--".equals(value) ? "" : small.unit,left+228,290,34,17,1,125,WHITE,MUTED);
+        chevron(s,left+241,280);
     }
     private static void metric(EvoHybridRenderer.Surface s, String name, String value, int x, int y, int width) {
         s.text(name,x,y,13,MUTED,true,true,-1,width);
-        s.text(value,x,y+25,24,WHITE,true,true,-1,width);
+        s.text(value,x,y+27,28,WHITE,true,true,-1,width);
     }
 
     static void draw(EvoHybridRenderer.Surface s, EvoHybridRenderer.Data d) {
         s.rect(0,0,1200,470,0xff08090b);
         s.plate(0,0,1200,470);
-        s.text("NIS",87,59,32,WHITE,true,true,-1,61);
-        s.text("MO",140,59,32,RED,true,true,-1,60);
-        s.text("GT3",210,58,22,MUTED,true,true,-1,58);
+        s.nismoLogo();
+        s.text("GT3",230,58,21,MUTED,true,true,-1,50);
         s.text(d.results ? "TRIP RESULTS" : d.charging ? "CHARGING" : "EV TripLog",
                 301,58,23,d.charging ? CYAN : WHITE,true,true,-1,230);
         s.text(d.avgCaption,525,42,12,MUTED,true,true,-1,220);
@@ -54,35 +117,19 @@ final class NismoHybridRenderer {
                 if((row+col)%2==0) s.slant(465+col*5,44+row*5,5,5,1,WHITE);
         }
 
-        int powerColor = d.power < 0 ? CYAN : RED;
-        s.gaugeBounds(0,78,99,250,153);
-        s.gaugeBounds(1,872,99,253,153);
-        if (EvoHybridRenderer.custom(d,0)) EvoHybridRenderer.customDigital(s,d,0,78,99,250,149,powerColor,true);
-        else {
-            s.text("MOTOR POWER",98,132,21,MUTED,true,true,-1,216);
-            s.readingWithUnit(whole(d.power),"kW",98,203,71,25,-1,218,WHITE,MUTED);
-            String direction = !EvoHybridRenderer.valid(d.power) ? "--" :
-                    d.power < 0 ? "REGEN" : d.power > 0 ? "DRIVE" : "COAST";
-            s.text(direction,100,234,20,powerColor,true,true,-1,180);
-        }
-        metric(s,"FRONT MOTOR · rpm",whole(d.liveRpm),84,275,235);
-        if (EvoHybridRenderer.custom(d,1)) EvoHybridRenderer.customDigital(s,d,1,872,99,253,149,CYAN,true);
-        else {
-            s.text(d.batteryLabel,1111,132,21,MUTED,true,true,1,225);
-            s.readingWithUnit(whole(d.soc),"%",1109,206,72,28,1,218,WHITE,MUTED);
-        }
-        s.text(d.rangeLabel,1110,275,14,MUTED,true,true,1,210);
-        s.text(d.range,1110,301,26,WHITE,true,true,1,210);
-        bank(s,false,Math.abs(d.nismoPower)/(d.power < 0 ? 100 : 200),powerColor,-1,d.startupAccent,d.powerAccent);
-        bank(s,true,d.nismoSoc/100,CYAN,d.chargePhase,d.startupAccent,0);
+        instruments(s,d,false);
+        instruments(s,d,true);
 
         s.text("SPEED",600,143,20,MUTED,true,true,0,190);
-        s.text(whole(d.speed),600,238,110,WHITE,true,true,0,290);
+        s.text(whole(d.speed),600,239,119,WHITE,true,true,0,294);
         s.text("km/h",600,263,22,MUTED,true,true,0,110);
         if (d.recording) {
             s.circle(514,295,4.5f,RED);
             s.text(d.status,604,301,17,WHITE,true,true,0,161);
-        } else s.text(d.status,600,301,17,d.statusColor,true,true,0,184);
+        } else {
+            if(d.charging && d.chargePhase>=0) s.circle(514,295,3+1.5f*(1-Math.abs(2*d.chargePhase-1)),CYAN);
+            s.text(d.status,600,301,17,d.statusColor,true,true,0,184);
+        }
 
         s.line(62,386,748,386,0xff484c50,1);
         s.line(271,341,258,380,0xff484c50,1);
@@ -106,9 +153,9 @@ final class NismoHybridRenderer {
         EvoHybridRenderer.history(s,d,790,337,359,101);
         if (d.pressedSlot >= 0 || d.selectionAccent > 0) {
             int slot = d.pressedSlot;
-            if (slot == 0 || slot == 1) {
-                float x = slot == 0 ? 98 : 891;
-                s.line(x,250,x+198,250,slot == 0 ? powerColor : CYAN,2);
+            if (slot >= 0 && slot < 4) {
+                float x = slot%2 == 0 ? 98 : 891, y=slot<2 ? 249 : 301;
+                s.line(x,y,x+198,y,slot%2 == 0 ? RED : CYAN,2);
             } else s.line(804,435,1137,435,RED,1 + 2*d.selectionAccent);
         }
     }

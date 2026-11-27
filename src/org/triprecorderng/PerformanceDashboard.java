@@ -35,6 +35,7 @@ final class PerformanceDashboard extends View {
     private final EvoHybridCanvas fallbackGraph;
     private final RectF fallbackGraphBounds=new RectF();
     private boolean graphPressed;
+    private android.view.accessibility.AccessibilityNodeProvider instrumentNodes;
     private int pressedGauge=-1;
     private long lastSlowRefresh;
     private final SharedMotionController motion = new SharedMotionController();
@@ -43,7 +44,10 @@ final class PerformanceDashboard extends View {
     private final SharedMotionController.Mode configuredMotion;
     private final boolean performanceRefresh;
     private static Boolean lastNismoLight;
-    private long materialStart = -1, accelerationStart = -1;
+    private long materialStart = -1;
+    private final NismoHybridRenderer.BankMotion leftBank=new NismoHybridRenderer.BankMotion();
+    private final NismoHybridRenderer.BankMotion rightBank=new NismoHybridRenderer.BankMotion();
+    private long observedTripStart, resultsUntil;
     private boolean materialChanged;
     private boolean chargeSession, chargingActive, completedTrip;
     private boolean motionSafe() {
@@ -138,8 +142,6 @@ final class PerformanceDashboard extends View {
         evoData.liveRpm=frontRpm;
         // Fast values redraw on every new reading; expensive trip summaries and labels stay at 1 Hz.
         long elapsedNow = android.os.SystemClock.elapsedRealtime();
-        if (nismo && valid(previousSpeed) && speed > previousSpeed && motorPower > 0)
-            accelerationStart = elapsedNow;
         if (lastSlowRefresh != 0 && elapsedNow - lastSlowRefresh < 1000) {
             if (Double.compare(previousSpeed, speed) != 0 || Double.compare(previousPower, motorPower) != 0 || Double.compare(previousRpm,frontRpm)!=0)
                 invalidate();
@@ -172,7 +174,15 @@ final class PerformanceDashboard extends View {
         String charging = ChargeRecorder.status;
         chargeSession = linked && charging != null && !charging.isEmpty() && ChargeRecorder.current != null;
         chargingActive = chargeSession && !charging.endsWith(L.t(" - paused"));
-        completedTrip = current == null && shown != null && shown.ended;
+        if (current != null) {
+            observedTripStart=current.startMs;
+            resultsUntil=0;
+        } else if (observedTripStart>0 && shown!=null && shown.ended && shown.startMs==observedTripStart
+                && shown.endMs>=shown.startMs && now>=shown.endMs && now-shown.endMs<30000) {
+            resultsUntil=elapsedNow+15000;
+            observedTripStart=0;
+        }
+        completedTrip = current==null && elapsedNow<resultsUntil;
         evoData.recording = fresh && current != null;
         if (!live.running) {
             status = L.t("Service stopped"); statusColor = RED;
@@ -283,6 +293,8 @@ final class PerformanceDashboard extends View {
     }
 
     private void refreshInstrumentLabels() {
+        evoData.thai = L.TH.equals(L.current());
+        evoData.nismoHistory = nismo;
         evoData.soc = soc;
         evoData.avgConsumption = average;
         evoData.batteryTemp = maxTemp;
@@ -335,10 +347,19 @@ final class PerformanceDashboard extends View {
         boolean speedFresh = live.running && live.driveWall > 0 && wall >= live.driveWall && wall-live.driveWall < 2000;
         evoData.speed = speedFresh ? speed : Double.NaN;
         evoData.power = powerFresh && speedFresh ? motorPower : Double.NaN;
-        evoData.nismoPower = motion.drive.update(now,mode,evoData.power);
-        evoData.nismoSoc = motion.battery.update(now,mode,soc);
+        boolean linked=live.running && live.lastTickWall>0 && wall>=live.lastTickWall && wall-live.lastTickWall<10000
+                && !"none".equals(live.vehicle) && !"GPS only".equals(live.vehicle);
+        boolean cellsFresh=linked && live.telemetryWall>0 && wall>=live.telemetryWall && wall-live.telemetryWall<10000;
+        if (!linked) evoData.power=Double.NaN;
+        evoData.liveRpm=linked && speedFresh && wall>=live.frontRpmWall && wall-live.frontRpmWall<2000 ? frontRpm : Double.NaN;
+        evoData.soc=linked ? soc : Double.NaN;
+        evoData.remainingRange=linked ? range.km : Double.NaN;
+        evoData.chargingVoltage=cellsFresh ? chargeVoltage : Double.NaN;
+        evoData.batteryTemp=cellsFresh ? maxTemp : Double.NaN;
+        evoData.leftLevel=leftBank.sample(now,mode,NismoHybridRenderer.selected(evoData,0),evoData);
+        evoData.rightLevel=rightBank.sample(now,mode,NismoHybridRenderer.selected(evoData,1),evoData);
         evoData.charging = parked && chargeSession;
-        evoData.results = parked && completedTrip && !evoData.charging;
+        evoData.results = parked && completedTrip && now<resultsUntil && !evoData.charging;
         boolean full = mode == SharedMotionController.Mode.FULL;
         evoData.chargePhase = full && evoData.charging && chargingActive && valid(soc) ? (now % 1800)/1800f : -1;
         long sampleAge = now - evoData.historySecond*1000;
@@ -346,13 +367,12 @@ final class PerformanceDashboard extends View {
                 && evoData.historyCount >= 2 && sampleAge >= 0 && sampleAge < 1000;
         evoData.historyOffset = full && evoData.historyCount >= 2 ? Math.min(1,Math.max(0,sampleAge/1000f)) : 0;
         evoData.historyColor = NismoHybridRenderer.RED;
-        evoData.powerAccent = full && evoData.power > 0 ? decay(now,accelerationStart,240) : 0;
         evoData.selectionAccent = mode == SharedMotionController.Mode.OFF ? 0 : decay(now,telemetry.changeTime(),180);
-        evoData.pressedSlot = pressedGauge >= 0 ? pressedGauge : graphPressed ? 2 :
+        evoData.pressedSlot = pressedGauge >= 0 ? pressedGauge : graphPressed ? 4 :
                 evoData.selectionAccent > 0 ? telemetry.changedSlot() : -1;
         if (!safe) materialStart = -1;
         evoData.materialBlend = .25f * decay(now,materialStart,200);
-        if (motion.active() || motion.drive.active() || motion.battery.active() || evoData.powerAccent > 0 ||
+        if (motion.active() || leftBank.active() || rightBank.active() ||
                 evoData.selectionAccent > 0 || evoData.materialBlend > 0) {
             if (performanceRefresh) postInvalidateOnAnimation();
             else postInvalidateDelayed(50);
@@ -373,9 +393,7 @@ final class PerformanceDashboard extends View {
             if(e.getActionMasked()==MotionEvent.ACTION_UP){
                 int slot=pressedGauge;pressedGauge=-1;
                 if(evoCanvas.gaugeAt(e.getX(),e.getY())==slot){
-                    if(EvoHybridRenderer.valid(speed)&&speed>3)
-                        android.widget.Toast.makeText(c,"Park to customize gauges",android.widget.Toast.LENGTH_SHORT).show();
-                    else telemetry.showGauge(this,evoCanvas.gaugeBounds(slot),slot);
+                    openInstrument(slot);
                 }
             }else if(e.getActionMasked()==MotionEvent.ACTION_CANCEL)pressedGauge=-1;
             return true;
@@ -387,6 +405,25 @@ final class PerformanceDashboard extends View {
         }
         return super.onTouchEvent(e);
     }
+    private void openInstrument(int slot) {
+        if(slot==4) telemetry.show(this,chartBounds());
+        else if(valid(speed) && speed>3)
+            android.widget.Toast.makeText(c,"Park to customize gauges",android.widget.Toast.LENGTH_SHORT).show();
+        else telemetry.showGauge(this,evoCanvas.gaugeBounds(slot),slot);
+    }
+    @Override public android.view.accessibility.AccessibilityNodeProvider getAccessibilityNodeProvider() {
+        if(!nismo) return super.getAccessibilityNodeProvider();
+        if(instrumentNodes==null) instrumentNodes=new NismoInstrumentNodes(this);
+        return instrumentNodes;
+    }
+    RectF instrumentBounds(int slot) {
+        return slot==4 ? chartBounds() : evoCanvas.gaugeBounds(slot);
+    }
+    String instrumentDescription(int slot) {
+        return slot==4 ? telemetry.description() : (slot<2 ? "Main " : "Lower ")+(slot%2==0 ? "left" : "right")+
+                " gauge: "+NismoHybridRenderer.selected(evoData,slot).label;
+    }
+    void activateInstrument(int slot) { openInstrument(slot); }
     @Override protected void onDetachedFromWindow(){motion.cancel();telemetry.dismiss();super.onDetachedFromWindow();}
     @Override public void onWindowFocusChanged(boolean focused) {
         super.onWindowFocusChanged(focused);

@@ -14,6 +14,7 @@ import java.io.InputStream;
 final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
     private final Bitmap bitmap;
     private Bitmap previousMaterial;
+    private android.graphics.drawable.Drawable nismoLogo;
     private float materialBlend;
     private final CockpitPalette palette;
     private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
@@ -24,7 +25,7 @@ final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
     private final Typeface italic=Typeface.create("sans-serif-condensed",Typeface.BOLD_ITALIC);
     private Canvas c;
     private final RectF graphBounds=new RectF();
-    private final RectF[] gaugeBounds={new RectF(),new RectF()};
+    private final RectF[] gaugeBounds={new RectF(),new RectF(),new RectF(),new RectF()};
     private float graphScale=1,graphX,graphY;
     RectF graphBounds(){return new RectF(graphBounds);}
     private void transform(float scale,float x,float y){graphScale=scale;graphX=x;graphY=y;graphBounds.setEmpty();for(RectF r:gaugeBounds)r.setEmpty();c.translate(x,y);c.scale(scale,scale);}
@@ -36,7 +37,12 @@ final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
     EvoHybridCanvas(Context context,String asset) {
         palette=new CockpitPalette(Prefs.dashboardTheme(context),Prefs.sportTheme(context)&&Prefs.lightAppearance(context));
         boolean gt3 = "nismo_gt3".equals(asset);
-        if (gt3) asset = palette.light ? "nismo_gt3_day.webp" : "nismo_gt3_night.webp";
+        if (gt3) {
+            asset = palette.light ? "nismo_gt3_day.webp" : "nismo_gt3_night.webp";
+            String name=palette.light ? "nismo_gt3_logo_day" : "nismo_gt3_logo_night";
+            nismoLogo=context.getDrawable(context.getResources().getIdentifier(name,"drawable",context.getPackageName()));
+            nismoLogo.setBounds(72,37,220,59);
+        }
         bitmap = decode(context,asset,palette.light && !gt3);
     }
     void prepareMaterialTransition(Context context) {
@@ -121,6 +127,7 @@ final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
             p.setAlpha(255);
         }
     }
+    public void nismoLogo(){if(nismoLogo!=null)nismoLogo.draw(c);}
     public void rect(float x,float y,float w,float h,int color){fill(palette.fill(color));c.drawRect(x,y,x+w,y+h,p);}
     public void outline(float x,float y,float w,float h,float radius,int color,float thickness){
         fill(palette.stroke(color));p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(thickness);box.set(x,y,x+w,y+h);c.drawRoundRect(box,radius,radius,p);
@@ -130,7 +137,7 @@ final class EvoHybridCanvas implements EvoHybridRenderer.Surface {
     }
     public void circle(float cx,float cy,float r,int color){fill(palette.fill(color));c.drawCircle(cx,cy,r,p);}
     public void slant(float x,float y,float w,float h,float shear,int color){
-        fill(palette.fill(color));shape.reset();shape.moveTo(x+shear,y);shape.lineTo(x+shear+w,y);
+        fill(palette.fill(color | 0xff000000));p.setAlpha(color >>> 24);shape.reset();shape.moveTo(x+shear,y);shape.lineTo(x+shear+w,y);
         shape.lineTo(x+w,y+h);shape.lineTo(x,y+h);shape.close();c.drawPath(shape,p);
     }
     public void arc(float cx,float cy,float radius,float start,float sweep,float width,int color){
