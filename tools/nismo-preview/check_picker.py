@@ -106,5 +106,5 @@ tap(find("text", "OK"))
 settings_choice("Dashboard theme", "Classic")
 tap(find("text", "Appearance", True))
 assert find("text", "Light").get("checked") == "true"
-tap(find("text", "Cancel"))
+tap(find("resource-id", "android:id/button2"))
 print("PASS restored header to Settings, Classic Light -> GT-R dark popup -> Classic Light selection")
